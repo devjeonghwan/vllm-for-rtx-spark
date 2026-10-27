@@ -2,7 +2,27 @@
 
 vLLM builds and model recipes for NVIDIA RTX Spark on Windows ARM64.
 
-Currently supported: Qwen3.8-Flash-Next-FP4-Local on RTX Spark N1X, with 96 GB GPU / 32 GB CPU memory and NVMe PLE. Based on vLLM 0.32.0 and [myllmbox's v5.3.1 recipe](https://github.com/myllmbox/qwen38-flash-next-recipe).
+Currently supported: [Qwen3.8-Flash-Next-FP4-Local](https://huggingface.co/nvidia/Qwen3.8-Flash-Next-FP4-Local) on RTX Spark N1X, with 96 GB GPU / 32 GB CPU memory and NVMe PLE. Based on vLLM 0.32.0 and [myllmbox's v5.3.1 recipe](https://github.com/myllmbox/qwen38-flash-next-recipe).
+
+## Benchmarks
+
+### 1. DGX Spark (Original MyLLMBox v5.3 Recipe) vs RTX Spark (This project)
+
+| Workload | RTX Spark, 1 request | DGX Spark, 1 request | RTX Spark, 16 requests | DGX Spark, 16 requests |
+|---|---:|---:|---:|---:|
+| Mixed | 51.45 | 57.58 | 194.90 | 187.78 |
+| Code | 50.35 | 57.23 | 249.65 | 268.15 |
+| JSON schema | 41.63 | 44.90 | 215.83 | 222.28 |
+| Prose | 38.15 | 44.53 | 190.28 | 212.20 |
+
+### 2. RTX Spark: NVIDIA recipe (llama.cpp) vs This project
+
+NVIDIA figures are from its [published Windows recipe](https://nvidia.github.io/local-ai-inference-recipes/hardware/rtx-spark/index.html?model=qwen%2Fqwen3.8-flash-next&os=windows&backend=llama-cpp&memory=78&precision=iq4-xs&variant=vision-mtp&memoryConfig=128). Our measurements use `qwen3.8-fast.yaml` on the same RTX Spark N1X as above.
+
+| Benchmark | NVIDIA llama.cpp, IQ4_XS | This project, NVFP4 |
+|---|---:|---:|
+| AA-AgentPerf-local completion, full replay | 1,118.16 s | **847.11 s** |
+| SPEED-Bench coding decode, all 80 conversations | 35.37 tok/s | **53.20 tok/s** |
 
 ## Install
 
