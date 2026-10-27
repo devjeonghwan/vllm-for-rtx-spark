@@ -62,7 +62,7 @@ class OriginalSkinnyKernel:
         metadata = _metadata()
         if torch.cuda.get_device_capability() != (12, 1) or variant["use_pdl"] is not True:
             raise RuntimeError("Keep the original SM121 PDL policy of this archive")
-        self.module = load_module(metadata["library"], sha256=metadata["library_sha256"],
+        self.module = load_module(metadata["library"],
                                   init_symbol=variant["init_symbol"], load_symbol=variant["load_symbol"],
                                   stream=torch.cuda.current_stream(), invoke_symbols={variant["invoke_symbol"]: 5})
 

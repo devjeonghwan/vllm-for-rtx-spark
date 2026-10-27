@@ -1,7 +1,6 @@
 {
   "schema_version": 1,
   "library": "lib/b12x.dll",
-  "library_sha256": "ae658b8d41533914366c5959c352bd4bb15f9d70e6146115984ee1021effe5d1",
   "programs": [
     {
       "route": "a16",

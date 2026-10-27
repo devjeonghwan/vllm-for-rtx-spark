@@ -1,0 +1,571 @@
+diff --git a/vllm/v1/engine/windows_lifecycle.py b/vllm/v1/engine/windows_lifecycle.py
+new file mode 100644
+--- /dev/null
++++ b/vllm/v1/engine/windows_lifecycle.py
+@@ -0,0 +1,114 @@
++"""Windows process control only; no Torch, model, sampler, or HTTP implementation."""
++
++import math
++import time
++
++DEFAULT_CLEANUP_GRACE_SECONDS = 30.0
++
++
++class WindowsShutdownError(RuntimeError):
++    def __init__(self, report):
++        self.report = report
++        super().__init__(
++            "Windows EngineCore cooperative cleanup failed: " + repr(report)
++        )
++
++
++def cleanup_grace(timeout):
++    # A zero request-drain timeout means abort requests in original _handle_shutdown.
++    # It must not also mean zero time for GPU/Graph/native-worker resource cleanup.
++    if timeout is None:
++        return DEFAULT_CLEANUP_GRACE_SECONDS
++    if (
++        isinstance(timeout, bool)
++        or not isinstance(timeout, (int, float))
++        or not math.isfinite(timeout)
++        or timeout < 0
++    ):
++        raise ValueError("Finite nonnegative cleanup timeout required")
++    if timeout == 0:
++        return DEFAULT_CLEANUP_GRACE_SECONDS
++    return float(timeout)
++
++
++def shutdown_processes(
++    processes, controls, *, timeout=None, force_shutdown, clock=time.monotonic
++):
++    """Request original child finally, join, and verify its cleanup acknowledgement.
++
++    ``controls`` contains one spawn-context (request, completed) Event pair per
++    process. Completion is published only after original EngineCore.shutdown.
++    TerminateProcess via the pre-existing fallback is used only after a timeout.
++    The helper never reports a forced exit as cooperative success.
++    """
++    if len(processes) != len(controls):
++        raise ValueError("One request/ack pair per EngineCore process required")
++    grace = cleanup_grace(timeout)
++    deadline = clock() + grace
++    for request, _ in controls:
++        request.set()
++    for process in processes:
++        if process.pid is not None:
++            process.join(max(0.0, deadline - clock()))
++    timed_out = [
++        process
++        for process in processes
++        if process.pid is not None and process.is_alive()
++    ]
++    report = {
++        "status": "cooperative_original_child_shutdown",
++        "cleanup_grace_seconds": grace,
++        "TerminateProcess_fallback_used": bool(timed_out),
++        "pending_request_shutdown_validated": False,
++        "processes": [],
++    }
++    if timed_out:
++        try:
++            force_shutdown(timed_out, timeout=0)
++        except BaseException as error:  # noqa: BLE001 - record failure; never relabel forced exit as success.
++            report["fallback_error"] = repr(error)
++        report["status"] = "failed_cooperative_shutdown_timeout"
++    for process, (_, completed) in zip(processes, controls, strict=True):
++        report["processes"].append(
++            {
++                "pid": process.pid,
++                "exitcode": process.exitcode,
++                "cleanup_acknowledged": completed.is_set(),
++                "alive_after_join_or_fallback": process.is_alive()
++                if process.pid is not None
++                else False,
++            }
++        )
++    if timed_out or any(
++        row["pid"] is None
++        or row["exitcode"] != 0
++        or row["cleanup_acknowledged"] is not True
++        or row["alive_after_join_or_fallback"]
++        for row in report["processes"]
++    ):
++        if not timed_out:
++            report["status"] = "failed_child_exit_or_cleanup_ack"
++        raise WindowsShutdownError(report)
++    return report
++
++
++def close_client_resources(resources, timeout=None):
++    """Keep original socket/task cleanup even when child cleanup failed."""
++    primary = None
++    try:
++        if resources.engine_manager is not None:
++            resources.engine_manager.shutdown(timeout=timeout)
++    except BaseException as error:  # noqa: BLE001 - preserve the original failure through resource cleanup.
++        primary = error
++    try:
++        # Manager.shutdown is idempotent via its detached original finalizer.
++        # BackgroundResources.__call__ then closes the original ZMQ/tasks.
++        resources()
++    except BaseException as error:
++        if primary is None:
++            raise
++        primary.add_note(
++            "Original client background-resource cleanup also failed: " + repr(error)
++        )
++    if primary is not None:
++        raise primary
+diff --git a/vllm/v1/engine/windows_startup.py b/vllm/v1/engine/windows_startup.py
+new file mode 100644
+--- /dev/null
++++ b/vllm/v1/engine/windows_startup.py
+@@ -0,0 +1,60 @@
++"""Windows startup liveness/deadline and failure cleanup; no model/transport math."""
++
++import math
++import time
++
++
++class WindowsStartupWait:
++    """Windows HANDLEs cannot be polled as ZMQ file descriptors.
++
++    Recheck owned child exit codes before/after short original socket polls.
++    Keep the original configured ready timeout as a total monotonic budget.
++    """
++
++    def __init__(self, timeout_seconds, *, clock=time.monotonic):
++        if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or not math.isfinite(timeout_seconds) or timeout_seconds < 0:
++            raise ValueError("Finite nonnegative original startup timeout required")
++        self.timeout_seconds = timeout_seconds
++        self.clock = clock
++        self.deadline = clock() + timeout_seconds
++
++    def check_children(self, manager, coordinator=None, watched=()):
++        finished = {}
++        get_finished = getattr(manager, "finished_procs", None)
++        if get_finished is not None:
++            finished.update(get_finished())
++        if coordinator is not None and coordinator.exitcode is not None:
++            finished[coordinator.name] = coordinator.exitcode
++        frontend = {process.name: process.exitcode for process in watched if process.exitcode is not None}
++        if finished or frontend:
++            raise RuntimeError(
++                "Engine core initialization failed. See root cause above. "
++                f"Failed core proc(s): {finished}"
++                + (f", failed frontend proc(s): {frontend}" if frontend else "")
++            )
++
++    def poll(self, poller, timeout_ms, *, manager=None, coordinator=None, watched=()):
++        self.check_children(manager, coordinator, watched)
++        remaining = self.deadline - self.clock()
++        if remaining <= 0:
++            raise TimeoutError(f"Timed out waiting for engine core processes to start. Waited {self.timeout_seconds}s (configured by VLLM_ENGINE_READY_TIMEOUT_S).")
++        events = poller.poll(min(timeout_ms, 1000, max(1, math.ceil(remaining * 1000))))
++        self.check_children(manager, coordinator, watched)
++        if not events and self.clock() >= self.deadline:
++            raise TimeoutError(f"Timed out waiting for engine core processes to start. Waited {self.timeout_seconds}s (configured by VLLM_ENGINE_READY_TIMEOUT_S).")
++        return events
++
++
++def cleanup_failed_client(finalizer, resources, *, primary, close_resources=None):
++    """Close owned sockets after failed child startup without masking its error."""
++    if finalizer.detach() is None:
++        return
++    if close_resources is None:
++        from vllm.v1.engine.windows_lifecycle import close_client_resources
++        close_resources = close_client_resources
++    try:
++        close_resources(resources)
++    except BaseException as error:
++        if primary is None:
++            raise
++        primary.add_note("Original Windows API startup cleanup also failed: " + repr(error))
+diff --git a/vllm/v1/executor/windows_mp_lifecycle.py b/vllm/v1/executor/windows_mp_lifecycle.py
+new file mode 100644
+--- /dev/null
++++ b/vllm/v1/executor/windows_mp_lifecycle.py
+@@ -0,0 +1,85 @@
++"""Windows worker ownership only; retain original death-pipe/MQ/RPC transport."""
++
++import threading
++
++WINDOWS_ASYNC_STOP = object()
++FAILED_WORKER_OWNERS = []
++
++
++def shutdown_workers(handles, *, force_shutdown, shutdown_api=None, timeout=None, pending_futures=()):
++    """Keep original EOF request, then require successful worker cleanup and join.
++
++    Event request is set before original death_writer closure. The original
++    DeathPipeMonitor still wakes the original MQ reader; no new queue consumer,
++    CUDA IPC, tensor copy, or model execution is introduced here.
++    """
++    handles = tuple(handles)
++    try:
++        if any(not future.done() for future in pending_futures):
++            raise RuntimeError("Windows MP idle shutdown cannot drop pending RPC futures")
++        controls = []
++        for handle in handles:
++            request = getattr(handle, "windows_shutdown_request", None)
++            completed = getattr(handle, "windows_shutdown_complete", None)
++            if request is None or completed is None:
++                raise RuntimeError("Require owned Windows request/completion events for every MP worker")
++            controls.append((request, completed))
++        # Preserve ordering: child may react to EOF immediately.
++        for request, _ in controls:
++            request.set()
++        for handle in handles:
++            if handle.death_writer is not None:
++                handle.death_writer.close()
++                handle.death_writer = None
++        if shutdown_api is None:
++            from vllm.v1.engine.windows_lifecycle import shutdown_processes
++            shutdown_api = shutdown_processes
++        report = shutdown_api([handle.proc for handle in handles], controls,
++                              timeout=timeout, force_shutdown=force_shutdown)
++        return dict(report, request_transport="Original death-pipe EOF / original MQ.shutdown wakeup",
++                    worker_cleanup_ack_after_original_shutdown=True,
++                    CUDA_IPC_or_tensor_transport_changed=False,
++                    scope="Owned local MP workers; idle shutdown only, pending request abort not validated")
++    except BaseException:
++        # Never close response queues or release owners after unproven shutdown.
++        FAILED_WORKER_OWNERS.append((handles, tuple(pending_futures)))
++        raise
++
++
++def cleanup_failed_startup(handles, *, force_shutdown, primary, shutdown_api=None):
++    """Retain the original startup error while attaching real cleanup failures."""
++    try:
++        shutdown_workers(handles, force_shutdown=force_shutdown, shutdown_api=shutdown_api)
++    except BaseException as error:
++        if primary is None:
++            raise
++        primary.add_note("Windows MP startup cleanup also failed: " + repr(error))
++        return error
++    return None
++
++
++def stop_async_output(worker, *, timeout=30.0):
++    """Drain original FIFO output work and drop its last GPU-owner frame.
++
++    The original async thread recognizes the singleton after preceding FIFO
++    work. It marks completion only on that path, and the owner joins it before
++    original worker/Graph/PLE teardown. This never calls get_output a second time.
++    """
++    thread = getattr(worker, "async_output_copy_thread", None)
++    if thread is None:
++        return dict(async_output_thread_present=False, joined=True)
++    try:
++        if thread is threading.current_thread():
++            raise RuntimeError("Async output thread cannot join itself")
++        if getattr(worker, "_windows_async_output_drained", False) and not thread.is_alive():
++            return dict(async_output_thread_present=True, joined=True, FIFO_stop_observed=True)
++        if not thread.is_alive():
++            raise RuntimeError("Async output thread exited without the FIFO completion marker")
++        worker.async_output_queue.put(WINDOWS_ASYNC_STOP)
++        thread.join(timeout)
++        if thread.is_alive() or getattr(worker, "_windows_async_output_drained", False) is not True:
++            raise RuntimeError("Original async output FIFO has not drained and joined")
++        return dict(async_output_thread_present=True, joined=True, FIFO_stop_observed=True)
++    except BaseException:
++        FAILED_WORKER_OWNERS.append((worker, thread, getattr(worker, "async_output_queue", None)))
++        raise
+diff --git a/vllm/v1/worker/gpu/windows_lifecycle.py b/vllm/v1/worker/gpu/windows_lifecycle.py
+new file mode 100644
+--- /dev/null
++++ b/vllm/v1/worker/gpu/windows_lifecycle.py
+@@ -0,0 +1,113 @@
++"""Release original Windows recipe consumers before original runner cache deletion.
++
++No replacement Graph executor, allocator pool, model math, or PLE implementation.
++Imports of real runtime classes happen only inside the shutdown call.
++"""
++
++import sys
++
++
++FAILED_RUNNERS = []
++
++
++def shutdown_consumers(
++    runner,
++    torch,
++    *,
++    manager_type=None,
++    standard_type=None,
++    breakable_type=None,
++    boundary=None,
++):
++    completed = getattr(runner, "_windows_recipe_consumers_shutdown", None)
++    if completed is not None:
++        return completed
++    if manager_type is None:
++        from vllm.v1.worker.gpu.cudagraph_utils import CudaGraphManager
++
++        manager_type = CudaGraphManager
++    if standard_type is None:
++        from vllm.compilation.cuda_graph import CUDAGraphWrapper
++
++        standard_type = CUDAGraphWrapper
++    if breakable_type is None:
++        from vllm.compilation.breakable_cudagraph import BreakableCUDAGraphWrapper
++
++        breakable_type = BreakableCUDAGraphWrapper
++    if boundary is None:
++        from vllm._rtx_spark.runtime import ple as recipe_original_ple_windows
++
++        boundary = recipe_original_ple_windows
++    owners = [runner]
++    try:
++        managers = {
++            id(value): value
++            for owner in (runner, getattr(runner, "speculator", None))
++            if owner is not None
++            for value in vars(owner).values()
++            if isinstance(value, manager_type)
++        }
++        standard = list(standard_type._all_instances)
++        breakable = list(breakable_type._all_instances)
++        wrappers = standard + breakable
++        owners.extend((managers, wrappers))
++        graphs = {
++            id(graph): graph
++            for manager in managers.values()
++            for graph in manager.graphs.values()
++        }
++        owners.append(graphs)
++        for wrapper in standard:
++            for entry in wrapper.concrete_cudagraph_entries.values():
++                graph = getattr(entry, "cudagraph", None)
++                if graph is not None:
++                    graphs[id(graph)] = graph
++        for wrapper in breakable:
++            for entry in wrapper.entries.values():
++                capture = entry.capture
++                if capture is None:
++                    continue
++                if capture._capturing or capture._current_graph is not None:
++                    raise RuntimeError("Cannot release an active breakable capture")
++                # Original _end_segment appends CUDAGraph.replay; eager breaks
++                # are ordinary callables. Retain and reset only actual Graphs.
++                for segment in capture.segments:
++                    graph = getattr(segment, "__self__", None)
++                    if isinstance(graph, torch.cuda.CUDAGraph):
++                        if getattr(segment, "__name__", None) != "replay":
++                            raise RuntimeError("Unexpected bound CUDAGraph segment")
++                        graphs[id(graph)] = graph
++        torch.cuda.synchronize()
++        for graph in graphs.values():
++            graph.reset()
++        for manager in managers.values():
++            manager.release_graphs()
++        for wrapper in wrappers:
++            wrapper.clear_graphs()
++        torch.cuda.synchronize()
++        native_cute = {"original_CUDA_libraries_closed": 0, "runtime_not_loaded": True}
++        native_cute_runtime = sys.modules.get("original_cute_coff_runtime")
++        if native_cute_runtime is not None:
++            native_cute = native_cute_runtime.close_after_graphs_drained(
++                graphs_reset=True, streams_drained=True
++            )
++        ple = boundary.shutdown_after_graphs_drained(
++            graphs_reset=True, streams_drained=True
++        )
++        completed = {
++            "graphs_reset": len(graphs),
++            "original_managers_released": len(managers),
++            "original_wrapper_registries_cleared": len(wrappers),
++            "all_streams_drained": True,
++            "PLE": ple,
++            "native_CuTe_AOT": native_cute,
++            "before_original_KV_or_model_deletion": True,
++            "scope": "original consumer cleanup only; pending-request shutdown not validated",
++        }
++        runner._windows_recipe_consumers_shutdown = completed
++        return completed
++    except BaseException:
++        # Keep actual Graphs, caches, native PLE owners and runner alive on error.
++        # No field clear, false acknowledgement, or retry success is fabricated.
++        FAILED_RUNNERS.append(tuple(owners))
++        raise
+diff --git a/vllm/v1/worker/windows_memory.py b/vllm/v1/worker/windows_memory.py
+new file mode 100644
+--- /dev/null
++++ b/vllm/v1/worker/windows_memory.py
+@@ -0,0 +1,92 @@
++"""Opt-in worker-owned scalar CUDA memory observations, outside request timing.
++
++No Tensor creation/copy, CUDA initialization, synchronization, peak reset or
++model execution. This does not measure total UMA/Windows physical memory.
++"""
++import functools
++import json
++import os
++from pathlib import Path
++import threading
++import time
++import uuid
++
++
++def _output_directory():
++    value = os.environ.get("MBX_WORKER_MEMORY_REPORT_DIR")
++    if not value:
++        return None
++    root = next((parent for parent in Path(__file__).resolve().parents
++                 if (parent / "sources.lock.json").is_file() and (parent / ".venv").is_dir()), None)
++    if root is None:
++        raise RuntimeError("Cannot identify task-owned memory observation root")
++    directory = Path(value).resolve()
++    if not directory.is_relative_to(root / "results"):
++        raise RuntimeError("Worker memory records must stay inside owned task results")
++    return directory
++
++
++def snapshot(owner, phase, *, error=None, torch_module=None):
++    record = dict(status="worker_memory_observation_disabled", phase=str(phase), pid=os.getpid(),
++        thread_id=threading.get_ident(), monotonic_seconds=time.monotonic(),
++        tensor_copies=False, Tensor_allocations=False, synchronization_added=False,
++        peak_reset_added=False, physical_UMA_measurement=False,
++        peak_scope="Ambient original Torch peak counters; original engine may reset them during profiling")
++    if error is not None:
++        record["observed_failure"] = repr(error)
++    try:
++        directory = _output_directory()
++        if directory is None:
++            return record
++        if torch_module is None:
++            import torch as torch_module
++        record["CUDA_initialized"] = bool(torch_module.cuda.is_initialized())
++        worker = vars(owner).get("worker", owner)
++        record["owner_class"] = type(worker).__module__ + "." + type(worker).__qualname__
++        device = getattr(worker, "device", None)
++        record["device"] = str(device)
++        record["rank"] = getattr(worker, "rank", None)
++        values = {}
++        errors = {}
++        if record["CUDA_initialized"]:
++            for name in ("memory_allocated", "max_memory_allocated", "memory_reserved", "max_memory_reserved"):
++                try:
++                    values[name + "_bytes"] = int(getattr(torch_module.cuda, name)(device))
++                except Exception as failure:
++                    errors[name] = repr(failure)
++            try:
++                free, total = torch_module.cuda.mem_get_info(device)
++                values.update(device_free_bytes=int(free), device_total_bytes=int(total))
++            except Exception as failure:
++                errors["mem_get_info"] = repr(failure)
++        status = ("worker_CUDA_not_initialized_no_memory_queries" if not record["CUDA_initialized"] else
++                  "observed_worker_scalar_memory" if not errors else "partial_worker_memory_observation")
++        record.update(status=status,
++            values=values, query_errors=errors,
++            allocator_scope="This worker process Torch allocator only; excludes some native allocations",
++            device_free_scope="Whole CUDA device at query time, including other processes/native allocations")
++        directory.mkdir(parents=True, exist_ok=True)
++        path = directory / ("worker-" + str(record["pid"]) + "-" + uuid.uuid4().hex + ".json")
++        record["path"] = str(path)
++        with path.open("x", encoding="utf-8") as stream:
++            json.dump(record, stream, indent=2)
++            stream.write("\n")
++    except Exception as failure:
++        record.update(status="failed_worker_memory_observation_only", observation_error=repr(failure))
++    return record
++
++
++def memory_boundary(phase):
++    def decorate(function):
++        @functools.wraps(function)
++        def invoke(owner, *args, **kwargs):
++            snapshot(owner, phase + ":before")
++            try:
++                result = function(owner, *args, **kwargs)
++            except BaseException as primary:
++                snapshot(owner, phase + ":failed", error=primary)
++                raise
++            snapshot(owner, phase + ":after")
++            return result
++        return invoke
++    return decorate
+diff --git a/vllm/vllm_flash_attn/_fa2_windows_abi.py b/vllm/vllm_flash_attn/_fa2_windows_abi.py
+new file mode 100644
+--- /dev/null
++++ b/vllm/vllm_flash_attn/_fa2_windows_abi.py
+@@ -0,0 +1,45 @@
++"""Original vLLM FA2 dense-varlen schema to NVIDIA's existing ARM64 kernel ABI."""
++
++# Exact schema from vLLM's pinned flash-attention 9cd61de/flash_api_torch_lib.cpp.
++SCHEMA = (
++    "varlen_fwd(Tensor! q, Tensor k, Tensor v, Tensor!? out, Tensor cu_seqlens_q, "
++    "Tensor cu_seqlens_k, Tensor? seqused_k, Tensor? leftpad_k, Tensor? block_table, Tensor? alibi_slopes, "
++    "int max_seqlen_q, int max_seqlen_k, float p_dropout, float softmax_scale, bool zero_tensors, "
++    "bool is_causal, int window_size_left, int window_size_right, float softcap, bool return_softmax, "
++    "int num_splits, Tensor? gen) -> Tensor[]"
++)
++
++
++def make_varlen_fwd(native_varlen_fwd):
++    def varlen_fwd(
++        q, k, v, out, cu_seqlens_q, cu_seqlens_k, seqused_k, leftpad_k,
++        block_table, alibi_slopes, max_seqlen_q, max_seqlen_k,
++        p_dropout, softmax_scale, zero_tensors, is_causal,
++        window_size_left, window_size_right, softcap, return_softmax,
++        num_splits, gen,
++    ):
++        if gen is not None:
++            raise ValueError("Original vLLM FA2 compatibility generator must be None")
++        result = native_varlen_fwd(
++            q, k, v, out, cu_seqlens_q, cu_seqlens_k, seqused_k, leftpad_k,
++            block_table, alibi_slopes, max_seqlen_q, max_seqlen_k,
++            p_dropout, softmax_scale, zero_tensors, is_causal,
++            window_size_left, window_size_right, softcap, return_softmax,
++            gen, num_splits,
++        )
++        if not isinstance(result, (tuple, list)) or len(result) != 4:
++            raise RuntimeError("NVIDIA FA2 native varlen ABI did not return the documented four tensors")
++        actual_out, softmax_lse, _softmax_or_empty, _rng_state = result
++        if out is not None and actual_out.data_ptr() != out.data_ptr():
++            raise RuntimeError("NVIDIA FA2 did not preserve the original caller-provided output buffer")
++        return [actual_out, softmax_lse]
++
++    return varlen_fwd
++
++
++def register(torch, native):
++    library = torch.library.Library("_vllm_fa2_C", "FRAGMENT")
++    library.define(SCHEMA)
++    forward = make_varlen_fwd(native.varlen_fwd)
++    library.impl("varlen_fwd", forward, "CUDA")
++    return library, forward
+diff --git a/vllm/vllm_flash_attn/_vllm_fa2_C.py b/vllm/vllm_flash_attn/_vllm_fa2_C.py
+new file mode 100644
+--- /dev/null
++++ b/vllm/vllm_flash_attn/_vllm_fa2_C.py
+@@ -0,0 +1,27 @@
++"""Windows host boundary for NVIDIA's native ARM64 FA2 dense varlen kernel.
++
++The original vLLM interface imports this module and calls its original op.
++Only dense varlen is registered; vLLM sparse/kvcache extension coverage is not
++claimed. Native module and dispatcher registrations live for this process.
++"""
++
++import importlib.metadata
++import sys
++import sysconfig
++
++import torch
++
++from ._fa2_windows_abi import register
++
++if sys.platform != "win32" or sysconfig.get_platform() != "win-arm64":
++    raise ImportError("This host binding is for native Windows ARM64 only")
++if importlib.metadata.version("flash-attn") != "2.8.4+cu13torch2.14":
++    raise ImportError("Require the reviewed NVIDIA ARM64 FA2 2.8.4/cu13/torch2.14 wheel")
++if not torch.__version__.startswith("2.14.") or torch.version.cuda != "13.4":
++    raise ImportError("Require the reviewed Torch2.14/CUDA13.4 runtime")
++
++# Torch must load first so its native dependencies are available.
++import flash_attn_2_cuda as _native
++
++_LIBRARY, _FORWARD = register(torch, _native)
++WINDOWS_NATIVE_DENSE_VARLEN_ONLY = True

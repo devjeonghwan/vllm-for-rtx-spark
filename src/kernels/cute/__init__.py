@@ -20,7 +20,7 @@ _preferred_runtime = "aot"
 
 
 def register_runtime(name, configure_provider, *, preferred=False):
-    """Register a native implementation when its compiler/runtime is supported."""
+    """Register local metadata; use a provider module to replay it in workers."""
     global _preferred_runtime
     if name in {"auto", "aot"} or name in _runtime_providers or not callable(configure_provider):
         raise ValueError("Invalid or duplicate runtime provider: " + name)
@@ -36,7 +36,10 @@ def install(mode=None):
     a Python package's presence alone is not considered support.
     """
     global _installed_mode, _bindings_installed
-    requested = mode or os.environ.get("VLLM_RTX_CUTE_MODE")
+    from ..providers import initialize_providers
+
+    initialize_providers()
+    requested = mode or os.environ.get("VLLM_RTX_SPARK_CUTE_MODE")
     if requested == "auto":
         requested = _preferred_runtime
     if requested is not None and requested != "aot" and requested not in _runtime_providers:
@@ -63,7 +66,7 @@ def install(mode=None):
     else:
         _runtime_providers[requested]()
     if requested is not None:
-        os.environ["VLLM_RTX_CUTE_MODE"] = requested
+        os.environ["VLLM_RTX_SPARK_CUTE_MODE"] = requested
         _installed_mode = requested
 
 

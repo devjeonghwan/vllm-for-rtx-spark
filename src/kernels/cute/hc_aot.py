@@ -57,7 +57,7 @@ class OriginalHcKernel:
         data = _metadata()
         self.variant = variant
         self.torch = torch
-        self.module = load_module(data["library"], sha256=data["library_sha256"],
+        self.module = load_module(data["library"],
             init_symbol=variant["init_symbol"], load_symbol=variant["load_symbol"],
             stream=torch.cuda.current_stream(),
             invoke_symbols={variant["invoke_symbol"]: 5 if variant["backend"] == "fma" else 4})

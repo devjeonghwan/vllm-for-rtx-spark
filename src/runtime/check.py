@@ -6,26 +6,38 @@ import platform
 import struct
 import sys
 
+from packaging.version import InvalidVersion, Version
+
 
 def inspect_installation():
     from . import resources_root
+    from ..version import load_manifest, wheel_version
 
     checks = []
+    target_platform = load_manifest()["platform"]
 
     def check(name, ok, detail):
         checks.append({"name": name, "ok": bool(ok), "detail": detail})
 
-    check("platform", sys.platform == "win32" and platform.machine().lower() in {"arm64", "aarch64"},
+    expected_os = {"windows": "win32"}.get(target_platform["os"], target_platform["os"])
+    expected_cpus = {"arm64", "aarch64"} if target_platform["cpu"] == "arm64" else {target_platform["cpu"]}
+    check("platform", sys.platform == expected_os and platform.machine().lower() in expected_cpus,
           f"{sys.platform}/{platform.machine()}")
-    check("python", sys.version_info[:2] == (3, 13), platform.python_version())
-    expected = {"vllm": "0.32.0+spark.1", "torch": "2.14.0+cu134", "triton-windows": "3.8.0.post29",
-                "flash-attn": "2.8.4+cu13torch2.14"}
+    expected_python = tuple(int(part) for part in target_platform["python"].split(".")[:2])
+    check("python", sys.version_info[:2] == expected_python, platform.python_version())
+    expected = {"vllm": wheel_version(), "torch": target_platform["torch"],
+                "triton-windows": target_platform["triton_windows"],
+                "flash-attn": target_platform["flash_attention"]}
     for name, version in expected.items():
         try:
             actual = importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:
             actual = "missing"
-        check(name, actual == version, actual)
+        try:
+            matches = Version(actual) == Version(version)
+        except InvalidVersion:
+            matches = False
+        check(name, matches, actual)
     root = resources_root()
     dlls = list(root.rglob("*.dll"))
     check("native libraries", bool(dlls), str(len(dlls)))

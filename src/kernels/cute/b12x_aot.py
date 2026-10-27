@@ -27,7 +27,6 @@ from . import assets
 
 ORIGINAL = Path(__file__).with_name("device") / "b12x"
 NATIVE_DLL = assets.resolve("lib/b12x.dll")
-NATIVE_DLL_SHA256 = assets.metadata("b12x")["library_sha256"]
 NATIVE_LOADER = Path(__file__).with_name("coff_runtime.py")
 _api = None
 _programs = {}
@@ -161,7 +160,7 @@ def _preload_shape(n, k, device):
         program = _programs[key]
         prefix = program["prefix"]
         module = runtime.load_module(
-            NATIVE_DLL, sha256=NATIVE_DLL_SHA256,
+            NATIVE_DLL,
             init_symbol=prefix + "_cuda_init", load_symbol=prefix + "_cuda_load",
             stream=stream, invoke_symbols={program["invoke_symbol"]:
                                           4 if program["route"] == "reduce" else 8 if program["route"] == "quantize_rows" else 11})
@@ -365,8 +364,8 @@ def _is_supported(device=None):
 def get_b12x_mxfp8_linear():
     global _api
     if os.environ.get("MBX_B12X_AOT", "0") != "1":
-        from vllm.utils.b12x import get_b12x_mxfp8_linear as original
-        return original()
+        from ...runtime.vllm import get_adapter
+        return get_adapter().get_b12x_mxfp8_linear()
     if _api is not None:
         return _api
     import torch

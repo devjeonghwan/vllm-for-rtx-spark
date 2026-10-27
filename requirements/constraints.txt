@@ -4,4 +4,3 @@ triton-windows==3.8.0.post29
 transformers==5.19.0
 numpy==2.5.4
 setuptools==80.10.2
-vllm==0.32.0+spark.1

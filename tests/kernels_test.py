@@ -1,6 +1,5 @@
 """CPU tests for the packaged source, policy and native-host contract."""
 import ctypes
-import hashlib
 import json
 from pathlib import Path
 import runpy
@@ -11,11 +10,11 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-runpy.run_path(str(ROOT / "scripts/source_tree.py"))["load"]()
-from _spark.kernels import cute  # noqa: E402
-from _spark.kernels.cute import assets  # noqa: E402
-from _spark.kernels.cute.builder import build  # noqa: E402
-from _spark.kernels.cute import builder  # noqa: E402
+runpy.run_path(str(ROOT / "scripts/load_source_package.py"))["load"]()
+from _rtx_spark.kernels import cute  # noqa: E402
+from _rtx_spark.kernels.cute import assets  # noqa: E402
+from _rtx_spark.kernels.cute.builder import build  # noqa: E402
+from _rtx_spark.kernels.cute import builder  # noqa: E402
 
 
 class KernelPackTests(unittest.TestCase):
@@ -28,29 +27,35 @@ class KernelPackTests(unittest.TestCase):
     def minimal_pack(directory, content):
         directory.mkdir(parents=True)
         (directory / "lib").mkdir()
-        files = {}
+        files = []
+        payload = bytearray(128)
+        payload[:2] = b"MZ"
+        struct.pack_into("<I", payload, 60, 64)
+        payload[64:70] = b"PE\0\0\x64\xaa"
+        payload.extend(content)
         for name in ("b12x", "hc", "skinny", "gdn"):
             relative = "lib/" + name + ".dll"
-            (directory / relative).write_bytes(content)
+            (directory / relative).write_bytes(payload)
             (directory / (name + ".json")).write_text(json.dumps({
-                "library": relative, "library_sha256": hashlib.sha256(content).hexdigest()}))
+                "library": relative}))
         for path in directory.rglob("*"):
             if path.is_file():
-                files[path.relative_to(directory).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
-        (directory / "manifest.json").write_text(json.dumps({"schema_version": 1, "files": files}))
+                files.append(path.relative_to(directory).as_posix())
+        (directory / "manifest.json").write_text(json.dumps({"schema_version": 1,
+            "target": {"cpu": "win_arm64", "gpu": "sm_121a", "sm_count": 48}, "files": files}))
 
     def test_registration_is_cpu_only(self):
         before = {name for name in ("torch", "cutlass", "triton") if name in sys.modules}
         cute.install()
         cute.configure("auto")
         self.assertEqual(before, {name for name in ("torch", "cutlass", "triton") if name in sys.modules})
-        self.assertIs(sys.modules["original_cute_coff_runtime"], sys.modules["_spark.kernels.cute.coff_runtime"])
+        self.assertIs(sys.modules["original_cute_coff_runtime"], sys.modules["_rtx_spark.kernels.cute.coff_runtime"])
         with self.assertRaisesRegex(RuntimeError, "provider is not installed"):
             cute.configure("native")
 
     def test_pack_identity_and_paths(self):
         manifest = assets.verify()
-        self.assertTrue({name + ".json" for name in ("b12x", "hc", "skinny", "gdn")} <= manifest["files"].keys())
+        self.assertTrue({name + ".json" for name in ("b12x", "hc", "skinny", "gdn")} <= set(manifest["files"]))
         self.assertFalse(any(name.startswith("sources/") for name in manifest["files"]))
         self.assertTrue((ROOT / "src/kernels/cute/device/b12x/_lib/dense_gemm.py").is_file())
         for name in manifest["files"]:
@@ -84,8 +89,8 @@ class KernelPackTests(unittest.TestCase):
                 self.assertTrue(all(row["program"] in backend._programs for row in ranges))
 
     def test_generated_abi_structures(self):
-        from _spark.kernels.cute.hc_aot import Tensor1Stride, Tensor2Stride
-        from _spark.kernels.cute.skinny_aot import TensorStride, TensorTwoShapeStride
+        from _rtx_spark.kernels.cute.hc_aot import Tensor1Stride, Tensor2Stride
+        from _rtx_spark.kernels.cute.skinny_aot import TensorStride, TensorTwoShapeStride
         self.assertEqual(ctypes.sizeof(Tensor1Stride), 24)
         self.assertEqual(ctypes.sizeof(Tensor2Stride), 24)
         self.assertEqual(ctypes.sizeof(TensorStride), 16)
@@ -108,8 +113,8 @@ class KernelPackTests(unittest.TestCase):
             self.minimal_pack(pack, b"new")
             with patch.object(assets, "data_root", return_value=target):
                 result = builder._install(pack, root / "output", root)
-            self.assertEqual((target / "lib/hc.dll").read_bytes(), b"new")
-            self.assertEqual((Path(result["previous_pack"]) / "lib/hc.dll").read_bytes(), b"old")
+            self.assertTrue((target / "lib/hc.dll").read_bytes().endswith(b"new"))
+            self.assertTrue((Path(result["previous_pack"]) / "lib/hc.dll").read_bytes().endswith(b"old"))
 
     def test_install_failure_restores_previous_assets(self):
         with self.temporary_directory() as directory:
@@ -125,12 +130,12 @@ class KernelPackTests(unittest.TestCase):
             with patch.object(assets, "data_root", return_value=target), patch.object(builder.shutil, "copytree", side_effect=partial_copy):
                 with self.assertRaisesRegex(OSError, "interrupted"):
                     builder._install(pack, root / "output", root)
-            self.assertEqual((target / "lib/hc.dll").read_bytes(), b"old")
+            self.assertTrue((target / "lib/hc.dll").read_bytes().endswith(b"old"))
             self.assertTrue((root / "output/failed-kernel-install/partial").is_file())
 
     def test_runtime_resolution_uses_torch_without_sdk(self):
         from types import SimpleNamespace
-        from _spark.kernels.cute.coff_runtime import _runtime_directory
+        from _rtx_spark.kernels.cute.coff_runtime import _runtime_directory
         with self.temporary_directory() as directory:
             package = Path(directory) / "torch"
             library = package / "lib"
@@ -145,7 +150,7 @@ class KernelPackTests(unittest.TestCase):
                 self.assertEqual(_runtime_directory(torch), library)
 
     def test_cuda_runtime_version_compatibility(self):
-        from _spark.kernels.cute.coff_runtime import runtime_version_supported
+        from _rtx_spark.kernels.cute.coff_runtime import runtime_version_supported
         self.assertTrue(runtime_version_supported(13040))
         self.assertTrue(runtime_version_supported(13050))
         self.assertFalse(runtime_version_supported(13030))

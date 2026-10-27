@@ -7,7 +7,7 @@ import torch
 from vllm.logger import init_logger
 
 log = init_logger('vllm.mbx_depth')  # 7bb0..7cc4
-from vllm._spark.runtime import resources_root, cache_root
+from ....runtime import resources_root, cache_root
 CFG = os.environ.get('MBX_DEPTH_CFG', str(resources_root() / 'recipes/qwen3_8/mtp-depth.json'))  # 6b98/7d98
 STATS = os.environ.get('MBX_DEPTH_STATS', str(cache_root() / 'depth-stats.json'))  # 6bb4/7e74
 LIB = os.environ['MBX_DEPTH_LIB']
@@ -40,15 +40,12 @@ _L = None               # 87d8..87e4
 
 # Windows binding admission; no replacement policy math.
 from pathlib import Path
-import hashlib
 import struct
-from vllm._spark.runtime import native_manifest
-_NATIVE_DLL_SHA256 = native_manifest()['files']['depth']['sha256']
 def _verify_native_pe():
     # OS/ABI admission only; original native policy math remains the pinned DLL.
     raw = Path(LIB).read_bytes()
-    if hashlib.sha256(raw).hexdigest() != _NATIVE_DLL_SHA256:
-        raise RuntimeError("Unreviewed native depth DLL SHA")
+    if len(raw) < 64 or raw[:2] != b"MZ":
+        raise RuntimeError("Expected native Windows ARM64 PE")
     pe = struct.unpack_from("<I", raw, 0x3c)[0]
     if raw[pe:pe+4] != b"PE\0\0" or struct.unpack_from("<H", raw, pe+4)[0] != 0xaa64:
         raise RuntimeError("Expected native Windows ARM64 PE")

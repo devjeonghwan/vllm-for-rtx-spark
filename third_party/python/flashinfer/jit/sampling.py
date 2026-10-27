@@ -21,7 +21,7 @@ from .core import JitSpec, gen_jit_spec
 def gen_sampling_module() -> JitSpec:
     import sys
     if sys.platform == 'win32':
-        from native_sampling import gen_native_sampling_spec
+        from vllm._rtx_spark.recipes.qwen3_8.helpers.native_sampling import gen_native_sampling_spec
         return gen_native_sampling_spec()
     return gen_jit_spec(
         "sampling",

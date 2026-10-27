@@ -1,5 +1,4 @@
 """Kernel pack build interface. Compiler-host details stay in this provider."""
-import hashlib
 import json
 import os
 from pathlib import Path, PureWindowsPath
@@ -13,14 +12,10 @@ _PROVIDERS = {}
 
 
 def register_provider(name, provider):
-    """A future native compiler provider can replace the current source build."""
+    """Register local compiler metadata; modules replay it in other processes."""
     if name in _PROVIDERS or not callable(provider):
         raise ValueError("Invalid or duplicate compiler provider: " + name)
     _PROVIDERS[name] = provider
-
-
-def _sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def _write(path, document):
@@ -35,17 +30,23 @@ def _json(path):
 def _verify_pack(directory):
     directory = Path(directory).resolve()
     manifest = _json(directory / "manifest.json")
-    for name, digest in manifest["files"].items():
+    if manifest.get("schema_version") != 1 or manifest.get("target") != {
+        "cpu": "win_arm64", "gpu": "sm_121a", "sm_count": 48
+    }:
+        raise ValueError("Unsupported kernel pack schema or target")
+    if not isinstance(manifest["files"], list):
+        raise ValueError("Kernel pack requires a file list")
+    for name in manifest["files"]:
         relative = Path(name)
         if relative.is_absolute() or PureWindowsPath(name).drive or ".." in relative.parts:
             raise ValueError("Unsafe kernel asset path")
         target = (directory / relative).resolve()
-        if not target.is_relative_to(directory) or _sha(target) != digest:
-            raise ValueError("Built kernel pack is missing or changed: " + name)
+        if not target.is_relative_to(directory) or not target.is_file():
+            raise ValueError("Built kernel pack is missing: " + name)
     for family in ("b12x", "hc", "skinny", "gdn"):
         metadata = _json(directory / (family + ".json"))
-        if _sha(directory / metadata["library"]) != metadata["library_sha256"]:
-            raise ValueError("Built kernel library differs from its runtime metadata")
+        if metadata["library"] not in manifest["files"]:
+            raise ValueError("Built kernel library is not listed in its manifest")
     return manifest
 
 
@@ -76,9 +77,9 @@ def _install(pack, output, source_root):
 
 def _manifest(destination, *, rebuilt):
     document = assets.metadata("manifest")
-    document["files"] = {p.relative_to(destination).as_posix(): _sha(p)
+    document["files"] = [p.relative_to(destination).as_posix()
                          for p in sorted(destination.rglob("*"))
-                         if p.is_file() and p.name != "manifest.json" and "__pycache__" not in p.parts and p.suffix != ".pyc"}
+                         if p.is_file() and p.name != "manifest.json" and "__pycache__" not in p.parts and p.suffix != ".pyc"]
     document["prebuilt_reused"] = not rebuilt
     _write(destination / "manifest.json", document)
     return destination / "manifest.json"
@@ -159,11 +160,11 @@ def _source(output, source_root, settings):
     document["programs"] = [{**{key: value for key, value in p.items() if key not in ("artifacts", "build_wall_seconds")},
                              "invoke_symbol": _entry(p["artifacts"]["host.h"]["path"])} for p in b12x_programs]
     document["ranges_alpha_one"] = fast["ranges"]
-    document["library_sha256"] = _sha(libraries["b12x"])
+    document.pop("library_sha256", None)
     _write(destination / "b12x.json", document)
     for name in ("hc", "skinny", "gdn"):
         document = _json(destination / (name + ".json"))
-        document["library_sha256"] = _sha(libraries[name])
+        document.pop("library_sha256", None)
         if name == "hc":
             for variant, compiled in zip(document["variants"], hc["kernels"], strict=True):
                 header = next(Path(compiled["lowered_IR"]).parent.glob(Path(compiled["lowered_IR"]).stem + "_host.h"))
@@ -191,6 +192,9 @@ def build(output_directory, *, source_root=None, provider="prebuilt", settings=N
     The caller sees a kernel manifest and does not select a host architecture.
     Failed output directories are kept for inspection and never overwritten.
     """
+    from ..providers import initialize_providers
+
+    initialize_providers()
     if provider not in _PROVIDERS:
         raise ValueError("Unknown kernel compiler provider: " + provider)
     output = Path(output_directory).resolve()

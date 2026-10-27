@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -43,50 +42,82 @@ def cache_root():
 
 
 def native_manifest():
-    return json.loads((resources_root() / "native" / "manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads((resources_root() / "native" / "manifest.json").read_text(encoding="utf-8"))
+    if (manifest.get("format_version"), manifest.get("host"), manifest.get("gpu")) != (1, "win_arm64", "sm_121a"):
+        raise RuntimeError("Unsupported native resource schema or target")
+    return manifest
 
 
-def artifact(name, *, verify=True):
+def artifact(name):
     record = native_manifest()["files"][name]
-    path = resources_root() / "native" / record["file"]
-    if verify and hashlib.sha256(path.read_bytes()).hexdigest() != record["sha256"]:
-        raise RuntimeError("RTX Spark native artifact changed: " + name)
+    root = (resources_root() / "native").resolve()
+    path = (root / record["file"]).resolve()
+    if not path.is_relative_to(root):
+        raise ValueError("Native artifact escapes its package: " + name)
+    if not path.is_file():
+        raise FileNotFoundError("RTX Spark native artifact is missing: " + str(path))
     return path, record
 
 
-def _spark_options(args):
-    additional = getattr(args, "additional_config", None) or {}
-    if not isinstance(additional, dict):
-        raise TypeError("additional_config must be an object")
-    options = additional.get("rtx_spark", {})
-    if not isinstance(options, dict):
-        raise TypeError("additional_config.rtx_spark must be an object")
-    if "model" in options and not isinstance(options["model"], str):
-        raise TypeError("rtx_spark.model must be a string")
-    return options
+def _rtx_spark_options(args):
+    from .vllm import get_adapter
+
+    return get_adapter().integration_options(args)
 
 
-def _model_integration(arguments, options):
-    from ..recipes import resolve_model
+def _model_integration(arguments, options, *, prepared=None):
+    from ..recipes import resolve_model, resolve_model_name
 
-    integration = resolve_model(arguments, name=options.get("model"))
+    if prepared is None:
+        name = resolve_model_name(arguments, name=options.get("model"))
+    else:
+        name = prepared[1]
+        requested = options.get("model")
+        if requested is not None and requested != name:
+            raise ValueError("RTX Spark model recipe changed after preparation")
+    integration = resolve_model(arguments, name=name) if name is not None else None
     if integration is None and options:
         raise ValueError("No RTX Spark model integration matches the supplied settings")
-    return integration
+    return name, integration
 
 
 def prepare_engine_args(args):
     """Called before ModelConfig is created, while original hook envs are mutable."""
-    options = _spark_options(args)
-    integration = _model_integration(args, options)
+    from .vllm import get_adapter
+
+    adapter = get_adapter()
+    options = _rtx_spark_options(args)
+    name, integration = _model_integration(args, options)
     if integration is not None:
-        integration.prepare(args, options)
+        from ..optimizations import resolve_options, validate_options, apply_options
+
+        resolved = resolve_options(dict(options, model=name), integration.options)
+        validate_options(args, resolved, integration.options)
+        from ..plugin import register
+
+        adapter.bind_recipe(args, name)
+        register()
+        integration.prepare(args, resolved)
+        apply_options(args, resolved, integration.options)
+    adapter.remember_recipe(args, name)
 
 
-def configure_engine(config):
+def configure_engine(config, *, engine_args=None):
     """Preserve vLLM's config; validate the model integration, without allocation."""
-    options = _spark_options(config)
-    integration = _model_integration(config, options)
+    options = _rtx_spark_options(config)
+    from .vllm import get_adapter
+
+    adapter = get_adapter()
+    owner = config if engine_args is None else engine_args
+    is_prepared, name = adapter.prepared_recipe(owner)
+    if engine_args is not None and not is_prepared:
+        raise RuntimeError("RTX Spark engine arguments were not prepared")
+    name, integration = _model_integration(config, options, prepared=(True, name) if is_prepared else None)
     if integration is not None:
-        integration.validate(config, options)
+        from ..optimizations import resolve_options, validate_options
+
+        resolved = resolve_options(dict(options, model=name), integration.options)
+        validate_options(config, resolved, integration.options)
+        integration.validate(config, resolved)
+        adapter.bind_recipe(config, name)
     return config

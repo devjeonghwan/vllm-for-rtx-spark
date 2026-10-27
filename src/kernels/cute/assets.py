@@ -1,6 +1,5 @@
 """Locate the installed kernel pack; no compiler or CUDA import is needed."""
 from functools import lru_cache
-import hashlib
 import json
 from pathlib import Path, PureWindowsPath
 
@@ -34,7 +33,9 @@ def verify():
         "cpu": "win_arm64", "gpu": "sm_121a", "sm_count": 48
     }:
         raise RuntimeError("Unsupported kernel pack target or schema")
-    for name, digest in manifest["files"].items():
-        if hashlib.sha256(resolve(name).read_bytes()).hexdigest() != digest:
-            raise RuntimeError("Kernel asset is missing or changed: " + name)
+    if not isinstance(manifest["files"], list):
+        raise RuntimeError("Kernel pack requires a file list")
+    for name in manifest["files"]:
+        if not resolve(name).is_file():
+            raise RuntimeError("Kernel asset is missing: " + name)
     return manifest

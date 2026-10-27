@@ -1,6 +1,6 @@
 {
   "mode": "dynamic",
-  "min": 1,
+  "min": 3,
   "window": 48,
   "promote": [
     60,

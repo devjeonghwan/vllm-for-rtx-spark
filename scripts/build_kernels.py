@@ -5,7 +5,7 @@ from pathlib import Path
 import runpy
 
 ROOT = Path(__file__).resolve().parents[1]
-runpy.run_path(str(ROOT / "scripts/source_tree.py"))["load"]()
+runpy.run_path(str(ROOT / "scripts/load_source_package.py"))["load"]()
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
     parser.add_argument("--settings", type=Path)
     parser.add_argument("--install", action="store_true", help="Replace checkout assets after validation; preserve the old pack in the output directory")
     args = parser.parse_args()
-    from _spark.kernels import build_kernels
+    from _rtx_spark.kernels import build_kernels
     result = build_kernels(args.output, source_root=ROOT, provider=args.provider, settings=args.settings, install=args.install)
     print(json.dumps(result, indent=2))
 

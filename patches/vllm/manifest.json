@@ -1,0 +1,65 @@
+{
+  "vllm": {
+    "version": "0.32.0",
+    "repository": "https://github.com/vllm-project/vllm",
+    "commit": "5df63a7203cdb9328d824a27b682e77c7b9928be"
+  },
+  "platform": {
+    "os": "windows",
+    "cpu": "arm64",
+    "python": "3.13",
+    "torch": "2.14.0+cu134",
+    "triton_windows": "3.8.0.post29",
+    "flash_attention": "2.8.4+cu13torch2.14",
+    "cuda_toolkit": "13.4.92",
+    "gpu": "sm_121a"
+  },
+  "build": {
+    "python_tag": "cp313",
+    "abi_tag": "cp313",
+    "platform_tag": "win_arm64",
+    "torch_cuda_arch_list": "12.1a",
+    "cuda_architectures": "121a-real",
+    "core_extensions": [
+      "_C_stable_libtorch.pyd",
+      "_moe_C_stable_libtorch.pyd"
+    ]
+  },
+  "requirements": {
+    "runtime": "requirements/runtime.txt",
+    "runtime_vendor": "requirements/runtime-vendor.txt",
+    "constraints": "requirements/constraints.txt"
+  },
+  "patches": [
+    "0001-native-build.patch",
+    "0002-windows-runtime.patch",
+    "0003-recipe-runtime.patch",
+    "0004-rtx-spark-hooks.patch"
+  ],
+  "copy": [
+    {
+      "source": "third_party/vllm-kernels/deep_gemm",
+      "destination": "vllm/third_party/deep_gemm"
+    },
+    {
+      "source": "third_party/vllm-kernels/flash_attn_cute",
+      "destination": "vllm/vllm_flash_attn/cute"
+    },
+    {
+      "source": "third_party/vllm-kernels/flashmla/flash_mla_interface.py",
+      "destination": "vllm/third_party/flashmla/flash_mla_interface.py"
+    },
+    {
+      "source": "third_party/vllm-kernels/fmha_sm100",
+      "destination": "vllm/third_party/fmha_sm100"
+    },
+    {
+      "source": "third_party/vllm-kernels/tml_fa4",
+      "destination": "vllm/third_party/tml_fa4"
+    },
+    {
+      "source": "third_party/vllm-kernels/triton_kernels",
+      "destination": "vllm/third_party/triton_kernels"
+    }
+  ]
+}

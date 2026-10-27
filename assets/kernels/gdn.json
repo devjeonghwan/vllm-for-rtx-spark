@@ -1,6 +1,5 @@
 {
   "library": "lib/gdn.dll",
-  "library_sha256": "99a1b82ad3c8c48414da40bed30eb282ba3b3192d41ff3d8009801878ed6fc92",
   "variants": {
     "plain": {
       "init_symbol": "original_FI_GDN_sm121a_plain_cuda_init",

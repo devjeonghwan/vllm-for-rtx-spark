@@ -1,7 +1,6 @@
 {
   "status": "source_ready_original_SM121_skinny_native_manifest",
   "library": "lib/skinny.dll",
-  "library_sha256": "e4dcc95459c0dece5f4118232daf0f2270ba9b088435eada41b0793f3b9896c6",
   "variants": [
     {
       "config": {

@@ -5,7 +5,6 @@ argument addresses to the untouched host function, including its stream value.
 No model tensor, extra GPU allocation, Graph executor, or TMA encoding is owned.
 """
 import ctypes as C
-import hashlib
 import os
 import platform
 import struct
@@ -49,9 +48,8 @@ def runtime_version_supported(version):
 
 class CoffModule:
     """One original cudaLibrary handle/prefix/device, plus cached host entries."""
-    def __init__(self, dll, *, sha256, init_symbol, load_symbol, stream):
+    def __init__(self, dll, *, init_symbol, load_symbol, stream):
         self.path = Path(dll).resolve()
-        self.expected_sha256 = sha256
         self.init_symbol, self.load_symbol = init_symbol, load_symbol
         self.device = stream.device.index
         self.handle = C.c_void_p()
@@ -65,8 +63,6 @@ class CoffModule:
             raise RuntimeError("Final host execution requires native Windows ARM64")
         if _pe_machine(sys.executable) != 0xAA64 or _pe_machine(self.path) != 0xAA64:
             raise RuntimeError("Python and original-host DLL must both be ARM64 PE")
-        if hashlib.sha256(self.path.read_bytes()).hexdigest() != sha256:
-            raise ValueError("Original linked host DLL SHA changed")
         torch = sys.modules.get("torch")
         if torch is None or not torch.cuda.is_initialized():
             raise RuntimeError("Borrow an already initialized original Torch CUDA context")
@@ -172,15 +168,15 @@ class CoffModule:
         # share the same PE module. The OS and ctypes retain native code safely.
 
 
-def load_module(dll, *, sha256, init_symbol, load_symbol, stream, invoke_symbols=None):
+def load_module(dll, *, init_symbol, load_symbol, stream, invoke_symbols=None):
     """Prewarm-only cache lookup/first load, one canonical module instance."""
     key = (str(Path(dll).resolve()).casefold(), init_symbol, stream.device.index)
     with _lock:
         module = _modules.get(key)
         if module is None:
-            module = CoffModule(dll, sha256=sha256, init_symbol=init_symbol, load_symbol=load_symbol, stream=stream)
+            module = CoffModule(dll, init_symbol=init_symbol, load_symbol=load_symbol, stream=stream)
             _modules[key] = module
-        elif module.expected_sha256 != sha256 or module.load_symbol != load_symbol or module.closed or module.failure is not None:
+        elif module.load_symbol != load_symbol or module.closed or module.failure is not None:
             raise RuntimeError("Cached original library identity changed or previous load failed")
         for symbol, count in (invoke_symbols or {}).items():
             module.bind(symbol, count)

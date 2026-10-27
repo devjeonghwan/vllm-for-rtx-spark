@@ -13,17 +13,17 @@
     "GPU_execution_during_build": false
   },
   "implementation": "original source compiled locally; inference hosts are ARM64",
-  "files": {
-    "b12x.json": "565ed27b5cc4a99af479819fea42cc508fd5c0ec9c1559f9fe9d3a797da4df9d",
-    "gdn.json": "b58fd491d20c63f98211f1461d800fc1b6e5805943801bb7c180a36cee5a7a03",
-    "hc.json": "57a473bd75289c44208f13f654af6b70ab6073399e92b8fd1b4edd10738d097b",
-    "lib/b12x.dll": "ae658b8d41533914366c5959c352bd4bb15f9d70e6146115984ee1021effe5d1",
-    "lib/gdn.dll": "99a1b82ad3c8c48414da40bed30eb282ba3b3192d41ff3d8009801878ed6fc92",
-    "lib/hc.dll": "45ec64ec29dc977d15ef863fdd4e9c0d044ccece4eee2dae8613e3eef0c5cb9d",
-    "lib/skinny.dll": "e4dcc95459c0dece5f4118232daf0f2270ba9b088435eada41b0793f3b9896c6",
-    "licenses/Apache-2.0.txt": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
-    "licenses/CUTLASS-BSD-3-Clause.txt": "10e174914fb737aec2d32762bd2e45861acb5ebf1656bee6cf575a6019a08cf0",
-    "licenses/NVIDIA-CuTe-DSL-4.8.1.txt": "9ed3a0344d6bf9f08420f268d8aa70f7e3930d248edc2cf1a8107a560b483433",
-    "skinny.json": "b47ef228c55d373ad176f43bb8458b742335d0828c532dc804f67f8cb3e7b836"
-  }
+  "files": [
+    "b12x.json",
+    "gdn.json",
+    "hc.json",
+    "lib/b12x.dll",
+    "lib/gdn.dll",
+    "lib/hc.dll",
+    "lib/skinny.dll",
+    "licenses/Apache-2.0.txt",
+    "licenses/CUTLASS-BSD-3-Clause.txt",
+    "licenses/NVIDIA-CuTe-DSL-4.8.1.txt",
+    "skinny.json"
+  ]
 }

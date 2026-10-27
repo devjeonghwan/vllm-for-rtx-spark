@@ -22,7 +22,7 @@ _CSF_PROVIDERS = {
 
 
 def register_csf_provider(provider):
-    """Register a source-built replacement before model weights are prepared."""
+    """Register local metadata; use a provider module to replay it in workers."""
     if not isinstance(provider, CsfProvider):
         raise TypeError("Expected CsfProvider")
     if provider.name in _CSF_PROVIDERS:
@@ -31,13 +31,16 @@ def register_csf_provider(provider):
 
 
 def resolve_csf_provider(name="cubin"):
+    from ..providers import initialize_providers
+
+    initialize_providers()
     try:
         provider = _CSF_PROVIDERS[name]
     except KeyError:
         raise ValueError("CSF provider is not installed: " + name) from None
-    library, record = artifact(provider.library)
-    result = dict(provider=provider, library=library, library_sha256=record["sha256"])
+    library, _ = artifact(provider.library)
+    result = dict(provider=provider, library=library)
     if provider.cubin:
-        cubin, cubin_record = artifact(provider.cubin)
-        result.update(cubin=cubin, cubin_sha256=cubin_record["sha256"])
+        cubin, _ = artifact(provider.cubin)
+        result.update(cubin=cubin)
     return result

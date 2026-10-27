@@ -5,7 +5,6 @@
   "K": 10240,
   "logical_N": 324,
   "library": "lib/hc.dll",
-  "library_sha256": "45ec64ec29dc977d15ef863fdd4e9c0d044ccece4eee2dae8613e3eef0c5cb9d",
   "variants": [
     {
       "backend": "fma",

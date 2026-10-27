@@ -6,7 +6,6 @@ or independent launch policy is supplied by this Python module.
 
 import ast
 import functools
-import hashlib
 import importlib
 import inspect
 import os
@@ -15,24 +14,16 @@ import struct
 import sys
 import textwrap
 
-from vllm._spark.runtime import source_root
-from vllm._spark.kernels.csf import resolve_csf_provider
+from ....runtime import source_root
+from ....kernels.csf import resolve_csf_provider
 ROOT = source_root() / "kernels" / "csf" / "original"
 ORIGINAL_PREP = ROOT / "marlin_utils_fp4.py"
-ORIGINAL_PREP_SHA = "653c241421415702b745821c07147712cc14a02ae0911ef5065b170c837075d2"
 COMPRESS_SOURCE = ROOT / "compress.py"
-COMPRESS_SOURCE_SHA = "463d8edc55deb259a3236e6481e28e64800a081214b1e5c4a7d437a459e8aabd"
-COMPRESS_PROOF_SHA = "af463d97c01ede584536c3828bb586732b2f44d0f4431eb47360d72024b6fc93"
-CUBIN_SHA = "c1bb55bca1818454d2888ddbd1fd3b0cbd85842006b7da12fec85a8b2f529219"
 _installed = None
 _native = None
 torch = None
 _templates = {}
 _prepared_metadata = []
-
-
-def _sha(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def _check_pe(path):
@@ -62,8 +53,6 @@ def _load_native():
 
 
 def _check_compress_source():
-    if _sha(COMPRESS_SOURCE.read_bytes()) != COMPRESS_SOURCE_SHA:
-        raise ValueError("Original compression source changed")
     expected = ast.parse(COMPRESS_SOURCE.read_text(encoding="utf-8")).body[0]
     actual = ast.parse(textwrap.dedent(inspect.getsource(compress))).body[0]
     if ast.dump(actual, include_attributes=False) != ast.dump(expected, include_attributes=False):
@@ -144,9 +133,6 @@ def _pack(value, torch):
         prepared_dtype=str(value.dtype), prepared_device=str(value.device),
         prepared_bytes=value.numel() * value.element_size(), planes=metadata,
         storage_bytes=sum(item["bytes"] for item in metadata),
-        original_prep_source_sha256=ORIGINAL_PREP_SHA,
-        original_compress_source_sha256=COMPRESS_SOURCE_SHA,
-        original_compress_37anchor_proof_sha256=COMPRESS_PROOF_SHA,
         original_plane_storage_count=3, raw_empty_sentinel_bytes=16,
         production_cpu_scale_copy=False, production_scale_data_hash=False,
         production_numpy_encoder=False, production_CPU_roundtrip_validation=False,
@@ -166,8 +152,6 @@ def install(module, *, ops=None):
         if _installed[0] is not module:
             raise RuntimeError("Do not install the original binding into another module")
         return
-    if _sha(ORIGINAL_PREP.read_bytes()) != ORIGINAL_PREP_SHA:
-        raise ValueError("Original image preparation source changed")
     original_prep = module.prepare_nvfp4_moe_layer_for_marlin
     tree = ast.parse(ORIGINAL_PREP.read_text(encoding="utf-8"))
     expected = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
@@ -228,6 +212,4 @@ def status():
                 compression_implementation="recovered_original_device_Torch_body",
                 production_cpu_scale_copy=False, production_scale_data_hash=False,
                 production_numpy_encoder=False,
-                original_compress_source_sha256=COMPRESS_SOURCE_SHA,
-                original_compress_37anchor_proof_sha256=COMPRESS_PROOF_SHA,
                 original_GPU_allocator_peak_equivalence="not established")

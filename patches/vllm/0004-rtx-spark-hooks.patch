@@ -1,0 +1,24 @@
+diff --git a/vllm/__init__.py b/vllm/__init__.py
+--- a/vllm/__init__.py
++++ b/vllm/__init__.py
+@@ -5,6 +5,11 @@
+ # The version.py should be independent library, and we always import the
+ # version library first.  Such assumption is critical for some customization.
+ from .version import __version__, __version_tuple__  # isort:skip
++
++# Configure the native platform before importing vLLM consumers.
++from vllm._rtx_spark.runtime.bootstrap import initialize as _rtx_spark_initialize
++
++_rtx_spark_initialize()
+ 
+ import typing
+ 
+diff --git a/vllm/_version.py b/vllm/_version.py
+new file mode 100644
+--- /dev/null
++++ b/vllm/_version.py
+@@ -0,0 +1,4 @@
++"""Version of the pinned Windows ARM64 build."""
++__version__ = version = "0.32.0"
++__version_tuple__ = version_tuple = (0, 32, 0)
++__commit_id__ = commit_id = "5df63a7203cdb9328d824a27b682e77c7b9928be"

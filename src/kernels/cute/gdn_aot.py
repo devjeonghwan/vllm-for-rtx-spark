@@ -77,7 +77,7 @@ class NativeKernel:
             configuration = assets.metadata("gdn")
             configuration["library"] = str(assets.resolve(configuration["library"]))
             entry = configuration["variants"]["checkpoint" if self.checkpoint else "plain"]
-            module = load_module(configuration["library"], sha256=configuration["library_sha256"],
+            module = load_module(configuration["library"],
                                  init_symbol=entry["init_symbol"], load_symbol=entry["load_symbol"],
                                  stream=actual_stream, invoke_symbols={entry["invoke_symbol"]: entry["inputs"]})
             module_entry = module, entry["invoke_symbol"]

@@ -1,19 +1,5 @@
 {
-  "schema_version": 1,
-  "project_version": "0.1.0",
-  "platform": {
-    "os": "windows",
-    "cpu": "arm64",
-    "python": "3.13",
-    "gpu": "sm_121a",
-    "torch": "2.14.0+cu134",
-    "cuda_toolkit": "13.4.92"
-  },
-  "vllm": {
-    "repository": "https://github.com/vllm-project/vllm",
-    "version": "0.32.0",
-    "commit": "5df63a7203cdb9328d824a27b682e77c7b9928be"
-  },
+  "schema_version": 2,
   "windows_reference": {
     "repository": "https://github.com/SystemPanic/vllm-windows",
     "commit": "a5fd74a0dc5fbb4d3f9a9f27674d1c21fbb6f38c"
@@ -25,13 +11,10 @@
     "image_digest": "sha256:ed5df971ee2ffada90d8801609fbfe7ee21088f8964ae2b28d6d8cddae52945f"
   },
   "csf": {
-    "implementation": "original-cubin",
-    "sha256": "c1bb55bca1818454d2888ddbd1fd3b0cbd85842006b7da12fec85a8b2f529219",
-    "bytes": 1748200
+    "implementation": "original-cubin"
   },
   "flash_attention": {
     "version": "2.8.4+cu13torch2.14",
-    "url": "https://github.com/NVIDIA/pytorch-windows-ci/releases/download/Flash-Attention-for-WoA/flash_attn-2.8.4%2Bcu13torch2.14-cp313-cp313-win_arm64.whl",
-    "sha256": "54d1c98df04b133d227d5414a9d6d9d668e4b049246b96ecfd811b8272a9d926"
+    "url": "https://github.com/NVIDIA/pytorch-windows-ci/releases/download/Flash-Attention-for-WoA/flash_attn-2.8.4%2Bcu13torch2.14-cp313-cp313-win_arm64.whl"
   }
 }
