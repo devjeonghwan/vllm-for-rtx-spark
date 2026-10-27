@@ -88,7 +88,12 @@ def prepare(source: Path, upstream: Path | None = None) -> dict:
         actual = subprocess.check_output(["git", "-C", str(upstream), "rev-parse", "HEAD"], text=True).strip()
         if actual != commit:
             raise RuntimeError("Local upstream checkout is not the pinned commit")
-        archive = subprocess.check_output(["git", "-C", str(upstream), "archive", "--format=tar", commit])
+        # git archive applies checkout line-ending conversion. Keep patch inputs
+        # independent of the user's Git autocrlf/eol settings.
+        archive = subprocess.check_output([
+            "git", "-c", "core.autocrlf=false", "-c", "core.eol=lf",
+            "-C", str(upstream), "archive", "--format=tar", commit,
+        ])
         source.mkdir()
         with tarfile.open(fileobj=io.BytesIO(archive), mode="r:") as tar:
             for member in tar.getmembers():
