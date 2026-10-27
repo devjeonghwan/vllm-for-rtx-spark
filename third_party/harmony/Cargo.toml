@@ -1,0 +1,36 @@
+[package]
+name = "oss-harmony"
+version = "0.0.11"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/oss-harmony/harmony"
+description = "Response format library for the gpt-oss open-weight model series (fork of openai-harmony)"
+readme = "README.md"
+
+[lib]
+name = "openai_harmony"
+crate-type = ["rlib", "cdylib"]
+
+[features]
+default = []
+python-binding = ["pyo3"]
+
+[dependencies]
+anyhow = "1.0.98"
+base64 = "0.22.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.140", features = ["preserve_order"] }
+serde_with = "3.12.0"
+thiserror = "2.0.12"
+fancy-regex = "0.13.0"
+rustc-hash = "1.1.0"
+bstr = "1.5.0"
+sha2 = "0.10.9"
+zstd = "0.13"
+pyo3 = { version = "0.25.0", optional = true, features = [
+    "extension-module",
+    "abi3-py38",
+] }
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"

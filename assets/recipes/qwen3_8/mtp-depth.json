@@ -1,0 +1,14 @@
+{
+  "mode": "dynamic",
+  "min": 1,
+  "window": 48,
+  "promote": [
+    60,
+    45
+  ],
+  "demote": [
+    25,
+    15
+  ],
+  "log": false
+}

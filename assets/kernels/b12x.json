@@ -1,0 +1,2698 @@
+{
+  "schema_version": 1,
+  "library": "lib/b12x.dll",
+  "library_sha256": "ae658b8d41533914366c5959c352bd4bb15f9d70e6146115984ee1021effe5d1",
+  "programs": [
+    {
+      "route": "a16",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        16,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 16,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": true,
+        "use_m1_non_tma": false,
+        "split_k_slices": 4,
+        "split_k_atomic_bf16": false,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_121a",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "e76de3318a9ad1a6",
+      "representative_M": 1,
+      "prefix": "b12x_e76de3318a9ad1a6",
+      "invoke_symbol": "_mlir_b12x_e76de3318a9ad1a6__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "0bab05b50529d528",
+      "representative_M": 9,
+      "prefix": "b12x_0bab05b50529d528",
+      "invoke_symbol": "_mlir_b12x_0bab05b50529d528__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "25fbcf8e8a139690",
+      "representative_M": 16,
+      "prefix": "b12x_25fbcf8e8a139690",
+      "invoke_symbol": "_mlir_b12x_25fbcf8e8a139690__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "5397bc4373a3306f",
+      "representative_M": 129,
+      "prefix": "b12x_5397bc4373a3306f",
+      "invoke_symbol": "_mlir_b12x_5397bc4373a3306f__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "f44105eb810dd24d",
+      "representative_M": 4096,
+      "prefix": "b12x_f44105eb810dd24d",
+      "invoke_symbol": "_mlir_b12x_f44105eb810dd24d__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "a16",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        16,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 16,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": true,
+        "use_m1_non_tma": false,
+        "split_k_slices": 4,
+        "split_k_atomic_bf16": false,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_121a",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "7bae51727caa00d9",
+      "representative_M": 1,
+      "prefix": "b12x_7bae51727caa00d9",
+      "invoke_symbol": "_mlir_b12x_7bae51727caa00d9__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "0cb50275632cf6cf",
+      "representative_M": 9,
+      "prefix": "b12x_0cb50275632cf6cf",
+      "invoke_symbol": "_mlir_b12x_0cb50275632cf6cf__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "51039d19c7651999",
+      "representative_M": 16,
+      "prefix": "b12x_51039d19c7651999",
+      "invoke_symbol": "_mlir_b12x_51039d19c7651999__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "06175ba42cf758fb",
+      "representative_M": 129,
+      "prefix": "b12x_06175ba42cf758fb",
+      "invoke_symbol": "_mlir_b12x_06175ba42cf758fb__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "0e454e91717bbea8",
+      "representative_M": 4096,
+      "prefix": "b12x_0e454e91717bbea8",
+      "invoke_symbol": "_mlir_b12x_0e454e91717bbea8__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "a16",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        16,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 16,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": true,
+        "use_m1_non_tma": false,
+        "split_k_slices": 4,
+        "split_k_atomic_bf16": false,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_121a",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "17b126ff7f6833cb",
+      "representative_M": 1,
+      "prefix": "b12x_17b126ff7f6833cb",
+      "invoke_symbol": "_mlir_b12x_17b126ff7f6833cb__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "8bce3314680df8f7",
+      "representative_M": 9,
+      "prefix": "b12x_8bce3314680df8f7",
+      "invoke_symbol": "_mlir_b12x_8bce3314680df8f7__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "27168a8133f2ecc0",
+      "representative_M": 16,
+      "prefix": "b12x_27168a8133f2ecc0",
+      "invoke_symbol": "_mlir_b12x_27168a8133f2ecc0__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "48f92c3942d90719",
+      "representative_M": 129,
+      "prefix": "b12x_48f92c3942d90719",
+      "invoke_symbol": "_mlir_b12x_48f92c3942d90719__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "8665f882da2a8bc7",
+      "representative_M": 4096,
+      "prefix": "b12x_8665f882da2a8bc7",
+      "invoke_symbol": "_mlir_b12x_8665f882da2a8bc7__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "a16",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        16,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 16,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": true,
+        "use_m1_non_tma": false,
+        "split_k_slices": 4,
+        "split_k_atomic_bf16": false,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_121a",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "322fff5a46b93e8f",
+      "representative_M": 1,
+      "prefix": "b12x_322fff5a46b93e8f",
+      "invoke_symbol": "_mlir_b12x_322fff5a46b93e8f__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "944da82eb8c441c7",
+      "representative_M": 9,
+      "prefix": "b12x_944da82eb8c441c7",
+      "invoke_symbol": "_mlir_b12x_944da82eb8c441c7__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "b37881fef80bbffa",
+      "representative_M": 16,
+      "prefix": "b12x_b37881fef80bbffa",
+      "invoke_symbol": "_mlir_b12x_b37881fef80bbffa__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "53c68acd1a2f5a32",
+      "representative_M": 129,
+      "prefix": "b12x_53c68acd1a2f5a32",
+      "invoke_symbol": "_mlir_b12x_53c68acd1a2f5a32__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        128,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "4ff1d4a92f0b9d79",
+      "representative_M": 512,
+      "prefix": "b12x_4ff1d4a92f0b9d79",
+      "invoke_symbol": "_mlir_b12x_4ff1d4a92f0b9d79__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "002e1d8c3343cbb6",
+      "representative_M": 4096,
+      "prefix": "b12x_002e1d8c3343cbb6",
+      "invoke_symbol": "_mlir_b12x_002e1d8c3343cbb6__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "a16",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        16,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 16,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": true,
+        "use_m1_non_tma": false,
+        "split_k_slices": 4,
+        "split_k_atomic_bf16": false,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_121a",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "8a5deb004e1bf20c",
+      "representative_M": 1,
+      "prefix": "b12x_8a5deb004e1bf20c",
+      "invoke_symbol": "_mlir_b12x_8a5deb004e1bf20c__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "5a930b4a63b48237",
+      "representative_M": 9,
+      "prefix": "b12x_5a930b4a63b48237",
+      "invoke_symbol": "_mlir_b12x_5a930b4a63b48237__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "c62f843ef69e0aef",
+      "representative_M": 16,
+      "prefix": "b12x_c62f843ef69e0aef",
+      "invoke_symbol": "_mlir_b12x_c62f843ef69e0aef__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "35ca63abf17d437a",
+      "representative_M": 129,
+      "prefix": "b12x_35ca63abf17d437a",
+      "invoke_symbol": "_mlir_b12x_35ca63abf17d437a__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        128,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "8c982b119bfd5816",
+      "representative_M": 512,
+      "prefix": "b12x_8c982b119bfd5816",
+      "invoke_symbol": "_mlir_b12x_8c982b119bfd5816__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "e884a90618834291",
+      "representative_M": 4096,
+      "prefix": "b12x_e884a90618834291",
+      "invoke_symbol": "_mlir_b12x_e884a90618834291__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "a16",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        16,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 16,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": true,
+        "use_m1_non_tma": false,
+        "split_k_slices": 4,
+        "split_k_atomic_bf16": false,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_121a",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "ac26b6280179786c",
+      "representative_M": 1,
+      "prefix": "b12x_ac26b6280179786c",
+      "invoke_symbol": "_mlir_b12x_ac26b6280179786c__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "3eb97db3fbde1d91",
+      "representative_M": 9,
+      "prefix": "b12x_3eb97db3fbde1d91",
+      "invoke_symbol": "_mlir_b12x_3eb97db3fbde1d91__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "1855c36fd6bde225",
+      "representative_M": 16,
+      "prefix": "b12x_1855c36fd6bde225",
+      "invoke_symbol": "_mlir_b12x_1855c36fd6bde225__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "bd9a82926b88442a",
+      "representative_M": 129,
+      "prefix": "b12x_bd9a82926b88442a",
+      "invoke_symbol": "_mlir_b12x_bd9a82926b88442a__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        128,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "33f72401c11f9897",
+      "representative_M": 512,
+      "prefix": "b12x_33f72401c11f9897",
+      "invoke_symbol": "_mlir_b12x_33f72401c11f9897__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "2081266be6250453",
+      "representative_M": 4096,
+      "prefix": "b12x_2081266be6250453",
+      "invoke_symbol": "_mlir_b12x_2081266be6250453__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "a16",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        16,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 16,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": true,
+        "use_m1_non_tma": false,
+        "split_k_slices": 4,
+        "split_k_atomic_bf16": false,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_121a",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "c49953bf7db8a0bb",
+      "representative_M": 1,
+      "prefix": "b12x_c49953bf7db8a0bb",
+      "invoke_symbol": "_mlir_b12x_c49953bf7db8a0bb__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "9cfd168c09bce292",
+      "representative_M": 9,
+      "prefix": "b12x_9cfd168c09bce292",
+      "invoke_symbol": "_mlir_b12x_9cfd168c09bce292__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "5ec7b33023ecd46b",
+      "representative_M": 129,
+      "prefix": "b12x_5ec7b33023ecd46b",
+      "invoke_symbol": "_mlir_b12x_5ec7b33023ecd46b__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        128,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "3b21aad7d52bde15",
+      "representative_M": 1536,
+      "prefix": "b12x_3b21aad7d52bde15",
+      "invoke_symbol": "_mlir_b12x_3b21aad7d52bde15__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "df5506190b5b869a",
+      "representative_M": 4096,
+      "prefix": "b12x_df5506190b5b869a",
+      "invoke_symbol": "_mlir_b12x_df5506190b5b869a__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "a16",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        16,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 16,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": true,
+        "use_m1_non_tma": false,
+        "split_k_slices": 4,
+        "split_k_atomic_bf16": false,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_121a",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "a3f2a62586ff07c9",
+      "representative_M": 1,
+      "prefix": "b12x_a3f2a62586ff07c9",
+      "invoke_symbol": "_mlir_b12x_a3f2a62586ff07c9__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "8b7bda07263ac044",
+      "representative_M": 9,
+      "prefix": "b12x_8b7bda07263ac044",
+      "invoke_symbol": "_mlir_b12x_8b7bda07263ac044__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "381d1e6fb172b736",
+      "representative_M": 129,
+      "prefix": "b12x_381d1e6fb172b736",
+      "invoke_symbol": "_mlir_b12x_381d1e6fb172b736__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        128,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "38922fb43258185b",
+      "representative_M": 1536,
+      "prefix": "b12x_38922fb43258185b",
+      "invoke_symbol": "_mlir_b12x_38922fb43258185b__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": false,
+      "id": "403564de88dffd3c",
+      "representative_M": 4096,
+      "prefix": "b12x_403564de88dffd3c",
+      "invoke_symbol": "_mlir_b12x_403564de88dffd3c__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "reduce",
+      "N": 96,
+      "slices": 4,
+      "id": "b999ad25d691a559",
+      "representative_M": 1,
+      "prefix": "b12x_b999ad25d691a559",
+      "invoke_symbol": "_mlir_b12x_b999ad25d691a559__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseSplitKReduce_object_at__Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "reduce",
+      "N": 1152,
+      "slices": 4,
+      "id": "0e427b5ce7b8c681",
+      "representative_M": 1,
+      "prefix": "b12x_0e427b5ce7b8c681",
+      "invoke_symbol": "_mlir_b12x_0e427b5ce7b8c681__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseSplitKReduce_object_at__Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "reduce",
+      "N": 1280,
+      "slices": 4,
+      "id": "4e429878fcc1e776",
+      "representative_M": 1,
+      "prefix": "b12x_4e429878fcc1e776",
+      "invoke_symbol": "_mlir_b12x_4e429878fcc1e776__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseSplitKReduce_object_at__Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "reduce",
+      "N": 2560,
+      "slices": 4,
+      "id": "a77fe07f51d84d54",
+      "representative_M": 1,
+      "prefix": "b12x_a77fe07f51d84d54",
+      "invoke_symbol": "_mlir_b12x_a77fe07f51d84d54__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseSplitKReduce_object_at__Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "reduce",
+      "N": 3456,
+      "slices": 4,
+      "id": "036cdf92da6c8737",
+      "representative_M": 1,
+      "prefix": "b12x_036cdf92da6c8737",
+      "invoke_symbol": "_mlir_b12x_036cdf92da6c8737__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseSplitKReduce_object_at__Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "reduce",
+      "N": 13952,
+      "slices": 4,
+      "id": "2c6a728374983560",
+      "representative_M": 1,
+      "prefix": "b12x_2c6a728374983560",
+      "invoke_symbol": "_mlir_b12x_2c6a728374983560__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseSplitKReduce_object_at__Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "reduce",
+      "N": 16384,
+      "slices": 4,
+      "id": "6f627975c78dc132",
+      "representative_M": 1,
+      "prefix": "b12x_6f627975c78dc132",
+      "invoke_symbol": "_mlir_b12x_6f627975c78dc132__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseSplitKReduce_object_at__Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "66bc0b6e76e8e0e3",
+      "representative_M": 9,
+      "prefix": "b12x_66bc0b6e76e8e0e3",
+      "invoke_symbol": "_mlir_b12x_66bc0b6e76e8e0e3__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "e34ddb725274d094",
+      "representative_M": 16,
+      "prefix": "b12x_e34ddb725274d094",
+      "invoke_symbol": "_mlir_b12x_e34ddb725274d094__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "337786b76a1cfa2e",
+      "representative_M": 129,
+      "prefix": "b12x_337786b76a1cfa2e",
+      "invoke_symbol": "_mlir_b12x_337786b76a1cfa2e__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 96,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "f0d5604dd45199e0",
+      "representative_M": 4096,
+      "prefix": "b12x_f0d5604dd45199e0",
+      "invoke_symbol": "_mlir_b12x_f0d5604dd45199e0__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "6c9e2c78b3ecdf22",
+      "representative_M": 9,
+      "prefix": "b12x_6c9e2c78b3ecdf22",
+      "invoke_symbol": "_mlir_b12x_6c9e2c78b3ecdf22__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "872b274686009c81",
+      "representative_M": 16,
+      "prefix": "b12x_872b274686009c81",
+      "invoke_symbol": "_mlir_b12x_872b274686009c81__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "0baabff9b045e185",
+      "representative_M": 129,
+      "prefix": "b12x_0baabff9b045e185",
+      "invoke_symbol": "_mlir_b12x_0baabff9b045e185__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1152,
+      "K": 1152,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "1831b88a3179d89a",
+      "representative_M": 4096,
+      "prefix": "b12x_1831b88a3179d89a",
+      "invoke_symbol": "_mlir_b12x_1831b88a3179d89a__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "fa6a9ede90c24d58",
+      "representative_M": 9,
+      "prefix": "b12x_fa6a9ede90c24d58",
+      "invoke_symbol": "_mlir_b12x_fa6a9ede90c24d58__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        64,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "a799ef1e85617678",
+      "representative_M": 16,
+      "prefix": "b12x_a799ef1e85617678",
+      "invoke_symbol": "_mlir_b12x_a799ef1e85617678__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "406504c5403d6e2c",
+      "representative_M": 129,
+      "prefix": "b12x_406504c5403d6e2c",
+      "invoke_symbol": "_mlir_b12x_406504c5403d6e2c__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 1280,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "3edf8513f354f7ec",
+      "representative_M": 4096,
+      "prefix": "b12x_3edf8513f354f7ec",
+      "invoke_symbol": "_mlir_b12x_3edf8513f354f7ec__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "7e72c7d65f68bb17",
+      "representative_M": 9,
+      "prefix": "b12x_7e72c7d65f68bb17",
+      "invoke_symbol": "_mlir_b12x_7e72c7d65f68bb17__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "750152116fba56a5",
+      "representative_M": 16,
+      "prefix": "b12x_750152116fba56a5",
+      "invoke_symbol": "_mlir_b12x_750152116fba56a5__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "1db923870b7b9b44",
+      "representative_M": 129,
+      "prefix": "b12x_1db923870b7b9b44",
+      "invoke_symbol": "_mlir_b12x_1db923870b7b9b44__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        128,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "d72ad4028136432a",
+      "representative_M": 512,
+      "prefix": "b12x_d72ad4028136432a",
+      "invoke_symbol": "_mlir_b12x_d72ad4028136432a__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 640,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "18e3844b3b42aeb5",
+      "representative_M": 4096,
+      "prefix": "b12x_18e3844b3b42aeb5",
+      "invoke_symbol": "_mlir_b12x_18e3844b3b42aeb5__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "3a5cebd64ba7f115",
+      "representative_M": 9,
+      "prefix": "b12x_3a5cebd64ba7f115",
+      "invoke_symbol": "_mlir_b12x_3a5cebd64ba7f115__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "ed3a99f929625ac9",
+      "representative_M": 16,
+      "prefix": "b12x_ed3a99f929625ac9",
+      "invoke_symbol": "_mlir_b12x_ed3a99f929625ac9__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "7664c8d089e3b969",
+      "representative_M": 129,
+      "prefix": "b12x_7664c8d089e3b969",
+      "invoke_symbol": "_mlir_b12x_7664c8d089e3b969__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        128,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "52a4057f0682383b",
+      "representative_M": 512,
+      "prefix": "b12x_52a4057f0682383b",
+      "invoke_symbol": "_mlir_b12x_52a4057f0682383b__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 2560,
+      "K": 6144,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "3515ab09ee5a2f10",
+      "representative_M": 4096,
+      "prefix": "b12x_3515ab09ee5a2f10",
+      "invoke_symbol": "_mlir_b12x_3515ab09ee5a2f10__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": true,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "bac72c031d108724",
+      "representative_M": 9,
+      "prefix": "b12x_bac72c031d108724",
+      "invoke_symbol": "_mlir_b12x_bac72c031d108724__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "ac252bbb5c516555",
+      "representative_M": 16,
+      "prefix": "b12x_ac252bbb5c516555",
+      "invoke_symbol": "_mlir_b12x_ac252bbb5c516555__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "2112bd18bb6e7ab2",
+      "representative_M": 129,
+      "prefix": "b12x_2112bd18bb6e7ab2",
+      "invoke_symbol": "_mlir_b12x_2112bd18bb6e7ab2__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        128,
+        64
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "c42c132649ea6a87",
+      "representative_M": 512,
+      "prefix": "b12x_c42c132649ea6a87",
+      "invoke_symbol": "_mlir_b12x_c42c132649ea6a87__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 3456,
+      "K": 1152,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "c013b8c0d6018da9",
+      "representative_M": 4096,
+      "prefix": "b12x_c013b8c0d6018da9",
+      "invoke_symbol": "_mlir_b12x_c013b8c0d6018da9__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "0becb32cdbc3f073",
+      "representative_M": 9,
+      "prefix": "b12x_0becb32cdbc3f073",
+      "invoke_symbol": "_mlir_b12x_0becb32cdbc3f073__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "6e273fbe0bc0611b",
+      "representative_M": 129,
+      "prefix": "b12x_6e273fbe0bc0611b",
+      "invoke_symbol": "_mlir_b12x_6e273fbe0bc0611b__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        128,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "6aa2b1d66875c738",
+      "representative_M": 1536,
+      "prefix": "b12x_6aa2b1d66875c738",
+      "invoke_symbol": "_mlir_b12x_6aa2b1d66875c738__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 13952,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "671d3b62a23df630",
+      "representative_M": 4096,
+      "prefix": "b12x_671d3b62a23df630",
+      "invoke_symbol": "_mlir_b12x_671d3b62a23df630__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        32,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "4cd04396cea694be",
+      "representative_M": 9,
+      "prefix": "b12x_4cd04396cea694be",
+      "invoke_symbol": "_mlir_b12x_4cd04396cea694be__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": false
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "36c556a7e050b17a",
+      "representative_M": 129,
+      "prefix": "b12x_36c556a7e050b17a",
+      "invoke_symbol": "_mlir_b12x_36c556a7e050b17a__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        128,
+        128
+      ],
+      "BK": 64,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "caaac920c74ac007",
+      "representative_M": 1536,
+      "prefix": "b12x_caaac920c74ac007",
+      "invoke_symbol": "_mlir_b12x_caaac920c74ac007__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantized",
+      "N": 16384,
+      "K": 2560,
+      "tile": [
+        64,
+        128
+      ],
+      "BK": 128,
+      "mma_k": 32,
+      "policy": {
+        "single_work_tile_per_cta": false,
+        "direct_one_m_tile_scheduler": false,
+        "use_m1_non_tma": false,
+        "split_k_slices": 1,
+        "split_k_atomic_bf16": true,
+        "large_m_unroll": true
+      },
+      "sm_version": "sm_120",
+      "target_occupancy": 1,
+      "alpha_is_one": true,
+      "id": "fe2c967925bc1ebb",
+      "representative_M": 4096,
+      "prefix": "b12x_fe2c967925bc1ebb",
+      "invoke_symbol": "_mlir_b12x_fe2c967925bc1ebb__mlir_ciface_cutlass___call___original_aot_b12x__lib_dense_gemm_DenseGemmLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_CUstream0x0"
+    },
+    {
+      "route": "quantize_rows",
+      "N": 0,
+      "K": 640,
+      "subgroup_width": 4,
+      "threads": 256,
+      "value_order": "linear",
+      "min_amax": 0.0,
+      "id": "cb4ab92eaa9c6045",
+      "representative_M": 1,
+      "prefix": "b12x_cb4ab92eaa9c6045",
+      "invoke_symbol": "_mlir_b12x_cb4ab92eaa9c6045__mlir_ciface_cutlass___call___original_aot_b12x__lib_quant_mxfp8_rows_MXFP8RowsQuantLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_1_1_CUstream0x0"
+    },
+    {
+      "route": "quantize_rows",
+      "N": 0,
+      "K": 1152,
+      "subgroup_width": 4,
+      "threads": 256,
+      "value_order": "linear",
+      "min_amax": 0.0,
+      "id": "c5e36a4f22f4d587",
+      "representative_M": 1,
+      "prefix": "b12x_c5e36a4f22f4d587",
+      "invoke_symbol": "_mlir_b12x_c5e36a4f22f4d587__mlir_ciface_cutlass___call___original_aot_b12x__lib_quant_mxfp8_rows_MXFP8RowsQuantLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_1_1_CUstream0x0"
+    },
+    {
+      "route": "quantize_rows",
+      "N": 0,
+      "K": 2560,
+      "subgroup_width": 4,
+      "threads": 256,
+      "value_order": "linear",
+      "min_amax": 0.0,
+      "id": "a6582c4f78a4e023",
+      "representative_M": 1,
+      "prefix": "b12x_a6582c4f78a4e023",
+      "invoke_symbol": "_mlir_b12x_a6582c4f78a4e023__mlir_ciface_cutlass___call___original_aot_b12x__lib_quant_mxfp8_rows_MXFP8RowsQuantLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_1_1_CUstream0x0"
+    },
+    {
+      "route": "quantize_rows",
+      "N": 0,
+      "K": 6144,
+      "subgroup_width": 4,
+      "threads": 256,
+      "value_order": "linear",
+      "min_amax": 0.0,
+      "id": "a7282eef74074967",
+      "representative_M": 1,
+      "prefix": "b12x_a7282eef74074967",
+      "invoke_symbol": "_mlir_b12x_a7282eef74074967__mlir_ciface_cutlass___call___original_aot_b12x__lib_quant_mxfp8_rows_MXFP8RowsQuantLaunch_object_at__Ptrgmem_Ptrgmem_Ptrgmem_Ptrgmem_1_1_1_CUstream0x0"
+    }
+  ],
+  "ranges": {
+    "96x2560": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "e76de3318a9ad1a6"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "0bab05b50529d528"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "25fbcf8e8a139690"
+      },
+      {
+        "first_M": 129,
+        "last_M": 4095,
+        "program": "5397bc4373a3306f"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "f44105eb810dd24d"
+      }
+    ],
+    "1152x1152": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "7bae51727caa00d9"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "0cb50275632cf6cf"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "51039d19c7651999"
+      },
+      {
+        "first_M": 129,
+        "last_M": 4095,
+        "program": "06175ba42cf758fb"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 65536,
+        "program": "0e454e91717bbea8"
+      }
+    ],
+    "1280x2560": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "17b126ff7f6833cb"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "8bce3314680df8f7"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "27168a8133f2ecc0"
+      },
+      {
+        "first_M": 129,
+        "last_M": 4095,
+        "program": "48f92c3942d90719"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "8665f882da2a8bc7"
+      }
+    ],
+    "2560x640": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "322fff5a46b93e8f"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "944da82eb8c441c7"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "b37881fef80bbffa"
+      },
+      {
+        "first_M": 129,
+        "last_M": 511,
+        "program": "53c68acd1a2f5a32"
+      },
+      {
+        "first_M": 512,
+        "last_M": 3072,
+        "program": "4ff1d4a92f0b9d79"
+      },
+      {
+        "first_M": 3073,
+        "last_M": 4095,
+        "program": "53c68acd1a2f5a32"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "002e1d8c3343cbb6"
+      }
+    ],
+    "2560x6144": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "8a5deb004e1bf20c"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "5a930b4a63b48237"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "c62f843ef69e0aef"
+      },
+      {
+        "first_M": 129,
+        "last_M": 511,
+        "program": "35ca63abf17d437a"
+      },
+      {
+        "first_M": 512,
+        "last_M": 3072,
+        "program": "8c982b119bfd5816"
+      },
+      {
+        "first_M": 3073,
+        "last_M": 4095,
+        "program": "35ca63abf17d437a"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "e884a90618834291"
+      }
+    ],
+    "3456x1152": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "ac26b6280179786c"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "3eb97db3fbde1d91"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "1855c36fd6bde225"
+      },
+      {
+        "first_M": 129,
+        "last_M": 511,
+        "program": "bd9a82926b88442a"
+      },
+      {
+        "first_M": 512,
+        "last_M": 3072,
+        "program": "33f72401c11f9897"
+      },
+      {
+        "first_M": 3073,
+        "last_M": 4095,
+        "program": "bd9a82926b88442a"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 65536,
+        "program": "2081266be6250453"
+      }
+    ],
+    "13952x2560": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "c49953bf7db8a0bb"
+      },
+      {
+        "first_M": 9,
+        "last_M": 128,
+        "program": "9cfd168c09bce292"
+      },
+      {
+        "first_M": 129,
+        "last_M": 1535,
+        "program": "5ec7b33023ecd46b"
+      },
+      {
+        "first_M": 1536,
+        "last_M": 2048,
+        "program": "3b21aad7d52bde15"
+      },
+      {
+        "first_M": 2049,
+        "last_M": 4095,
+        "program": "5ec7b33023ecd46b"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "df5506190b5b869a"
+      }
+    ],
+    "16384x2560": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "a3f2a62586ff07c9"
+      },
+      {
+        "first_M": 9,
+        "last_M": 128,
+        "program": "8b7bda07263ac044"
+      },
+      {
+        "first_M": 129,
+        "last_M": 1535,
+        "program": "381d1e6fb172b736"
+      },
+      {
+        "first_M": 1536,
+        "last_M": 2048,
+        "program": "38922fb43258185b"
+      },
+      {
+        "first_M": 2049,
+        "last_M": 4095,
+        "program": "381d1e6fb172b736"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "403564de88dffd3c"
+      }
+    ]
+  },
+  "ranges_alpha_one": {
+    "96x2560": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "e76de3318a9ad1a6"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "66bc0b6e76e8e0e3"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "e34ddb725274d094"
+      },
+      {
+        "first_M": 129,
+        "last_M": 4095,
+        "program": "337786b76a1cfa2e"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "f0d5604dd45199e0"
+      }
+    ],
+    "1152x1152": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "7bae51727caa00d9"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "6c9e2c78b3ecdf22"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "872b274686009c81"
+      },
+      {
+        "first_M": 129,
+        "last_M": 4095,
+        "program": "0baabff9b045e185"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 65536,
+        "program": "1831b88a3179d89a"
+      }
+    ],
+    "1280x2560": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "17b126ff7f6833cb"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "fa6a9ede90c24d58"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "a799ef1e85617678"
+      },
+      {
+        "first_M": 129,
+        "last_M": 4095,
+        "program": "406504c5403d6e2c"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "3edf8513f354f7ec"
+      }
+    ],
+    "2560x640": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "322fff5a46b93e8f"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "7e72c7d65f68bb17"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "750152116fba56a5"
+      },
+      {
+        "first_M": 129,
+        "last_M": 511,
+        "program": "1db923870b7b9b44"
+      },
+      {
+        "first_M": 512,
+        "last_M": 3072,
+        "program": "d72ad4028136432a"
+      },
+      {
+        "first_M": 3073,
+        "last_M": 4095,
+        "program": "1db923870b7b9b44"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "18e3844b3b42aeb5"
+      }
+    ],
+    "2560x6144": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "8a5deb004e1bf20c"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "3a5cebd64ba7f115"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "ed3a99f929625ac9"
+      },
+      {
+        "first_M": 129,
+        "last_M": 511,
+        "program": "7664c8d089e3b969"
+      },
+      {
+        "first_M": 512,
+        "last_M": 3072,
+        "program": "52a4057f0682383b"
+      },
+      {
+        "first_M": 3073,
+        "last_M": 4095,
+        "program": "7664c8d089e3b969"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "3515ab09ee5a2f10"
+      }
+    ],
+    "3456x1152": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "ac26b6280179786c"
+      },
+      {
+        "first_M": 9,
+        "last_M": 15,
+        "program": "bac72c031d108724"
+      },
+      {
+        "first_M": 16,
+        "last_M": 128,
+        "program": "ac252bbb5c516555"
+      },
+      {
+        "first_M": 129,
+        "last_M": 511,
+        "program": "2112bd18bb6e7ab2"
+      },
+      {
+        "first_M": 512,
+        "last_M": 3072,
+        "program": "c42c132649ea6a87"
+      },
+      {
+        "first_M": 3073,
+        "last_M": 4095,
+        "program": "2112bd18bb6e7ab2"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 65536,
+        "program": "c013b8c0d6018da9"
+      }
+    ],
+    "13952x2560": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "c49953bf7db8a0bb"
+      },
+      {
+        "first_M": 9,
+        "last_M": 128,
+        "program": "0becb32cdbc3f073"
+      },
+      {
+        "first_M": 129,
+        "last_M": 1535,
+        "program": "6e273fbe0bc0611b"
+      },
+      {
+        "first_M": 1536,
+        "last_M": 2048,
+        "program": "6aa2b1d66875c738"
+      },
+      {
+        "first_M": 2049,
+        "last_M": 4095,
+        "program": "6e273fbe0bc0611b"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "671d3b62a23df630"
+      }
+    ],
+    "16384x2560": [
+      {
+        "first_M": 1,
+        "last_M": 8,
+        "program": "a3f2a62586ff07c9"
+      },
+      {
+        "first_M": 9,
+        "last_M": 128,
+        "program": "4cd04396cea694be"
+      },
+      {
+        "first_M": 129,
+        "last_M": 1535,
+        "program": "36c556a7e050b17a"
+      },
+      {
+        "first_M": 1536,
+        "last_M": 2048,
+        "program": "caaac920c74ac007"
+      },
+      {
+        "first_M": 2049,
+        "last_M": 4095,
+        "program": "36c556a7e050b17a"
+      },
+      {
+        "first_M": 4096,
+        "last_M": 8192,
+        "program": "fe2c967925bc1ebb"
+      }
+    ]
+  },
+  "target": {
+    "cpu": "win_arm64",
+    "gpu": "sm_121a",
+    "sm_count": 48
+  },
+  "source": "myllmbox v5.3.1 original b12x; local CuTe 4.8.1 CPU-only AOT compile",
+  "original_sources": {
+    "b12x._lib.dense_gemm": {
+      "path": "sources/b12x/_lib/dense_gemm.py",
+      "sha256": "c241ee123f8405becdb21fdbac29296adec88396be3f225a79e1e985a159f989"
+    },
+    "b12x._lib.dense_gemm_mxfp6": {
+      "path": "sources/b12x/_lib/dense_gemm_mxfp6.py",
+      "sha256": "2a16f399049476f278df910c4ed7d3baf4357caf4c34662f3568cf179dda7001"
+    },
+    "b12x._lib.fp6": {
+      "path": "sources/b12x/_lib/fp6.py",
+      "sha256": "986f24c90f257d9ff9ebcb4debcf3d313e0fcec3a86b0300efe2c0ab008f2598"
+    },
+    "b12x._lib.intrinsics": {
+      "path": "sources/b12x/_lib/intrinsics.py",
+      "sha256": "7e0c8e42bcdf609f2aae29a27c9f9013e2a8d3da91f8e032af234554d206ef7a"
+    },
+    "b12x._lib.utils": {
+      "path": "sources/b12x/_lib/utils.py",
+      "sha256": "cb5264549d86f17d5855e3b21d65f098171d41f2fc878f0bac27f4586d75d649"
+    },
+    "b12x._lib.quant.mxfp8_rows": {
+      "path": "sources/b12x/_lib/quant/mxfp8_rows.py",
+      "sha256": "589011e5b92b7943db7b9c114b77227532edeb3cb402254aee52dabd41d149eb"
+    }
+  }
+}

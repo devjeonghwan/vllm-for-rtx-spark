@@ -1,0 +1,29 @@
+{
+  "distribution": "oss-harmony",
+  "module": "openai_harmony",
+  "version": "0.0.11",
+  "license": "Apache-2.0",
+  "source_url": "https://files.pythonhosted.org/packages/43/88/ca56e5b17df4763bbb552c7be3abe432b51db3c51f6327a3848b88ad7c08/oss_harmony-0.0.11.tar.gz",
+  "sdist_sha256": "ccad467b71d61490df1f2204b7a064990833338615ac135536c5b3a8e2d03a15",
+  "source_files_verified": 53,
+  "source_patched": false,
+  "wheel": "oss_harmony-0.0.11-cp38-abi3-win_arm64.whl",
+  "wheel_sha256": "8beebba47002cfb20e959514d4977b1d8b754cd478024f899f0e975862e516f6",
+  "tools": {
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "cargo": "cargo 1.99.1 (5f94df478 2026-08-27)",
+    "maturin": "maturin 1.15.0"
+  },
+  "reused_prebuilt_wheel": false,
+  "target": "aarch64-pc-windows-msvc",
+  "files": {
+    "openai_harmony/__init__.py": "e7daf40879af2ebed3cfc77ab2ef1d686a3c8e04a4f84f246643a4e3aeae3d06",
+    "openai_harmony/openai_harmony.pyd": "4d227c7fecf6d1ff7cfea2200a736b3168511d2fd59ba0c072e588d7586c3c44",
+    "oss_harmony-0.0.11.dist-info/METADATA": "e95b4cd64018d43ca8f7c2dfadccb95ad3ea5b4cc41625e5c64dc30ace0fff58",
+    "oss_harmony-0.0.11.dist-info/WHEEL": "5c91cda034d5108bb9f8df23eb145a5495a68426bf9e2cb771e8ea76f2203f43",
+    "oss_harmony-0.0.11.dist-info/licenses/LICENSE": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd",
+    "oss_harmony-0.0.11.dist-info/sboms/oss-harmony.cyclonedx.json": "0eeff82e32f1f0c2fe97cab72a37a1550a57deaa0777f3492e0fce31b4a0a192",
+    "oss_harmony-0.0.11.dist-info/RECORD": "0581ccda52686d73693abe5165ee0f86b749a915313ff8fd4a79270c09367d66"
+  },
+  "SBOM_local_build_paths_normalized": true
+}

@@ -1,0 +1,135 @@
+Metadata-Version: 2.4
+Name: mistral_common
+Version: 1.12.0
+Summary: Mistral-common is a library of common utilities for Mistral AI.
+Author-email: Mistral AI <oss@mistral.ai>
+License-Expression: Apache-2.0
+Requires-Python: <3.15,>=3.10.0
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pydantic<3.0,>=2.7; python_version <= "3.13"
+Requires-Dist: pydantic<3.0,>=2.12; python_version >= "3.14"
+Requires-Dist: jsonschema>=4.21.1
+Requires-Dist: typing-extensions>=4.11.0
+Requires-Dist: tiktoken>=0.7.0; python_version <= "3.13"
+Requires-Dist: tiktoken>=0.12.0; python_version >= "3.14"
+Requires-Dist: pillow>=10.3.0
+Requires-Dist: requests>=2.0.0
+Requires-Dist: numpy<2.4,>=1.25; python_version <= "3.12"
+Requires-Dist: numpy>=1.25; python_version > "3.12"
+Requires-Dist: pydantic-extra-types[pycountry]>=2.10.5
+Provides-Extra: opencv
+Requires-Dist: opencv-python-headless>=4.0.0; extra == "opencv"
+Provides-Extra: sentencepiece
+Requires-Dist: sentencepiece>=0.2.0; extra == "sentencepiece"
+Provides-Extra: soundfile
+Requires-Dist: soundfile>=0.12.1; extra == "soundfile"
+Provides-Extra: soxr
+Requires-Dist: soxr>=0.5.0; extra == "soxr"
+Provides-Extra: audio
+Requires-Dist: mistral_common[soundfile]; extra == "audio"
+Requires-Dist: mistral_common[soxr]; extra == "audio"
+Provides-Extra: image
+Requires-Dist: mistral_common[opencv]; extra == "image"
+Provides-Extra: guidance
+Requires-Dist: llguidance<1.4.0,>=1.3.0; extra == "guidance"
+Requires-Dist: jinja2>=3.1.0; extra == "guidance"
+Provides-Extra: hf-hub
+Requires-Dist: huggingface-hub>=1.0; extra == "hf-hub"
+Provides-Extra: server
+Requires-Dist: fastapi[standard]>=0.118.3; extra == "server"
+Requires-Dist: pydantic-settings>=2.9.1; extra == "server"
+Requires-Dist: click>=8.1.0; extra == "server"
+Requires-Dist: uvloop>=0.22.1; python_version >= "3.14" and extra == "server"
+Provides-Extra: all
+Requires-Dist: mistral_common[audio,guidance,hf-hub,image,opencv,sentencepiece,server]; extra == "all"
+Dynamic: license-file
+
+<div align="center">
+
+<img src="./docs/assets/logo.svg" alt="Mistral AI" height="100"/>
+
+<br/>
+<br/>
+
+# Mistral-common
+
+[![PyPI version](https://img.shields.io/pypi/v/mistral-common?label=release&logo=pypi&logoColor=white)](https://pypi.org/project/mistral-common/)
+[![Tests](https://img.shields.io/github/actions/workflow/status/mistralai/mistral-common/lint_build_test.yaml?label=tests&branch=main)](https://github.com/mistralai/mistral-common/actions/workflows/lint_build_test.yaml)
+[![Documentation](https://img.shields.io/website?url=https%3A%2F%2Fmistralai.github.io%2Fmistral-common%2F&up_message=online&down_message=offline&label=docs)](https://mistralai.github.io/mistral-common/)
+[![Python version](https://img.shields.io/badge/dynamic/json?query=info.requires_python&label=python&url=https%3A%2F%2Fpypi.org%2Fpypi%2Fmistral-common%2Fjson)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+
+</div>
+
+## What is it? 
+
+**mistral-common** is a set of tools to help you work with [Mistral AI](https://mistral.ai/) models.
+
+We open-source the tokenizers, validation and normalization code that can be used with our models.
+
+This ensures that you can take full advantage of our models for the following features:
+
+- **tokenization** of text, images and tools calls.
+- **validation and normalization** of requests, messages, tool calls, and responses. This is built on top of the [Pydantic](https://docs.pydantic.dev/latest/) library.
+
+We also version our tokenizers to guarantee backward compatibility for the models that we release.
+
+## For who ?
+
+This library is for you if you want to:
+
+- use our models in your own application.
+- build your own models and want to use the same tokenization and validation code as we do.
+
+## How to use it ?
+
+You can install the library using pip:
+```sh
+pip install mistral-common
+```
+
+We propose different dependencies to install depending on your needs:
+- `image`: to use the image tokenizers.
+- `audio`: to use the audio tokenizers.
+- `hf-hub`: to download the tokenizers from the Hugging Face Hub.
+- `sentencepiece`: to allow the use of SentencePiece tokenizers. This is now optional as we only release `Tekken` tokenizers for recent models.
+- \[Experimental\] `server`: to use our tokenizers in a server mode.
+
+Each dependency is optional and can be installed separately or all together using the following commands:
+```sh
+pip install "mistral-common[image]"
+pip install "mistral-common[audio]"
+pip install "mistral-common[hf-hub]"
+pip install "mistral-common[sentencepiece]"
+pip install "mistral-common[server]"
+pip install "mistral-common[image,audio,hf-hub,sentencepiece,server]"
+```
+
+For more information, please refer to the [documentation](https://mistralai.github.io/mistral-common/).
+
+## How to contribute?
+
+We welcome contributions to this library. Please read our [contribution guide](CONTRIBUTING.md) first. If you encounter a bug, have difficulties using `mistral-common`, or want to propose a feature, search the existing issues and open an issue on our [GitHub repository](https://github.com/mistralai/mistral-common/issues) before starting work.
+
+If you want to contribute code after the issue discussion, you may fork the repository and open a pull request. We will review changes that are relevant to the library and meet the contribution guidelines.
+
+```sh
+# Clone the repository
+git clone https://github.com/<your_fork_username>/mistral-common.git
+cd mistral-common
+
+# Create a virtual environment and install the dependencies
+uv venv
+source .venv/bin/activate
+uv sync --frozen --all-extras --group dev # --group docs if you want to build the documentation
+
+# Install the pre-commit hooks
+uv run pre-commit install
+```
+
+## License
+
+This library is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for more information.
+
+*You must not use this library or our models in a manner that infringes, misappropriates, or otherwise violates any third party’s rights, including intellectual property rights.*

@@ -1,0 +1,28 @@
+[build-system]
+requires = ["maturin>=1.8,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "oss-harmony"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version"]
+dependencies = ["pydantic>=2.11.7"]
+description = "Response format library for the gpt-oss open-weight model series (fork of openai-harmony)"
+readme = "README.md"
+
+[project.optional-dependencies]
+demo = ["uvicorn", "fastapi"]
+
+[tool.maturin]
+features = ["python-binding", "pyo3/extension-module"]
+module-name = "openai_harmony"
+python-source = "python"
+
+[tool.pytest.ini_options]
+# Only collect tests from the top-level tests directory
+testpaths = ["tests"]

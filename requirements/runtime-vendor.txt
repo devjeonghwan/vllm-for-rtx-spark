@@ -1,0 +1,3 @@
+torch==2.14.0+cu134
+torchvision==0.29.0+cu134
+flash-attn @ https://github.com/NVIDIA/pytorch-windows-ci/releases/download/Flash-Attention-for-WoA/flash_attn-2.8.4%2Bcu13torch2.14-cp313-cp313-win_arm64.whl#sha256=54d1c98df04b133d227d5414a9d6d9d668e4b049246b96ecfd811b8272a9d926

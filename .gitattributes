@@ -1,0 +1,13 @@
+* text=auto eol=lf
+src/** -text
+third_party/** -text
+assets/** -text
+patches/** -text
+*.dll binary
+*.pyd binary
+*.cubin binary
+*.o binary
+*.lib binary
+*.pt binary
+*.gz binary
+*.whl binary

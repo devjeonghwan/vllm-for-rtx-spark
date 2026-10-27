@@ -1,0 +1,6 @@
+<|start|>system<|message|>You are ChatGPT, a large language model trained by OpenAI.
+Knowledge cutoff: 2024-06
+
+Reasoning: high
+
+# Valid channels: analysis, final. Channel must be included for every message.<|end|><|start|>user<|message|>What is the best place to eat candy in the world?<|end|><|start|>assistant

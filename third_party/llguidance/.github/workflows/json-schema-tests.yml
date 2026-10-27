@@ -1,0 +1,35 @@
+name: JSON Schema Test Suite
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+        description: 'Git ref to checkout'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  json-schema-test-suite:
+    name: JSON Schema Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ inputs.ref }}
+
+    - name: Clone JSON-Schema-Test-Suite
+      run: |
+        git clone https://github.com/json-schema-org/JSON-Schema-Test-Suite /tmp/JSON-Schema-Test-Suite
+        git -C /tmp/JSON-Schema-Test-Suite checkout 78048eadfc76180feadea1e2783d7f54ffaa2e6d
+
+    - name: Run JSON Schema Test Suite
+      run: |
+        cargo run -p json_schema_test_suite --release -- \
+          --expected expected_json_schema_test_suite.json \
+          /tmp/JSON-Schema-Test-Suite
+      working-directory: json_schema_test_suite

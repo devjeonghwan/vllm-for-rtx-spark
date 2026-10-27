@@ -1,0 +1,729 @@
+from typing import Any, Dict, List, Tuple
+
+import llguidance
+import numpy as np
+import pytest
+from llguidance import LLMatcher, LLParserLimits, LLTokenizer, StructTag
+from llguidance.numpy import (
+    allocate_token_bitmask,
+    consume_token_par,
+    fill_next_token_bitmask_par,
+    fill_next_token_bitmask_par_with_draft_tokens,
+)
+from numpy.typing import NDArray
+
+_tokenizer = None
+
+
+def tokenizer() -> LLTokenizer:
+    global _tokenizer
+    if _tokenizer is None:
+        _tokenizer = LLTokenizer("byte")
+    return _tokenizer
+
+
+def matcher(grm: str) -> LLMatcher:
+    return LLMatcher(tokenizer(), grm, log_level=1)
+
+
+def check_err(matcher: LLMatcher) -> None:
+    if matcher.is_error():
+        raise ValueError(matcher.get_error())
+
+
+def check_one_grammar(grm: str, s: str, passing: bool) -> None:
+    # print("Checking", repr(s))
+    interp = matcher(grm)
+    check_err(interp)
+    final_reject = False
+    if s.startswith("FINAL_REJECT:"):
+        final_reject = True
+        s = s[len("FINAL_REJECT:"):]
+
+    if "⁂" in s:
+        b = (s + "⁂[13]").encode().replace("⁂".encode(), b"\xFF")
+        tokens, suffix = tokenizer().tokenize_partial(b)
+        assert not suffix
+        assert tokens[-1] == 13
+        del tokens[-1]
+    else:
+        tokens = tokenizer().tokenize_str(s)
+
+    print("Check: " + tokenizer().dbg_tokens(tokens))
+
+    for i, t in enumerate(tokens):
+        next_tokens = tokens[i:]
+        if passing or final_reject:
+            assert interp.validate_tokens(next_tokens) == len(next_tokens)
+        else:
+            assert interp.validate_tokens(next_tokens) < len(next_tokens)
+        mask = interp.compute_logit_bias()
+        if mask[t] == 0:
+            if passing or final_reject:
+                print("Token not in mask",
+                      tokenizer().dbg_tokens(tokens[:i + 1]), repr(s))
+                assert False
+            return
+        else:
+            assert mask[t] == 200
+        interp.consume_token(t)
+        check_err(interp)
+    if final_reject:
+        if interp.is_accepting():
+            print("Expected to fail at the end", s)
+            assert False
+        else:
+            return
+    if not passing:
+        print("Expected to fail", s)
+        assert False
+    assert interp.is_accepting()
+
+
+def check_grammar(grm: str, passing: List[str], failing: List[str]) -> None:
+    for s in passing:
+        check_one_grammar(grm, s, True)
+    for s in failing:
+        check_one_grammar(grm, s, False)
+
+
+def test_json() -> None:
+    grm = LLMatcher.grammar_from_json_schema({"type": "object"},
+                                             {"whitespace_flexible": False})
+    check_grammar(grm, ["{}", '{"foo":1}'], ["FINAL_REJECT:{", " {}", "{ }"])
+
+    grm = LLMatcher.grammar_from_json_schema({
+        "type": "object",
+        "properties": {
+            "foo": {
+                "type": "integer"
+            }
+        },
+        "required": ["foo"]
+    })
+    check_grammar(grm, ['{"foo":1}', '{"foo":1,"bar":2}', '{ "foo" : 1 }'],
+                  ["{}", "FINAL_REJECT:{", ' {"foo":1}', '{"bar":1}'])
+
+
+def test_lark() -> None:
+    check_grammar(
+        'start: /.../ "abc" /.../',
+        [
+            "abcabcabc",
+            "aaaabcccc",
+            # NOTE: Also ensures that multi-byte characters still count as a single character
+            "🔵🟠✅abc❌🟠🔵",
+        ],
+        [
+            "aaabcccc",
+            "aaaaabcccc",
+            "FINAL_REJECT:aaaabccc",
+            "aaaabccccc",
+            "🔵🟠✅❌abc❌✅🟠🔵",
+            "🔵🟠abc🟠🔵",
+        ],
+    )
+
+
+def test_regex_grammar() -> None:
+    grm = LLMatcher.grammar_from_regex(r"\d+")
+    check_grammar(grm, ["123", "456"], ["abc", "1a2"])
+
+
+def test_lark_syntax() -> None:
+    m = matcher('start: /.../ no_such_rule')
+    assert m.is_error()
+    assert "no_such_rule" in m.get_error()
+
+    e = LLMatcher.validate_grammar('start: /.../ no_such_rule')
+    assert "no_such_rule" in e
+
+    e = LLMatcher.validate_grammar('start: /.../ no_such_rule', tokenizer())
+    assert "no_such_rule" in e
+
+
+def test_regex_syntax() -> None:
+    g = LLMatcher.grammar_from_regex(r"missing close paren (")
+    e = LLMatcher.validate_grammar(g)
+    assert "invalid regex" in e
+    e = LLMatcher.validate_grammar(g, tokenizer())
+    assert "invalid regex" in e
+
+
+def test_slices() -> None:
+    t = tokenizer()
+    gen_slices = LLTokenizer.general_slices()
+    assert len(gen_slices) > 0
+    json_slices = LLTokenizer.json_slices()
+    assert len(json_slices) > 0
+    t2 = t.with_slices(json_slices)
+    assert t.tokenize_str("Hello, world!") == t2.tokenize_str("Hello, world!")
+
+
+def mask_has(mask: NDArray[np.int32], t: int) -> bool:
+    v: int = mask[t // 32]
+    # use np.int32 to avoid int32 overflow errors
+    return bool(v & (np.int32(1) << (t % 32)) != 0)
+
+
+def test_par_errors() -> None:
+    t = tokenizer()
+    exec = llguidance.LLExecutor()
+    g0 = matcher(r"start: /[a-zA-Z ]*/")
+    g1 = matcher(r"start: /[0-9 ]*/")
+    mask = allocate_token_bitmask(3, t.vocab_size)
+
+    with pytest.raises(ValueError, match="Target index out of bounds"):
+        fill_next_token_bitmask_par(exec, [(g0, 0), (g1, 3)], mask)
+
+    with pytest.raises(RuntimeError, match="Already borrowed"):
+        fill_next_token_bitmask_par(exec, [(g0, 0), (g1, 1), (g1, 2)], mask)
+
+    msg = "'int' object is not an instance of 'tuple'"
+    with pytest.raises(TypeError, match=msg):
+        l = [1, (g1, 0), (g1, 1)]
+        fill_next_token_bitmask_par(exec, l, mask)  # type: ignore
+
+    msg = "LLTokenizer' object is not an instance of 'LLMatcher'"
+    with pytest.raises(TypeError, match=msg):
+        l = [(tokenizer(), 0)]
+        fill_next_token_bitmask_par(exec, l, mask)  # type: ignore
+
+    with pytest.raises(ValueError, match=r"Expecting.*tuple"):
+        l = [(tokenizer(), 0, 0)]
+        fill_next_token_bitmask_par(exec, l, mask)  # type: ignore
+
+    (three, vocab) = mask.shape
+    assert three == 3
+    with pytest.raises(ValueError, match="Null pointer"):
+        exec.unsafe_compute_mask_ptr([(g0, 0), (g1, 1)], 0, vocab * 4, 3)
+    with pytest.raises(ValueError, match="Pointer not aligned"):
+        exec.unsafe_compute_mask_ptr([(g0, 0), (g1, 1)], 3, vocab * 4, 3)
+    with pytest.raises(ValueError, match="Invalid buffer size"):
+        exec.unsafe_compute_mask_ptr([(g0, 0), (g1, 1)], 1024, vocab * 4 + 1,
+                                     3)
+    with pytest.raises(ValueError, match="Invalid buffer size"):
+        exec.unsafe_compute_mask_ptr([(g0, 0), (g1, 1)], 1024, vocab * 4 - 1,
+                                     3)
+
+    # should be OK
+    fill_next_token_bitmask_par(exec, [(g0, 0), (g1, 2)], mask)
+    t_a = t.tokenize_str("a")[0]
+    t_1 = t.tokenize_str("1")[0]
+    assert mask_has(mask[0, :], t_a)
+    assert not mask_has(mask[0, :], t_1)
+    assert not mask_has(mask[2, :], t_a)
+    assert mask_has(mask[2, :], t_1)
+
+
+def test_consume_token_par() -> None:
+    t = tokenizer()
+    exec = llguidance.LLExecutor()
+
+    # Create matchers with different grammars
+    g0 = matcher(r"start: /[a-zA-Z]+/")
+    g1 = matcher(r"start: /[0-9]+/")
+    g2 = matcher(r"start: /[a-z]+/")
+
+    # Get tokens for testing
+    t_a = t.tokenize_str("a")[0]  # valid for g0 and g2
+    t_1 = t.tokenize_str("1")[0]  # valid for g1 only
+
+    # Test consuming valid tokens
+    results = consume_token_par(exec, [(g0, t_a), (g1, t_1), (g2, t_a)])
+    assert results == [True, True, True]
+
+    # Consume more tokens to continue each matcher
+    t_b = t.tokenize_str("b")[0]
+    t_2 = t.tokenize_str("2")[0]
+
+    results = consume_token_par(exec, [(g0, t_b), (g1, t_2), (g2, t_b)])
+    assert results == [True, True, True]
+
+    # Test consuming invalid tokens
+    g3 = matcher(r"start: /[a-z]+/")
+    g4 = matcher(r"start: /[0-9]+/")
+    g5 = matcher(r"start: /[A-Z]+/")
+
+    # 'a' is not valid for g4, '1' is not valid for g3, '1' is not valid for g5
+    results = consume_token_par(exec, [(g3, t_1), (g4, t_a), (g5, t_1)])
+    assert results == [False, False, False]
+
+    # Mixed valid/invalid
+    g6 = matcher(r"start: /[a-z]+/")
+    g7 = matcher(r"start: /[0-9]+/")
+    g8 = matcher(r"start: /[a-z]+/")
+
+    results = consume_token_par(exec, [(g6, t_a), (g7, t_a), (g8, t_a)])
+    assert results == [True, False, True]
+
+
+def test_consume_token_par_errors() -> None:
+    exec = llguidance.LLExecutor()
+    g0 = matcher(r"start: /[a-zA-Z]+/")
+
+    # Test empty list
+    with pytest.raises(ValueError, match="No matchers"):
+        consume_token_par(exec, [])
+
+    # Test wrong tuple size
+    with pytest.raises(ValueError, match=r"Expecting.*tuple"):
+        exec.consume_token_par([(g0, 1, 2)])  # type: ignore
+
+    # Test already borrowed error (same matcher used twice)
+    with pytest.raises(RuntimeError, match="Already borrowed"):
+        consume_token_par(exec, [(g0, 1), (g0, 2)])
+
+    # Test wrong type in first slot (not an LLMatcher)
+    with pytest.raises(TypeError):
+        exec.consume_token_par([("not a matcher", 1)])  # type: ignore
+
+    # Test wrong type in second slot (not an int)
+    with pytest.raises(TypeError):
+        exec.consume_token_par([(g0, "not an int")])  # type: ignore
+
+
+def retrieve_tokens_from_bitmask(
+    bitmask: NDArray[np.int32], vocab_size: int
+) -> Tuple[List[List[int]], List[List[int]]]:
+    batch_accepted_tokens: List[List[int]] = []
+    batch_rejected_tokens: List[List[int]] = []
+    for batch_idx in range(bitmask.shape[0]):
+        batch_accepted_tokens.append([])
+        batch_rejected_tokens.append([])
+        for token_id in range(vocab_size):
+            print(bitmask.shape)
+            if mask_has(bitmask[batch_idx], token_id):
+                batch_accepted_tokens[-1].append(token_id)
+            else:
+                batch_rejected_tokens[-1].append(token_id)
+    return batch_accepted_tokens, batch_rejected_tokens
+
+
+def test_par_draft_tokens() -> None:
+    t = tokenizer()
+    exec = llguidance.LLExecutor()
+    g0 = matcher(r"start: /[a-zA-Z]/ /[0-9]*/")
+    g1 = matcher(r"start: /[0-9]/ /[a-zA-Z]*/")
+    g2 = matcher(r"start: <[*]>*")
+    g3 = matcher(r"start: /[a-zA-Z]/ /[0-9]*/")
+
+    # should be OK
+    g0_draft_tokens = t.tokenize_str("a1")
+    g1_draft_tokens = t.tokenize_str("2b")
+    g2_draft_tokens = t.tokenize_str("cc")
+    # g3 index 1 draft is reject
+    g3_draft_tokens = t.tokenize_str("aa")
+    mask = allocate_token_bitmask(
+        len(g0_draft_tokens)
+        + 1
+        + len(g1_draft_tokens)
+        + 1
+        + len(g2_draft_tokens)
+        + 1
+        + len(g3_draft_tokens)
+        + 1,
+        t.vocab_size,
+    )
+    fill_next_token_bitmask_par_with_draft_tokens(
+        exec,
+        [
+            (g0, 0, g0_draft_tokens),
+            (g1, 3, g1_draft_tokens),
+            (g2, 6, g2_draft_tokens),
+            (g3, 9, g3_draft_tokens),
+        ],
+        mask,
+    )
+
+    batch_accepted_tokens, batch_rejected_tokens = retrieve_tokens_from_bitmask(
+        mask, t.vocab_size
+    )
+    for batch_idx in range(len(batch_accepted_tokens)):
+        assert (
+            len(batch_accepted_tokens[batch_idx])
+            + len(batch_rejected_tokens[batch_idx])
+            == t.vocab_size
+        )
+
+    # for g0, first token should be Letters
+    # other tokens should be Numbers
+    mask_start_idx = 0
+    for idx, mask_idx in enumerate(
+        range(mask_start_idx, mask_start_idx + len(g0_draft_tokens) + 1)
+    ):
+        g0_accepted_tokens = batch_accepted_tokens[mask_idx]
+        for token_id in range(t.vocab_size):
+            if token_id in g0_accepted_tokens:
+                if idx == 0:
+                    assert t.decode_str([token_id]).isalpha()
+                else:
+                    assert token_id == t.eos_token or t.decode_str([token_id]).isdigit()
+            else:
+                assert not g0.try_consume_tokens([token_id])
+        if idx < len(g0_draft_tokens):
+            assert g0.consume_token(g0_draft_tokens[idx])
+
+    # for g1, first token should be Numbers
+    # other tokens should be Letters
+    mask_start_idx += len(g0_draft_tokens) + 1
+    for idx, mask_idx in enumerate(
+        range(mask_start_idx, mask_start_idx + len(g1_draft_tokens) + 1)
+    ):
+        g1_accepted_tokens = batch_accepted_tokens[mask_idx]
+        for token_id in range(t.vocab_size):
+            if token_id in g1_accepted_tokens:
+                if idx == 0:
+                    assert t.decode_str([token_id]).isdigit()
+                else:
+                    assert token_id == t.eos_token or t.decode_str([token_id]).isalpha()
+            else:
+                assert not g1.try_consume_tokens([token_id])
+        if idx < len(g1_draft_tokens):
+            assert g1.consume_token(g1_draft_tokens[idx])
+
+    # for g2, all tokens should be accept
+    mask_start_idx += len(g1_draft_tokens) + 1
+    for idx, mask_idx in enumerate(
+        range(mask_start_idx, mask_start_idx + len(g2_draft_tokens) + 1)
+    ):
+        g2_rejected_tokens = batch_rejected_tokens[mask_idx]
+        g2_accepted_tokens = batch_accepted_tokens[mask_idx]
+        assert len(g2_rejected_tokens) == 0
+        assert len(g2_accepted_tokens) == t.vocab_size
+        for token_id in range(t.vocab_size):
+            if token_id in g2_accepted_tokens:
+                assert mask_has(mask[mask_idx, :], token_id)
+            else:
+                assert not mask_has(mask[mask_idx, :], token_id)
+        if idx < len(g2_draft_tokens):
+            assert g2.consume_token(g2_draft_tokens[idx])
+
+    # for g3
+    # g3_draft_tokens[0] is accept
+    # g3_draft_tokens[1] is reject
+    mask_start_idx += len(g2_draft_tokens) + 1
+    for idx, mask_idx in enumerate(
+        range(mask_start_idx, mask_start_idx + len(g3_draft_tokens) + 1)
+    ):
+        g3_rejected_tokens = batch_rejected_tokens[mask_idx]
+        g3_accepted_tokens = batch_accepted_tokens[mask_idx]
+        if idx <= 1:
+            for token_id in range(t.vocab_size):
+                if token_id in g3_accepted_tokens:
+                    assert mask_has(mask[mask_idx, :], token_id)
+                else:
+                    assert not mask_has(mask[mask_idx, :], token_id)
+            if idx == 0:
+                assert g3.consume_token(g3_draft_tokens[idx])
+            else:
+                assert not g3.consume_token(g3_draft_tokens[idx])
+        else:
+            # the bitmask of all tokens has a bit value of 1.
+            assert len(g3_rejected_tokens) == 0
+            assert len(g3_accepted_tokens) == t.vocab_size
+
+
+def consume_tokens(m: LLMatcher, tokens: List[int]) -> None:
+    print("Consume", tokenizer().dbg_tokens(tokens))
+    assert m.stop_reason() == "NotStopped"
+    assert not m.is_stopped()
+    assert not m.is_accepting()
+    for t in tokens:
+        mask = m.compute_logit_bias()
+        assert mask[t] == 200, "Token should be in mask."
+        bit_mask = m.compute_bitmask()
+        assert bit_mask[t // 8] & (1 <<
+                                   (t % 8)) != 0, "Token should be in bitmask."
+        assert m.stop_reason() == "NotStopped"
+        assert not m.is_stopped()
+        assert not m.is_accepting()
+        m.consume_token(t)
+    assert not m.is_error()
+
+
+def test_stopping_conditions() -> None:
+    m = LLMatcher(tokenizer(), "start: /[aA][bB][cC]/")
+    consume_tokens(m, tokenizer().tokenize_str("abc"))
+    assert m.is_accepting()
+    assert m.is_stopped()
+    assert m.stop_reason() == "NoExtension"
+
+
+def test_rollback() -> None:
+    m = LLMatcher(tokenizer(), "start: /[aA] [bB] [cC] [dD] [eE]/")
+    m2 = m.deep_copy()
+    t = tokenizer().tokenize_str("a b c d e")
+    consume_tokens(m, t[0:3])
+    assert not m.is_stopped() and not m.is_accepting()
+    m.rollback(2)
+    m3 = m.deep_copy()
+    consume_tokens(m, t[1:])
+    assert m.is_stopped() and m.is_accepting()
+    assert not m.is_error()
+    m.rollback(1)
+    assert not m.is_accepting() and not m.is_stopped()
+    assert m.stop_reason() == "NotStopped"
+    consume_tokens(m, t[-1:])
+    assert m.is_stopped() and m.is_accepting()
+    assert not m.is_error()
+
+    mask = m.compute_logit_bias()
+    assert mask[tokenizer().eos_token] == 200
+    assert not m.is_error()
+    m.consume_token(tokenizer().eos_token)
+    assert not m.is_error()
+
+    consume_tokens(m2, t)
+    assert m2.is_stopped() and m2.is_accepting() and not m2.is_error()
+
+    m3.consume_tokens(t[1:])
+    assert m2.is_stopped() and m2.is_accepting() and not m2.is_error()
+
+
+def check_ff(m: LLMatcher, expected: str) -> None:
+    assert m.compute_ff_bytes() == expected.encode(), "FF bytes mismatch"
+    assert m.compute_ff_tokens() == tokenizer().tokenize_str(expected)
+
+
+def test_fast_forward() -> None:
+    m = LLMatcher(tokenizer(), "start: /(foo[12]23|bar)/")
+    toks = tokenizer().tokenize_str("foo123")
+    assert len(toks) == 6
+    check_ff(m, "")
+    consume_tokens(m, toks[0:1])
+    check_ff(m, "oo")
+    consume_tokens(m, toks[1:2])
+    check_ff(m, "o")
+    consume_tokens(m, toks[2:3])
+    check_ff(m, "")
+    consume_tokens(m, toks[3:4])
+    check_ff(m, "23")
+    consume_tokens(m, toks[4:])
+    assert m.is_accepting()
+    assert m.is_stopped()
+    assert m.stop_reason() == "NoExtension"
+    assert m.compute_ff_bytes() == b""
+    assert m.compute_ff_tokens() == []
+    assert not m.is_error()
+
+
+def test_try_consume_tokens() -> None:
+    m = LLMatcher(tokenizer(), "start: /(foo[12]23|bar)/")
+    tokens = tokenizer().tokenize_str("foo723")
+    assert len(tokens) == 6
+    assert m.try_consume_tokens(tokens) == 3
+    consume_tokens(m, tokenizer().tokenize_str("123"))
+    assert m.is_stopped() and m.is_accepting() and not m.is_error()
+
+
+def test_consume_token_error() -> None:
+    m = LLMatcher(tokenizer(), "start: /(foo[12]23|bar)/")
+    m2 = m.deep_copy()
+    m3 = m.deep_copy()
+    m4 = m.deep_copy()
+    tokens = tokenizer().tokenize_str("foo723")
+
+    consume_tokens(m, tokens[0:3])
+    mask = m.compute_logit_bias()
+    assert mask[tokens[3]] == 0
+    r = m.consume_token(tokens[3])
+    assert r == False
+    assert m.is_error()
+    assert "doesn't satisfy the grammar" in m.get_error()
+    # this is internal error, since the token was not in the mask
+    assert m.stop_reason() == "InternalError"
+
+    consume_tokens(m2, tokens[0:3])
+    r = m2.consume_token(tokenizer().vocab_size + 100)
+    assert r == False
+    assert m2.is_error()
+    assert "out of range" in m2.get_error()
+
+    r = m3.consume_tokens(tokens[0:3] + [tokenizer().vocab_size + 100])
+    assert r == False
+    assert m3.is_error()
+    assert "out of range" in m3.get_error()
+
+    n = m4.validate_tokens(tokens[0:3] + [tokenizer().vocab_size + 100])
+    assert n == 0  # questionable
+    assert m3.is_error()
+    assert "out of range" in m3.get_error()
+
+
+def test_struct_tag_0() -> None:
+    tags = [
+        StructTag(trigger="<func",
+                  begin="<func=foo>",
+                  grammar={"type": "object"},
+                  end="</func>"),
+        StructTag(trigger="<func",
+                  begin="<func=bar>",
+                  grammar={"type": "object"},
+                  end="</func>")
+    ]
+
+    f_foo = '<func=foo>{}</func>'
+    f_bar = '<func=bar>{"x":1}</func>'
+    inner = f"{f_foo}1\n23{f_bar}"
+
+    for special in [False, True]:
+        if special:
+            tags.append(
+                StructTag(trigger="<|tool|>",
+                          begin="<|tool|>blah(",
+                          grammar='start: /[0-9]+/ ("," /[0-9]+/)*',
+                          end=")"))
+        grm = StructTag.to_grammar(tags)
+
+        check_grammar(grm, [
+            f_foo,
+            f_foo + f_bar,
+            inner,
+            "FO" + inner,
+            inner + "qux",
+            "AAA" + inner + "BBB",
+            "123",
+            "aa<Func=123",
+            "</func>",
+        ], [
+            "FINAL_REJECT:" + f_foo[:-1],
+            '<func= foo>{}</func>',
+            '<func =foo>{}</func>',
+            '<func=foo>1</func>',
+            '<func=foo> {}</func>',
+            '<func=foo>{} </func>',
+        ])
+
+        if special:
+            f_tool = "⁂<|tool|>blah(11,12)"
+
+            check_grammar(
+                grm,
+                [
+                    f_tool,
+                    "foo" + f_tool + f_bar,
+                    f_tool + "qqqq" + f_bar + "mux",
+                    # this should pass since it doesn't actually use special tokens:
+                    '<|tool|>qux(1)',
+                ],
+                ["⁂<|tool|>qux(11)"])
+
+
+def test_parser_limits() -> None:
+    # this one needs more than initial_lexer_fuel=20
+    m = LLMatcher(tokenizer(),
+                  "start: /(foo[12]23|bar)/",
+                  limits=LLParserLimits(initial_lexer_fuel=5))
+    assert "initial lexer configuration (grammar) too big" in m.get_error()
+
+
+def check_json_schema_error(msg: str, json_schema: Dict[str, Any]) -> None:
+    for lenient in [True, False]:
+        grm = LLMatcher.grammar_from_json_schema(
+            json_schema, overrides={"lenient": lenient})
+        is_err, msgs = LLMatcher.validate_grammar_with_warnings(
+            grm,
+            tokenizer=tokenizer(),
+        )
+        assert msg in msgs[0]
+        if lenient:
+            assert not is_err
+        else:
+            assert is_err
+
+        m = LLMatcher(tokenizer(), grm)
+
+        if lenient:
+            assert msg in m.get_grammar_warnings()[0]
+        else:
+            assert m.is_error()
+            assert msg in m.get_error()
+
+
+def test_grammar_warnings() -> None:
+    is_err, msgs = LLMatcher.validate_grammar_with_warnings(
+        "start: <[128]>* <[123]>",
+        tokenizer=None,
+    )
+    assert not is_err
+    assert "no tokenizer" in msgs[0]
+
+    check_json_schema_error(
+        "Unknown format", {
+            "type": "object",
+            "properties": {
+                "foo": {
+                    "type": "string",
+                    "format": "my_custom_format"
+                }
+            },
+            "required": ["foo"]
+        })
+
+    check_json_schema_error('Unimplemented keys: ["not"]',
+                            {"not": {
+                                "type": "object"
+                            }})
+
+
+def test_get_capture() -> None:
+    grm = r"""start: "hello " group1 group2+ group3 " end"
+group1[capture,lazy]: /[a-z]+/
+group2[capture="body"]: /[a-z]{4}/
+group3[capture="body"]: /[0-9]{4}/"""
+    m = matcher(grm)
+    check_err(m)
+
+    assert m.get_capture("group1") is None
+    assert m.get_capture("body") is None
+    assert m.get_capture("non-existent-group") is None
+    assert m.get_captures() == []
+    m.consume_tokens(tokenizer().tokenize_str("hello worldabcd1234 end"))
+    assert m.is_stopped()
+    assert m.get_capture("group1") == b"w"
+    assert m.get_capture("body") == b"1234"
+    assert m.get_capture("non-existent-group") is None
+    assert m.get_captures() == [("group1", b"w"), ("body", b"orld"), ("body", b"abcd"), ("body", b"1234")]
+
+
+def test_multi_eos_tokens_property() -> None:
+    """Test that eos_tokens returns the expected list for a single-EOS tokenizer."""
+    tok = LLTokenizer("byte")
+    assert tok.eos_tokens == [tok.eos_token]
+    assert len(tok.eos_tokens) == 1
+
+
+
+def test_multi_eos_wrapper_override() -> None:
+    """Test that eos_token override works with TokenizerWrapper path."""
+
+    class MockTokenizerWrapper:
+        """Minimal mock that satisfies the TokenizerWrapper interface for testing."""
+
+        def __init__(self, tokens: List[bytes], eos_token_id: int):
+            self.tokens = tokens
+            self.eos_token_id = eos_token_id
+            self.bos_token_id = None
+            self.special_token_ids: List[int] = []
+            self.is_tokenizer_wrapper = True
+
+        def __call__(self, s: str) -> List[int]:
+            return [b for b in s.encode("utf-8")]
+
+    # Create a minimal byte-level tokenizer with 258 tokens:
+    # tokens 0-255 are single bytes, 256 is <EOS>, 257 is <EOS2>
+    tokens = [bytes([i]) for i in range(256)]
+    tokens.append(b"<EOS>")
+    tokens.append(b"<EOS2>")
+    wrapper = MockTokenizerWrapper(tokens, eos_token_id=256)
+
+    # Without override: single EOS
+    tok1 = LLTokenizer(wrapper)  # type: ignore[arg-type]
+    assert tok1.eos_token == 256
+    assert tok1.eos_tokens == [256]
+
+    # With override: multiple EOS
+    tok2 = LLTokenizer(wrapper, eos_token=[256, 257])  # type: ignore[arg-type]
+    assert tok2.eos_token == 256
+    assert tok2.eos_tokens == [256, 257]

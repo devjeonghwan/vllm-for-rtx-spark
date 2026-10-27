@@ -1,0 +1,2843 @@
+{
+  "draft2020-12": {
+    "additionalProperties": {
+      "additionalProperties are allowed by default": {
+        "additional properties are allowed": "pass"
+      },
+      "additionalProperties being false does not allow other properties": {
+        "an additional property is invalid": "pass",
+        "ignores arrays": "pass",
+        "ignores other non-objects": "pass",
+        "ignores strings": "pass",
+        "no additional properties is valid": "pass",
+        "patternProperties are not additional properties": "pass"
+      },
+      "additionalProperties can exist by itself": {
+        "an additional invalid property is invalid": "pass",
+        "an additional valid property is valid": "pass"
+      },
+      "additionalProperties does not look in applicators": {
+        "properties defined in allOf are not examined": "pass"
+      },
+      "additionalProperties with null valued instance properties": {
+        "allows null values": "pass"
+      },
+      "additionalProperties with propertyNames": {
+        "Valid against both keywords": "skip_compile",
+        "Valid against propertyNames, but not additionalProperties": "skip_compile"
+      },
+      "additionalProperties with schema": {
+        "an additional invalid property is invalid": "pass",
+        "an additional valid property is valid": "pass",
+        "no additional properties is valid": "pass"
+      },
+      "dependentSchemas with additionalProperties": {
+        "additionalProperties can't see bar": "skip_compile",
+        "additionalProperties can't see bar even when foo2 is present": "skip_compile",
+        "additionalProperties doesn't consider dependentSchemas": "skip_compile"
+      },
+      "non-ASCII pattern with additionalProperties": {
+        "matching the pattern is valid": "pass",
+        "not matching the pattern is invalid": "pass"
+      }
+    },
+    "allOf": {
+      "allOf": {
+        "allOf": "false_negative",
+        "mismatch first": "pass",
+        "mismatch second": "pass",
+        "wrong type": "pass"
+      },
+      "allOf combined with anyOf, oneOf": {
+        "allOf: false, anyOf: false, oneOf: false": "pass",
+        "allOf: false, anyOf: false, oneOf: true": "pass",
+        "allOf: false, anyOf: true, oneOf: false": "pass",
+        "allOf: false, anyOf: true, oneOf: true": "pass",
+        "allOf: true, anyOf: false, oneOf: false": "pass",
+        "allOf: true, anyOf: false, oneOf: true": "pass",
+        "allOf: true, anyOf: true, oneOf: false": "pass",
+        "allOf: true, anyOf: true, oneOf: true": "pass"
+      },
+      "allOf simple types": {
+        "mismatch one": "pass",
+        "valid": "pass"
+      },
+      "allOf with base schema": {
+        "mismatch base schema": "pass",
+        "mismatch both": "pass",
+        "mismatch first allOf": "pass",
+        "mismatch second allOf": "pass",
+        "valid": "false_negative"
+      },
+      "allOf with boolean schemas, all false": {
+        "any value is invalid": "compile_error_all_invalid"
+      },
+      "allOf with boolean schemas, all true": {
+        "any value is valid": "pass"
+      },
+      "allOf with boolean schemas, some false": {
+        "any value is invalid": "compile_error_all_invalid"
+      },
+      "allOf with one empty schema": {
+        "any data is valid": "pass"
+      },
+      "allOf with the first empty schema": {
+        "number is valid": "pass",
+        "string is invalid": "pass"
+      },
+      "allOf with the last empty schema": {
+        "number is valid": "pass",
+        "string is invalid": "pass"
+      },
+      "allOf with two empty schemas": {
+        "any data is valid": "pass"
+      },
+      "nested allOf, to check validation semantics": {
+        "anything non-null is invalid": "pass",
+        "null is valid": "pass"
+      }
+    },
+    "anchor": {
+      "Location-independent identifier": {
+        "match": "pass",
+        "mismatch": "pass"
+      },
+      "Location-independent identifier with absolute URI": {
+        "match": "pass",
+        "mismatch": "pass"
+      },
+      "Location-independent identifier with base URI change in subschema": {
+        "match": "pass",
+        "mismatch": "pass"
+      },
+      "same $anchor with different base uri": {
+        "$ref does not resolve to /$defs/A/allOf/0": "pass",
+        "$ref resolves to /$defs/A/allOf/1": "pass"
+      }
+    },
+    "anyOf": {
+      "anyOf": {
+        "both anyOf valid": "pass",
+        "first anyOf valid": "pass",
+        "neither anyOf valid": "pass",
+        "second anyOf valid": "pass"
+      },
+      "anyOf complex types": {
+        "both anyOf valid (complex)": "pass",
+        "first anyOf valid (complex)": "pass",
+        "neither anyOf valid (complex)": "pass",
+        "second anyOf valid (complex)": "pass"
+      },
+      "anyOf with base schema": {
+        "both anyOf invalid": "pass",
+        "mismatch base schema": "pass",
+        "one anyOf valid": "pass"
+      },
+      "anyOf with boolean schemas, all false": {
+        "any value is invalid": "compile_error_all_invalid"
+      },
+      "anyOf with boolean schemas, all true": {
+        "any value is valid": "pass"
+      },
+      "anyOf with boolean schemas, some true": {
+        "any value is valid": "pass"
+      },
+      "anyOf with one empty schema": {
+        "number is valid": "pass",
+        "string is valid": "pass"
+      },
+      "nested anyOf, to check validation semantics": {
+        "anything non-null is invalid": "pass",
+        "null is valid": "pass"
+      }
+    },
+    "boolean_schema": {
+      "boolean schema 'false'": {
+        "array is invalid": "compile_error_all_invalid",
+        "boolean false is invalid": "compile_error_all_invalid",
+        "boolean true is invalid": "compile_error_all_invalid",
+        "empty array is invalid": "compile_error_all_invalid",
+        "empty object is invalid": "compile_error_all_invalid",
+        "null is invalid": "compile_error_all_invalid",
+        "number is invalid": "compile_error_all_invalid",
+        "object is invalid": "compile_error_all_invalid",
+        "string is invalid": "compile_error_all_invalid"
+      },
+      "boolean schema 'true'": {
+        "array is valid": "pass",
+        "boolean false is valid": "pass",
+        "boolean true is valid": "pass",
+        "empty array is valid": "pass",
+        "empty object is valid": "pass",
+        "null is valid": "pass",
+        "number is valid": "pass",
+        "object is valid": "pass",
+        "string is valid": "pass"
+      }
+    },
+    "const": {
+      "characters with the same visual representation but different codepoint": {
+        "character looks the same but uses a different codepoint": "pass",
+        "character uses the same codepoint": "pass"
+      },
+      "characters with the same visual representation, but different number of codepoints": {
+        "character looks the same but uses combining marks": "pass",
+        "character uses the same codepoint": "pass"
+      },
+      "const validation": {
+        "another type is invalid": "pass",
+        "another value is invalid": "pass",
+        "same value is valid": "pass"
+      },
+      "const with -2.0 matches integer and float types": {
+        "float -2.0 is valid": "false_negative",
+        "float -2.00001 is invalid": "pass",
+        "float 2.0 is invalid": "pass",
+        "integer -2 is valid": "pass",
+        "integer 2 is invalid": "pass"
+      },
+      "const with 0 does not match other zero-like types": {
+        "empty array is invalid": "pass",
+        "empty object is invalid": "pass",
+        "empty string is invalid": "pass",
+        "false is invalid": "pass",
+        "float zero is valid": "false_negative",
+        "integer zero is valid": "pass"
+      },
+      "const with 1 does not match true": {
+        "float one is valid": "false_negative",
+        "integer one is valid": "pass",
+        "true is invalid": "pass"
+      },
+      "const with [false] does not match [0]": {
+        "[0.0] is invalid": "pass",
+        "[0] is invalid": "pass",
+        "[false] is valid": "pass"
+      },
+      "const with [true] does not match [1]": {
+        "[1.0] is invalid": "pass",
+        "[1] is invalid": "pass",
+        "[true] is valid": "pass"
+      },
+      "const with array": {
+        "another array item is invalid": "pass",
+        "array with additional items is invalid": "pass",
+        "same array is valid": "pass"
+      },
+      "const with false does not match 0": {
+        "false is valid": "pass",
+        "float zero is invalid": "pass",
+        "integer zero is invalid": "pass"
+      },
+      "const with null": {
+        "not null is invalid": "pass",
+        "null is valid": "pass"
+      },
+      "const with object": {
+        "another object is invalid": "pass",
+        "another type is invalid": "pass",
+        "same object is valid": "pass",
+        "same object with different property order is valid": "false_negative"
+      },
+      "const with true does not match 1": {
+        "float one is invalid": "pass",
+        "integer one is invalid": "pass",
+        "true is valid": "pass"
+      },
+      "const with {\"a\": false} does not match {\"a\": 0}": {
+        "{\"a\": 0.0} is invalid": "pass",
+        "{\"a\": 0} is invalid": "pass",
+        "{\"a\": false} is valid": "pass"
+      },
+      "const with {\"a\": true} does not match {\"a\": 1}": {
+        "{\"a\": 1.0} is invalid": "pass",
+        "{\"a\": 1} is invalid": "pass",
+        "{\"a\": true} is valid": "pass"
+      },
+      "float and integers are equal up to 64-bit representation limits": {
+        "float is valid": "false_negative",
+        "float minus one is invalid": "pass",
+        "integer is valid": "pass",
+        "integer minus one is invalid": "pass"
+      },
+      "nul characters in strings": {
+        "do not match string lacking nul": "pass",
+        "match string with nul": "pass"
+      }
+    },
+    "contains": {
+      "contains keyword validation": {
+        "array with item matching schema (5) is valid": "skip_compile",
+        "array with item matching schema (6) is valid": "skip_compile",
+        "array with two items matching schema (5, 6) is valid": "skip_compile",
+        "array without items matching schema is invalid": "skip_compile",
+        "empty array is invalid": "skip_compile",
+        "not array is valid": "skip_compile"
+      },
+      "contains keyword with boolean schema false": {
+        "any non-empty array is invalid": "skip_compile",
+        "empty array is invalid": "skip_compile",
+        "non-arrays are valid": "skip_compile"
+      },
+      "contains keyword with boolean schema true": {
+        "any non-empty array is valid": "skip_compile",
+        "empty array is invalid": "skip_compile"
+      },
+      "contains keyword with const keyword": {
+        "array with item 5 is valid": "skip_compile",
+        "array with two items 5 is valid": "skip_compile",
+        "array without item 5 is invalid": "skip_compile"
+      },
+      "contains with false if subschema": {
+        "any non-empty array is valid": "skip_compile",
+        "empty array is invalid": "skip_compile"
+      },
+      "contains with null instance elements": {
+        "allows null items": "skip_compile"
+      },
+      "items + contains": {
+        "does not match items, matches contains": "skip_compile",
+        "matches both items and contains": "skip_compile",
+        "matches items, does not match contains": "skip_compile",
+        "matches neither items nor contains": "skip_compile"
+      }
+    },
+    "content": {
+      "validation of binary string-encoding": {
+        "a valid base64 string": "pass",
+        "an invalid base64 string (% is not a valid character); validates true": "pass",
+        "ignores non-strings": "pass"
+      },
+      "validation of binary-encoded media type documents": {
+        "a valid base64-encoded JSON document": "pass",
+        "a validly-encoded invalid JSON document; validates true": "pass",
+        "an invalid base64 string that is valid JSON; validates true": "pass",
+        "ignores non-strings": "pass"
+      },
+      "validation of binary-encoded media type documents with schema": {
+        "a valid base64-encoded JSON document": "pass",
+        "a validly-encoded invalid JSON document; validates true": "pass",
+        "an empty array as a base64-encoded JSON document": "pass",
+        "an empty object as a base64-encoded JSON document; validates true": "pass",
+        "an invalid base64 string that is valid JSON; validates true": "pass",
+        "an invalid base64-encoded JSON document; validates true": "pass",
+        "another valid base64-encoded JSON document": "pass",
+        "ignores non-strings": "pass"
+      },
+      "validation of string-encoded content based on media type": {
+        "a valid JSON document": "pass",
+        "an invalid JSON document; validates true": "pass",
+        "ignores non-strings": "pass"
+      }
+    },
+    "default": {
+      "invalid string value for default": {
+        "still valid when the invalid default is used": "pass",
+        "valid when property is specified": "pass"
+      },
+      "invalid type for default": {
+        "still valid when the invalid default is used": "pass",
+        "valid when property is specified": "pass"
+      },
+      "the default keyword does not do anything if the property is missing": {
+        "an explicit property value is checked against maximum (failing)": "pass",
+        "an explicit property value is checked against maximum (passing)": "pass",
+        "missing properties are not filled in with the default": "pass"
+      }
+    },
+    "defs": {
+      "validate definition against metaschema": {
+        "invalid definition schema": "skip_compile",
+        "valid definition schema": "skip_compile"
+      }
+    },
+    "dependentRequired": {
+      "dependencies with escaped characters": {
+        "CRLF": "skip_compile",
+        "CRLF missing dependent": "skip_compile",
+        "quoted quotes": "skip_compile",
+        "quoted quotes missing dependent": "skip_compile"
+      },
+      "empty dependents": {
+        "empty object": "skip_compile",
+        "non-object is valid": "skip_compile",
+        "object with one property": "skip_compile"
+      },
+      "multiple dependents required": {
+        "missing both dependencies": "skip_compile",
+        "missing dependency": "skip_compile",
+        "missing other dependency": "skip_compile",
+        "neither": "skip_compile",
+        "nondependants": "skip_compile",
+        "with dependencies": "skip_compile"
+      },
+      "single dependency": {
+        "ignores arrays": "skip_compile",
+        "ignores other non-objects": "skip_compile",
+        "ignores strings": "skip_compile",
+        "missing dependency": "skip_compile",
+        "neither": "skip_compile",
+        "nondependant": "skip_compile",
+        "with dependency": "skip_compile"
+      }
+    },
+    "dependentSchemas": {
+      "boolean subschemas": {
+        "empty object is valid": "skip_compile",
+        "object with both properties is invalid": "skip_compile",
+        "object with property having schema false is invalid": "skip_compile",
+        "object with property having schema true is valid": "skip_compile"
+      },
+      "dependencies with escaped characters": {
+        "quoted quote": "skip_compile",
+        "quoted quote invalid under dependent schema": "skip_compile",
+        "quoted tab": "skip_compile",
+        "quoted tab invalid under dependent schema": "skip_compile"
+      },
+      "dependent subschema incompatible with root": {
+        "matches both": "skip_compile",
+        "matches dependency": "skip_compile",
+        "matches root": "skip_compile",
+        "no dependency": "skip_compile"
+      },
+      "single dependency": {
+        "ignores arrays": "skip_compile",
+        "ignores other non-objects": "skip_compile",
+        "ignores strings": "skip_compile",
+        "no dependency": "skip_compile",
+        "valid": "skip_compile",
+        "wrong type": "skip_compile",
+        "wrong type both": "skip_compile",
+        "wrong type other": "skip_compile"
+      }
+    },
+    "dynamicRef": {
+      "$dynamicRef avoids the root of each schema, but scopes are still registered": {
+        "data is not sufficient for schema at second#/$defs/length": "skip_compile",
+        "data is sufficient for schema at second#/$defs/length": "skip_compile"
+      },
+      "$dynamicRef points to a boolean schema": {
+        "follow $dynamicRef to a false schema": "skip_compile",
+        "follow $dynamicRef to a true schema": "skip_compile"
+      },
+      "$dynamicRef skips over intermediate resources - direct reference": {
+        "integer property passes": "skip_compile",
+        "string property fails": "skip_compile"
+      },
+      "$ref and $dynamicAnchor are independent of order - $defs first": {
+        "correct extended schema": "compile_error_valid",
+        "incorrect extended schema": "compile_error_valid",
+        "incorrect parent schema": "compile_error_valid"
+      },
+      "$ref and $dynamicAnchor are independent of order - $ref first": {
+        "correct extended schema": "compile_error_valid",
+        "incorrect extended schema": "compile_error_valid",
+        "incorrect parent schema": "compile_error_valid"
+      },
+      "$ref to $dynamicRef finds detached $dynamicAnchor": {
+        "non-number is invalid": "compile_error_valid",
+        "number is valid": "compile_error_valid"
+      },
+      "A $dynamicRef resolves to the first $dynamicAnchor still in scope that is encountered when the schema is evaluated": {
+        "An array containing non-strings is invalid": "skip_compile",
+        "An array of strings is valid": "skip_compile"
+      },
+      "A $dynamicRef that initially resolves to a schema with a matching $dynamicAnchor resolves to the first $dynamicAnchor in the dynamic scope": {
+        "The recursive part is not valid against the root": "skip_compile",
+        "The recursive part is valid against the root": "skip_compile"
+      },
+      "A $dynamicRef that initially resolves to a schema without a matching $dynamicAnchor behaves like a normal $ref to $anchor": {
+        "The recursive part doesn't need to validate against the root": "skip_compile"
+      },
+      "A $dynamicRef to a $dynamicAnchor in the same schema resource behaves like a normal $ref to an $anchor": {
+        "An array containing non-strings is invalid": "skip_compile",
+        "An array of strings is valid": "skip_compile"
+      },
+      "A $dynamicRef to an $anchor in the same schema resource behaves like a normal $ref to an $anchor": {
+        "An array containing non-strings is invalid": "skip_compile",
+        "An array of strings is valid": "skip_compile"
+      },
+      "A $dynamicRef with a non-matching $dynamicAnchor in the same schema resource behaves like a normal $ref to $anchor": {
+        "Any array is valid": "skip_compile"
+      },
+      "A $dynamicRef with intermediate scopes that don't include a matching $dynamicAnchor does not affect dynamic scope resolution": {
+        "An array containing non-strings is invalid": "skip_compile",
+        "An array of strings is valid": "skip_compile"
+      },
+      "A $dynamicRef without a matching $dynamicAnchor in the same schema resource behaves like a normal $ref to $anchor": {
+        "Any array is valid": "skip_compile"
+      },
+      "A $dynamicRef without anchor in fragment behaves identical to $ref": {
+        "An array of numbers is valid": "skip_compile",
+        "An array of strings is invalid": "skip_compile"
+      },
+      "A $ref to a $dynamicAnchor in the same schema resource behaves like a normal $ref to an $anchor": {
+        "An array containing non-strings is invalid": "skip_compile",
+        "An array of strings is valid": "skip_compile"
+      },
+      "An $anchor with the same name as a $dynamicAnchor is not used for dynamic scope resolution": {
+        "Any array is valid": "skip_compile"
+      },
+      "after leaving a dynamic scope, it is not used by a $dynamicRef": {
+        "/then/$defs/thingy is the final stop for the $dynamicRef": "skip_compile",
+        "first_scope is not in dynamic scope for the $dynamicRef": "skip_compile",
+        "string matches /$defs/thingy, but the $dynamicRef does not stop here": "skip_compile"
+      },
+      "multiple dynamic paths to the $dynamicRef keyword": {
+        "number list with number values": "skip_compile",
+        "number list with string values": "skip_compile",
+        "string list with number values": "skip_compile",
+        "string list with string values": "skip_compile"
+      },
+      "strict-tree schema, guards against misspelled properties": {
+        "instance with correct field": "compile_error_valid",
+        "instance with misspelled field": "compile_error_valid"
+      },
+      "tests for implementation dynamic anchor and reference link": {
+        "correct extended schema": "compile_error_valid",
+        "incorrect extended schema": "compile_error_valid",
+        "incorrect parent schema": "compile_error_valid"
+      }
+    },
+    "enum": {
+      "empty enum": {
+        "array is invalid": "compile_error_all_invalid",
+        "boolean is invalid": "compile_error_all_invalid",
+        "null is invalid": "compile_error_all_invalid",
+        "number is invalid": "compile_error_all_invalid",
+        "object is invalid": "compile_error_all_invalid",
+        "string is invalid": "compile_error_all_invalid"
+      },
+      "enum with 0 does not match false": {
+        "false is invalid": "pass",
+        "float zero is valid": "false_negative",
+        "integer zero is valid": "pass"
+      },
+      "enum with 1 does not match true": {
+        "float one is valid": "false_negative",
+        "integer one is valid": "pass",
+        "true is invalid": "pass"
+      },
+      "enum with [0] does not match [false]": {
+        "[0.0] is valid": "false_negative",
+        "[0] is valid": "pass",
+        "[false] is invalid": "pass"
+      },
+      "enum with [1] does not match [true]": {
+        "[1.0] is valid": "false_negative",
+        "[1] is valid": "pass",
+        "[true] is invalid": "pass"
+      },
+      "enum with [false] does not match [0]": {
+        "[0.0] is invalid": "pass",
+        "[0] is invalid": "pass",
+        "[false] is valid": "pass"
+      },
+      "enum with [true] does not match [1]": {
+        "[1.0] is invalid": "pass",
+        "[1] is invalid": "pass",
+        "[true] is valid": "pass"
+      },
+      "enum with escaped characters": {
+        "another string is invalid": "pass",
+        "member 1 is valid": "pass",
+        "member 2 is valid": "pass"
+      },
+      "enum with false does not match 0": {
+        "false is valid": "pass",
+        "float zero is invalid": "pass",
+        "integer zero is invalid": "pass"
+      },
+      "enum with true does not match 1": {
+        "float one is invalid": "pass",
+        "integer one is invalid": "pass",
+        "true is valid": "pass"
+      },
+      "enums in properties": {
+        "both properties are valid": "pass",
+        "missing all properties is invalid": "pass",
+        "missing optional property is valid": "pass",
+        "missing required property is invalid": "pass",
+        "wrong bar value": "pass",
+        "wrong foo value": "pass"
+      },
+      "heterogeneous enum validation": {
+        "extra properties in object is invalid": "pass",
+        "objects are deep compared": "pass",
+        "one of the enum is valid": "pass",
+        "something else is invalid": "pass",
+        "valid object matches": "pass"
+      },
+      "heterogeneous enum-with-null validation": {
+        "null is valid": "pass",
+        "number is valid": "pass",
+        "something else is invalid": "pass"
+      },
+      "nul characters in strings": {
+        "do not match string lacking nul": "pass",
+        "match string with nul": "pass"
+      },
+      "simple enum validation": {
+        "one of the enum is valid": "pass",
+        "something else is invalid": "pass"
+      }
+    },
+    "exclusiveMaximum": {
+      "exclusiveMaximum validation": {
+        "above the exclusiveMaximum is invalid": "pass",
+        "below the exclusiveMaximum is valid": "pass",
+        "boundary point is invalid": "pass",
+        "ignores non-numbers": "pass"
+      }
+    },
+    "exclusiveMinimum": {
+      "exclusiveMinimum validation": {
+        "above the exclusiveMinimum is valid": "pass",
+        "below the exclusiveMinimum is invalid": "pass",
+        "boundary point is invalid": "pass",
+        "ignores non-numbers": "pass"
+      }
+    },
+    "format": {
+      "date format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid date string is only an annotation by default": "false_negative"
+      },
+      "date-time format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid date-time string is only an annotation by default": "false_negative"
+      },
+      "duration format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid duration string is only an annotation by default": "false_negative"
+      },
+      "email format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid email string is only an annotation by default": "false_negative"
+      },
+      "hostname format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid hostname string is only an annotation by default": "false_negative"
+      },
+      "idn-email format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid idn-email string is only an annotation by default": "compile_error_valid"
+      },
+      "idn-hostname format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid idn-hostname string is only an annotation by default": "compile_error_valid"
+      },
+      "ipv4 format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid ipv4 string is only an annotation by default": "false_negative"
+      },
+      "ipv6 format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid ipv6 string is only an annotation by default": "false_negative"
+      },
+      "iri format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid iri string is only an annotation by default": "compile_error_valid"
+      },
+      "iri-reference format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid iri-reference string is only an annotation by default": "compile_error_valid"
+      },
+      "json-pointer format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid json-pointer string is only an annotation by default": "compile_error_valid"
+      },
+      "regex format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid regex string is only an annotation by default": "compile_error_valid"
+      },
+      "relative-json-pointer format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid relative-json-pointer string is only an annotation by default": "compile_error_valid"
+      },
+      "time format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid time string is only an annotation by default": "false_negative"
+      },
+      "uri format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid uri string is only an annotation by default": "false_negative"
+      },
+      "uri-reference format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid uri-reference string is only an annotation by default": "compile_error_valid"
+      },
+      "uri-template format": {
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "invalid uri-template string is only an annotation by default": "compile_error_valid"
+      },
+      "uuid format": {
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "invalid uuid string is only an annotation by default": "false_negative"
+      }
+    },
+    "if-then-else": {
+      "else: false fails when condition does not match": {
+        "does not match if → else executes → invalid": "skip_compile",
+        "matches if → else ignored → valid": "skip_compile"
+      },
+      "if and else without then": {
+        "invalid through else": "skip_compile",
+        "valid through else": "skip_compile",
+        "valid when if test passes": "skip_compile"
+      },
+      "if and then without else": {
+        "invalid through then": "skip_compile",
+        "valid through then": "skip_compile",
+        "valid when if test fails": "skip_compile"
+      },
+      "if appears at the end when serialized (keyword processing sequence)": {
+        "invalid redirects to else and fails": "skip_compile",
+        "no redirects to then and fails": "skip_compile",
+        "other redirects to else and passes": "skip_compile",
+        "yes redirects to then and passes": "skip_compile"
+      },
+      "if with boolean schema false": {
+        "boolean schema false in if always chooses the else path (invalid)": "skip_compile",
+        "boolean schema false in if always chooses the else path (valid)": "skip_compile"
+      },
+      "if with boolean schema true": {
+        "boolean schema true in if always chooses the then path (invalid)": "skip_compile",
+        "boolean schema true in if always chooses the then path (valid)": "skip_compile"
+      },
+      "ignore else without if": {
+        "valid when invalid against lone else": "skip_compile",
+        "valid when valid against lone else": "skip_compile"
+      },
+      "ignore if without then or else": {
+        "valid when invalid against lone if": "skip_compile",
+        "valid when valid against lone if": "skip_compile"
+      },
+      "ignore then without if": {
+        "valid when invalid against lone then": "skip_compile",
+        "valid when valid against lone then": "skip_compile"
+      },
+      "non-interference across combined schemas": {
+        "valid, but would have been invalid through else": "skip_compile",
+        "valid, but would have been invalid through then": "skip_compile"
+      },
+      "then: false fails when condition matches": {
+        "does not match if → then ignored → valid": "skip_compile",
+        "matches if → then=false → invalid": "skip_compile"
+      },
+      "validate against correct branch, then vs else": {
+        "invalid through else": "skip_compile",
+        "invalid through then": "skip_compile",
+        "valid through else": "skip_compile",
+        "valid through then": "skip_compile"
+      }
+    },
+    "infinite-loop-detection": {
+      "evaluating the same schema location against the same data location twice is not a sign of an infinite loop": {
+        "failing case": "pass",
+        "passing case": "pass"
+      }
+    },
+    "items": {
+      "a schema given for items": {
+        "JavaScript pseudo-array is valid": "pass",
+        "ignores non-arrays": "pass",
+        "valid items": "pass",
+        "wrong type of items": "pass"
+      },
+      "items and subitems": {
+        "fewer items is valid": "pass",
+        "too many items": "pass",
+        "too many sub-items": "pass",
+        "valid items": "pass",
+        "wrong item": "pass",
+        "wrong sub-item": "pass"
+      },
+      "items does not look in applicators, valid case": {
+        "prefixItems in allOf does not constrain items, invalid case": "pass",
+        "prefixItems in allOf does not constrain items, valid case": "pass"
+      },
+      "items with boolean schema (false)": {
+        "any non-empty array is invalid": "pass",
+        "empty array is valid": "pass"
+      },
+      "items with boolean schema (true)": {
+        "any array is valid": "pass",
+        "empty array is valid": "pass"
+      },
+      "items with heterogeneous array": {
+        "heterogeneous invalid instance": "pass",
+        "valid instance": "pass"
+      },
+      "items with null instance elements": {
+        "allows null elements": "pass"
+      },
+      "nested items": {
+        "nested array with invalid type": "pass",
+        "not deep enough": "pass",
+        "valid nested array": "pass"
+      },
+      "prefixItems validation adjusts the starting index for items": {
+        "valid items": "pass",
+        "wrong type of second item": "pass"
+      },
+      "prefixItems with no additional items allowed": {
+        "additional items are not permitted": "pass",
+        "empty array": "pass",
+        "equal number of items present": "pass",
+        "fewer number of items present (1)": "pass",
+        "fewer number of items present (2)": "pass"
+      }
+    },
+    "maxContains": {
+      "maxContains = 0 with minContains = 0": {
+        "empty array": "skip_compile",
+        "one matching item": "skip_compile"
+      },
+      "maxContains with contains": {
+        "all elements match, invalid maxContains": "skip_compile",
+        "all elements match, valid maxContains": "skip_compile",
+        "empty data": "skip_compile",
+        "some elements match, invalid maxContains": "skip_compile",
+        "some elements match, valid maxContains": "skip_compile"
+      },
+      "maxContains with contains, value with a decimal": {
+        "one element matches, valid maxContains": "skip_compile",
+        "too many elements match, invalid maxContains": "skip_compile"
+      },
+      "maxContains without contains is ignored": {
+        "one item valid against lone maxContains": "skip_compile",
+        "two items still valid against lone maxContains": "skip_compile"
+      },
+      "minContains < maxContains": {
+        "actual < minContains < maxContains": "skip_compile",
+        "minContains < actual < maxContains": "skip_compile",
+        "minContains < maxContains < actual": "skip_compile"
+      }
+    },
+    "maxItems": {
+      "maxItems validation": {
+        "exact length is valid": "pass",
+        "ignores non-arrays": "pass",
+        "shorter is valid": "pass",
+        "too long is invalid": "pass"
+      },
+      "maxItems validation with a decimal": {
+        "shorter is valid": "compile_error_valid",
+        "too long is invalid": "compile_error_valid"
+      }
+    },
+    "maxLength": {
+      "maxLength validation": {
+        "exact length is valid": "pass",
+        "ignores non-strings": "pass",
+        "shorter is valid": "pass",
+        "too long is invalid": "pass",
+        "two graphemes is long enough": "pass"
+      },
+      "maxLength validation with a decimal": {
+        "shorter is valid": "compile_error_valid",
+        "too long is invalid": "compile_error_valid"
+      }
+    },
+    "maxProperties": {
+      "maxProperties = 0 means the object is empty": {
+        "no properties is valid": "pass",
+        "one property is invalid": "pass"
+      },
+      "maxProperties validation": {
+        "exact length is valid": "pass",
+        "ignores arrays": "pass",
+        "ignores other non-objects": "pass",
+        "ignores strings": "pass",
+        "shorter is valid": "pass",
+        "too long is invalid": "pass"
+      },
+      "maxProperties validation with a decimal": {
+        "shorter is valid": "compile_error_valid",
+        "too long is invalid": "compile_error_valid"
+      }
+    },
+    "maximum": {
+      "maximum validation": {
+        "above the maximum is invalid": "pass",
+        "below the maximum is valid": "pass",
+        "boundary point is valid": "pass",
+        "ignores non-numbers": "pass"
+      },
+      "maximum validation with unsigned integer": {
+        "above the maximum is invalid": "pass",
+        "below the maximum is valid": "pass",
+        "boundary point float is valid": "pass",
+        "boundary point integer is valid": "pass"
+      }
+    },
+    "minContains": {
+      "maxContains < minContains": {
+        "empty data": "skip_compile",
+        "invalid maxContains": "skip_compile",
+        "invalid maxContains and minContains": "skip_compile",
+        "invalid minContains": "skip_compile"
+      },
+      "maxContains = minContains": {
+        "all elements match, invalid maxContains": "skip_compile",
+        "all elements match, invalid minContains": "skip_compile",
+        "all elements match, valid maxContains and minContains": "skip_compile",
+        "empty data": "skip_compile"
+      },
+      "minContains = 0": {
+        "empty data": "skip_compile",
+        "minContains = 0 makes contains always pass": "skip_compile"
+      },
+      "minContains = 0 with maxContains": {
+        "empty data": "skip_compile",
+        "not more than maxContains": "skip_compile",
+        "too many": "skip_compile"
+      },
+      "minContains without contains is ignored": {
+        "one item valid against lone minContains": "skip_compile",
+        "zero items still valid against lone minContains": "skip_compile"
+      },
+      "minContains=1 with contains": {
+        "all elements match, valid minContains": "skip_compile",
+        "empty data": "skip_compile",
+        "no elements match": "skip_compile",
+        "single element matches, valid minContains": "skip_compile",
+        "some elements match, valid minContains": "skip_compile"
+      },
+      "minContains=2 with contains": {
+        "all elements match, invalid minContains": "skip_compile",
+        "all elements match, valid minContains (exactly as needed)": "skip_compile",
+        "all elements match, valid minContains (more than needed)": "skip_compile",
+        "empty data": "skip_compile",
+        "some elements match, invalid minContains": "skip_compile",
+        "some elements match, valid minContains": "skip_compile"
+      },
+      "minContains=2 with contains with a decimal value": {
+        "both elements match, valid minContains": "skip_compile",
+        "one element matches, invalid minContains": "skip_compile"
+      }
+    },
+    "minItems": {
+      "minItems validation": {
+        "exact length is valid": "pass",
+        "ignores non-arrays": "pass",
+        "longer is valid": "pass",
+        "too short is invalid": "pass"
+      },
+      "minItems validation with a decimal": {
+        "longer is valid": "compile_error_valid",
+        "too short is invalid": "compile_error_valid"
+      }
+    },
+    "minLength": {
+      "minLength validation": {
+        "exact length is valid": "pass",
+        "ignores non-strings": "pass",
+        "longer is valid": "pass",
+        "one grapheme is not long enough": "pass",
+        "too short is invalid": "pass"
+      },
+      "minLength validation with a decimal": {
+        "longer is valid": "compile_error_valid",
+        "too short is invalid": "compile_error_valid"
+      }
+    },
+    "minProperties": {
+      "minProperties validation": {
+        "exact length is valid": "pass",
+        "ignores arrays": "pass",
+        "ignores other non-objects": "pass",
+        "ignores strings": "pass",
+        "longer is valid": "pass",
+        "too short is invalid": "pass"
+      },
+      "minProperties validation with a decimal": {
+        "longer is valid": "compile_error_valid",
+        "too short is invalid": "compile_error_valid"
+      }
+    },
+    "minimum": {
+      "minimum validation": {
+        "above the minimum is valid": "pass",
+        "below the minimum is invalid": "pass",
+        "boundary point is valid": "pass",
+        "ignores non-numbers": "pass"
+      },
+      "minimum validation with signed integer": {
+        "boundary point is valid": "pass",
+        "boundary point with float is valid": "pass",
+        "float below the minimum is invalid": "pass",
+        "ignores non-numbers": "pass",
+        "int below the minimum is invalid": "pass",
+        "negative above the minimum is valid": "pass",
+        "positive above the minimum is valid": "pass"
+      }
+    },
+    "multipleOf": {
+      "by int": {
+        "ignores non-numbers": "pass",
+        "int by int": "pass",
+        "int by int fail": "pass"
+      },
+      "by number": {
+        "35 is not multiple of 1.5": "pass",
+        "4.5 is multiple of 1.5": "pass",
+        "zero is multiple of anything": "pass"
+      },
+      "by small number": {
+        "0.0075 is multiple of 0.0001": "pass",
+        "0.00751 is not multiple of 0.0001": "pass"
+      },
+      "float division = inf": {
+        "always invalid, but naive implementations may raise an overflow error": "compile_error_all_invalid"
+      },
+      "small multiple of large integer": {
+        "any integer is a multiple of 1e-8": "pass"
+      }
+    },
+    "not": {
+      "allow everything with boolean schema false": {
+        "array is valid": "skip_compile",
+        "boolean false is valid": "skip_compile",
+        "boolean true is valid": "skip_compile",
+        "empty array is valid": "skip_compile",
+        "empty object is valid": "skip_compile",
+        "null is valid": "skip_compile",
+        "number is valid": "skip_compile",
+        "object is valid": "skip_compile",
+        "string is valid": "skip_compile"
+      },
+      "collect annotations inside a 'not', even if collection is disabled": {
+        "annotations are still collected inside a 'not'": "skip_compile",
+        "unevaluated property": "skip_compile"
+      },
+      "double negation": {
+        "any value is valid": "skip_compile"
+      },
+      "forbid everything with boolean schema true": {
+        "array is invalid": "skip_compile",
+        "boolean false is invalid": "skip_compile",
+        "boolean true is invalid": "skip_compile",
+        "empty array is invalid": "skip_compile",
+        "empty object is invalid": "skip_compile",
+        "null is invalid": "skip_compile",
+        "number is invalid": "skip_compile",
+        "object is invalid": "skip_compile",
+        "string is invalid": "skip_compile"
+      },
+      "forbid everything with empty schema": {
+        "array is invalid": "skip_compile",
+        "boolean false is invalid": "skip_compile",
+        "boolean true is invalid": "skip_compile",
+        "empty array is invalid": "skip_compile",
+        "empty object is invalid": "skip_compile",
+        "null is invalid": "skip_compile",
+        "number is invalid": "skip_compile",
+        "object is invalid": "skip_compile",
+        "string is invalid": "skip_compile"
+      },
+      "forbidden property": {
+        "property absent": "skip_compile",
+        "property present": "skip_compile"
+      },
+      "not": {
+        "allowed": "skip_compile",
+        "disallowed": "skip_compile"
+      },
+      "not more complex schema": {
+        "match": "skip_compile",
+        "mismatch": "skip_compile",
+        "other match": "skip_compile"
+      },
+      "not multiple types": {
+        "mismatch": "skip_compile",
+        "other mismatch": "skip_compile",
+        "valid": "skip_compile"
+      }
+    },
+    "oneOf": {
+      "nested oneOf, to check validation semantics": {
+        "anything non-null is invalid": "pass",
+        "null is valid": "pass"
+      },
+      "oneOf": {
+        "both oneOf valid": "skip_compile",
+        "first oneOf valid": "skip_compile",
+        "neither oneOf valid": "skip_compile",
+        "second oneOf valid": "skip_compile"
+      },
+      "oneOf complex types": {
+        "both oneOf valid (complex)": "skip_compile",
+        "first oneOf valid (complex)": "skip_compile",
+        "neither oneOf valid (complex)": "skip_compile",
+        "second oneOf valid (complex)": "skip_compile"
+      },
+      "oneOf with base schema": {
+        "both oneOf valid": "skip_compile",
+        "mismatch base schema": "skip_compile",
+        "one oneOf valid": "skip_compile"
+      },
+      "oneOf with boolean schemas, all false": {
+        "any value is invalid": "compile_error_all_invalid"
+      },
+      "oneOf with boolean schemas, all true": {
+        "any value is invalid": "skip_compile"
+      },
+      "oneOf with boolean schemas, more than one true": {
+        "any value is invalid": "skip_compile"
+      },
+      "oneOf with boolean schemas, one true": {
+        "any value is valid": "pass"
+      },
+      "oneOf with empty schema": {
+        "both valid - invalid": "skip_compile",
+        "one valid - valid": "skip_compile"
+      },
+      "oneOf with missing optional property": {
+        "both oneOf valid": "skip_compile",
+        "first oneOf valid": "skip_compile",
+        "neither oneOf valid": "skip_compile",
+        "second oneOf valid": "skip_compile"
+      },
+      "oneOf with required": {
+        "both invalid - invalid": "skip_compile",
+        "both valid - invalid": "skip_compile",
+        "first valid - valid": "skip_compile",
+        "second valid - valid": "skip_compile"
+      }
+    },
+    "optional/format/date": {
+      "validation of date strings": {
+        "2020 is a leap year": "pass",
+        "2021 is not a leap year": "false_positive",
+        "ISO8601 / non-RFC3339: YYYYMMDD without dashes (2023-03-28)": "pass",
+        "ISO8601 / non-RFC3339: week number implicit day of week (2023-01-02)": "pass",
+        "ISO8601 / non-RFC3339: week number rollover to next year (2023-01-01)": "pass",
+        "ISO8601 / non-RFC3339: week number with day of week (2023-03-28)": "pass",
+        "a invalid date string with 29 days in February (normal)": "false_positive",
+        "a invalid date string with 30 days in February (leap)": "pass",
+        "a invalid date string with 31 days in April": "pass",
+        "a invalid date string with 31 days in June": "pass",
+        "a invalid date string with 31 days in November": "pass",
+        "a invalid date string with 31 days in September": "pass",
+        "a invalid date string with 32 days in August": "pass",
+        "a invalid date string with 32 days in December": "pass",
+        "a invalid date string with 32 days in January": "pass",
+        "a invalid date string with 32 days in July": "pass",
+        "a invalid date string with 32 days in March": "pass",
+        "a invalid date string with 32 days in May": "pass",
+        "a invalid date string with 32 days in October": "pass",
+        "a invalid date string with invalid month": "pass",
+        "a valid date string": "pass",
+        "a valid date string with 28 days in February (normal)": "pass",
+        "a valid date string with 29 days in February (leap)": "pass",
+        "a valid date string with 30 days in April": "pass",
+        "a valid date string with 30 days in June": "pass",
+        "a valid date string with 30 days in November": "pass",
+        "a valid date string with 30 days in September": "pass",
+        "a valid date string with 31 days in August": "pass",
+        "a valid date string with 31 days in December": "pass",
+        "a valid date string with 31 days in January": "pass",
+        "a valid date string with 31 days in July": "pass",
+        "a valid date string with 31 days in March": "pass",
+        "a valid date string with 31 days in May": "pass",
+        "a valid date string with 31 days in October": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "an invalid date string": "pass",
+        "an invalid time string in date-time format": "pass",
+        "invalid month": "pass",
+        "invalid month-day combination": "pass",
+        "invalid non-ASCII '৪' (a Bengali 4)": "pass",
+        "non-padded day dates are not valid": "pass",
+        "non-padded month dates are not valid": "pass",
+        "only RFC3339 not all of ISO 8601 are valid": "pass"
+      }
+    },
+    "optional/format/date-time": {
+      "validation of date-time strings": {
+        "a valid date-time string": "pass",
+        "a valid date-time string with minus offset": "pass",
+        "a valid date-time string with plus offset": "pass",
+        "a valid date-time string without second fraction": "pass",
+        "a valid date-time with a leap second, UTC": "pass",
+        "a valid date-time with a leap second, with minus offset": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "an invalid closing Z after time-zone offset": "pass",
+        "an invalid date-time past leap second, UTC": "pass",
+        "an invalid date-time string": "pass",
+        "an invalid date-time with leap second on a wrong hour, UTC": "false_positive",
+        "an invalid date-time with leap second on a wrong minute, UTC": "false_positive",
+        "an invalid day in date-time string": "pass",
+        "an invalid hour in date-time string": "pass",
+        "an invalid minute in date-time string": "pass",
+        "an invalid offset in date-time string": "pass",
+        "an invalid offset minute in date-time string": "pass",
+        "case-insensitive T and Z": "pass",
+        "invalid extended year": "pass",
+        "invalid non-ASCII '৪' (a Bengali 4) in date portion": "pass",
+        "invalid non-ASCII '৪' (a Bengali 4) in time portion": "pass",
+        "invalid non-padded day dates": "pass",
+        "invalid non-padded month dates": "pass",
+        "only RFC3339 not all of ISO 8601 are valid": "pass"
+      }
+    },
+    "optional/format/duration": {
+      "validation of duration strings": {
+        "a valid duration string": "pass",
+        "all date and time components": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "an invalid duration string": "pass",
+        "date components only": "pass",
+        "element without unit": "pass",
+        "elements out of order": "pass",
+        "empty string is invalid": "pass",
+        "four years duration": "pass",
+        "fractional duration is not allowed by RFC 3339 ABNF": "pass",
+        "hour and minute": "pass",
+        "hours and minutes can appear without seconds": "pass",
+        "hours and seconds cannot appear without minutes": "pass",
+        "invalid non-ASCII '২' (a Bengali 2)": "pass",
+        "leading whitespace is invalid": "pass",
+        "minutes and seconds can appear without hour": "pass",
+        "missing time separator": "pass",
+        "month and day": "pass",
+        "months and days can appear without years": "pass",
+        "multi-digit values in all components": "pass",
+        "must start with P": "pass",
+        "no date or time elements present": "pass",
+        "no elements present": "pass",
+        "no time elements present": "pass",
+        "one and a half days, in days and hours": "pass",
+        "one and a half days, in hours": "pass",
+        "one minute duration": "pass",
+        "one month duration": "pass",
+        "time components only": "pass",
+        "time element in the date position": "pass",
+        "trailing whitespace is invalid": "pass",
+        "two weeks": "pass",
+        "weeks cannot be combined with other units": "pass",
+        "years and days cannot appear without months": "pass",
+        "years and months can appear without days": "pass",
+        "zero time, in days": "pass",
+        "zero time, in seconds": "pass"
+      }
+    },
+    "optional/format/ecmascript-regex": {
+      "\\a is not an ECMA 262 control escape": {
+        "when used as a pattern": "compile_error_all_invalid"
+      }
+    },
+    "optional/format/email": {
+      "validation of e-mail addresses": {
+        "a quoted string with a @ in the local part is valid": "false_negative",
+        "a quoted string with a double dot in the local part is valid": "false_negative",
+        "a quoted string with a space in the local part is valid": "false_negative",
+        "a valid e-mail address": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "an IPv4-address-literal after the @ is valid": "pass",
+        "an IPv6-address-literal after the @ is valid": "false_negative",
+        "an invalid IPv4-address-literal": "pass",
+        "an invalid domain": "pass",
+        "an invalid e-mail address": "pass",
+        "domain is required": "pass",
+        "dot after local part is not valid": "pass",
+        "dot before local part is not valid": "pass",
+        "full \"From\" header is invalid": "pass",
+        "local part is required": "pass",
+        "tilde after local part is valid": "pass",
+        "tilde before local part is valid": "pass",
+        "tilde in local part is valid": "pass",
+        "two email addresses is not valid": "pass",
+        "two separated dots inside local part are valid": "pass",
+        "two subsequent dots inside local part are not valid": "pass",
+        "unquoted space in local part is invalid": "pass"
+      }
+    },
+    "optional/format/hostname": {
+      "validation of A-label (punycode) host names": {
+        "Arabic-Indic digits mixed with Extended Arabic-Indic digits": "false_positive",
+        "Arabic-Indic digits not mixed with Extended Arabic-Indic digits": "pass",
+        "Begins with a Nonspacing Mark": "false_positive",
+        "Begins with a Spacing Combining Mark": "false_positive",
+        "Begins with an Enclosing Mark": "false_positive",
+        "Exceptions that are DISALLOWED, left-to-right chars": "false_positive",
+        "Exceptions that are DISALLOWED, right-to-left chars": "false_positive",
+        "Exceptions that are PVALID, left-to-right chars": "pass",
+        "Exceptions that are PVALID, right-to-left chars": "pass",
+        "Extended Arabic-Indic digits not mixed with Arabic-Indic digits": "pass",
+        "Greek KERAIA followed by Greek": "pass",
+        "Greek KERAIA not followed by Greek": "false_positive",
+        "Greek KERAIA not followed by anything": "false_positive",
+        "Hebrew GERESH not preceded by Hebrew": "false_positive",
+        "Hebrew GERESH not preceded by anything": "false_positive",
+        "Hebrew GERESH preceded by Hebrew": "pass",
+        "Hebrew GERSHAYIM not preceded by Hebrew": "false_positive",
+        "Hebrew GERSHAYIM not preceded by anything": "false_positive",
+        "Hebrew GERSHAYIM preceded by Hebrew": "pass",
+        "KATAKANA MIDDLE DOT with Han": "pass",
+        "KATAKANA MIDDLE DOT with Hiragana": "pass",
+        "KATAKANA MIDDLE DOT with Katakana": "pass",
+        "KATAKANA MIDDLE DOT with no Hiragana, Katakana, or Han": "false_positive",
+        "KATAKANA MIDDLE DOT with no other characters": "false_positive",
+        "MIDDLE DOT with no following 'l'": "false_positive",
+        "MIDDLE DOT with no preceding 'l'": "false_positive",
+        "MIDDLE DOT with nothing following": "false_positive",
+        "MIDDLE DOT with nothing preceding": "false_positive",
+        "MIDDLE DOT with surrounding 'l's": "pass",
+        "ZERO WIDTH JOINER not preceded by Virama": "false_positive",
+        "ZERO WIDTH JOINER not preceded by anything": "false_positive",
+        "ZERO WIDTH JOINER preceded by Virama": "pass",
+        "ZERO WIDTH NON-JOINER not preceded by Virama but matches regexp": "pass",
+        "ZERO WIDTH NON-JOINER preceded by Virama": "pass",
+        "a valid host name (example.test in Hangul)": "pass",
+        "contains illegal char U+302E Hangul single dot tone mark": "false_positive",
+        "invalid Punycode": "false_positive"
+      },
+      "validation of host names": {
+        "IDN label separator": "pass",
+        "a valid host name": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "contains \"--\" in the 3rd and 4th position": "false_positive",
+        "contains underscore": "pass",
+        "empty string": "pass",
+        "ends with hyphen": "pass",
+        "exceeds maximum label length (63)": "pass",
+        "exceeds maximum overall length (256)": "false_positive",
+        "leading dot": "pass",
+        "maximum label length (63)": "pass",
+        "single dot": "pass",
+        "single label": "pass",
+        "single label ending with digit": "pass",
+        "single label starting with digit": "pass",
+        "single label with digits": "pass",
+        "single label with hyphen": "pass",
+        "starts with hyphen": "pass",
+        "trailing dot": "pass"
+      }
+    },
+    "optional/format/idn-email": {
+      "validation of an internationalized e-mail addresses": {
+        "a valid e-mail address": "compile_error_valid",
+        "a valid idn e-mail (example@example.test in Hangul)": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "an invalid e-mail address": "compile_error_valid",
+        "an invalid idn e-mail address": "compile_error_valid"
+      }
+    },
+    "optional/format/idn-hostname": {
+      "validation of internationalized host names": {
+        "Arabic-Indic digits mixed with Extended Arabic-Indic digits": "compile_error_valid",
+        "Arabic-Indic digits not mixed with Extended Arabic-Indic digits": "compile_error_valid",
+        "Begins with a Nonspacing Mark": "compile_error_valid",
+        "Begins with a Spacing Combining Mark": "compile_error_valid",
+        "Begins with an Enclosing Mark": "compile_error_valid",
+        "Exceptions that are DISALLOWED, left-to-right chars": "compile_error_valid",
+        "Exceptions that are DISALLOWED, right-to-left chars": "compile_error_valid",
+        "Exceptions that are PVALID, left-to-right chars": "compile_error_valid",
+        "Exceptions that are PVALID, right-to-left chars": "compile_error_valid",
+        "Extended Arabic-Indic digits not mixed with Arabic-Indic digits": "compile_error_valid",
+        "Greek KERAIA followed by Greek": "compile_error_valid",
+        "Greek KERAIA not followed by Greek": "compile_error_valid",
+        "Greek KERAIA not followed by anything": "compile_error_valid",
+        "Hebrew GERESH not preceded by Hebrew": "compile_error_valid",
+        "Hebrew GERESH not preceded by anything": "compile_error_valid",
+        "Hebrew GERESH preceded by Hebrew": "compile_error_valid",
+        "Hebrew GERSHAYIM not preceded by Hebrew": "compile_error_valid",
+        "Hebrew GERSHAYIM not preceded by anything": "compile_error_valid",
+        "Hebrew GERSHAYIM preceded by Hebrew": "compile_error_valid",
+        "KATAKANA MIDDLE DOT with Han": "compile_error_valid",
+        "KATAKANA MIDDLE DOT with Hiragana": "compile_error_valid",
+        "KATAKANA MIDDLE DOT with Katakana": "compile_error_valid",
+        "KATAKANA MIDDLE DOT with no Hiragana, Katakana, or Han": "compile_error_valid",
+        "KATAKANA MIDDLE DOT with no other characters": "compile_error_valid",
+        "MIDDLE DOT with no following 'l'": "compile_error_valid",
+        "MIDDLE DOT with no preceding 'l'": "compile_error_valid",
+        "MIDDLE DOT with nothing following": "compile_error_valid",
+        "MIDDLE DOT with nothing preceding": "compile_error_valid",
+        "MIDDLE DOT with surrounding 'l's": "compile_error_valid",
+        "U-label contains \"--\" in the 3rd and 4th position": "compile_error_valid",
+        "U-label ends with a dash": "compile_error_valid",
+        "U-label starts and ends with a dash": "compile_error_valid",
+        "U-label starts with a dash": "compile_error_valid",
+        "ZERO WIDTH JOINER not preceded by Virama": "compile_error_valid",
+        "ZERO WIDTH JOINER not preceded by anything": "compile_error_valid",
+        "ZERO WIDTH JOINER preceded by Virama": "compile_error_valid",
+        "ZERO WIDTH NON-JOINER not preceded by Virama but matches regexp": "compile_error_valid",
+        "ZERO WIDTH NON-JOINER preceded by Virama": "compile_error_valid",
+        "a host name with a component too long": "compile_error_valid",
+        "a valid host name (example.test in Hangul)": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "contains illegal char U+302E Hangul single dot tone mark": "compile_error_valid",
+        "empty string": "compile_error_valid",
+        "illegal first char U+302E Hangul single dot tone mark": "compile_error_valid",
+        "invalid Punycode": "compile_error_valid",
+        "invalid label, correct Punycode": "compile_error_valid",
+        "single label": "compile_error_valid",
+        "single label ending with digit": "compile_error_valid",
+        "single label starting with digit": "compile_error_valid",
+        "single label with digits": "compile_error_valid",
+        "single label with hyphen": "compile_error_valid",
+        "valid Chinese Punycode": "compile_error_valid"
+      },
+      "validation of separators in internationalized host names": {
+        "dot as label separator": "compile_error_valid",
+        "fullwidth full stop as label separator": "compile_error_valid",
+        "halfwidth ideographic full stop as label separator": "compile_error_valid",
+        "ideographic full stop as label separator": "compile_error_valid",
+        "label too long if separator ignored (full stop)": "compile_error_valid",
+        "label too long if separator ignored (fullwidth full stop)": "compile_error_valid",
+        "label too long if separator ignored (halfwidth ideographic full stop)": "compile_error_valid",
+        "label too long if separator ignored (ideographic full stop)": "compile_error_valid",
+        "leading dot": "compile_error_valid",
+        "leading fullwidth full stop": "compile_error_valid",
+        "leading halfwidth ideographic full stop": "compile_error_valid",
+        "leading ideographic full stop": "compile_error_valid",
+        "single dot": "compile_error_valid",
+        "single fullwidth full stop": "compile_error_valid",
+        "single halfwidth ideographic full stop": "compile_error_valid",
+        "single ideographic full stop": "compile_error_valid",
+        "trailing dot": "compile_error_valid",
+        "trailing fullwidth full stop": "compile_error_valid",
+        "trailing halfwidth ideographic full stop": "compile_error_valid",
+        "trailing ideographic full stop": "compile_error_valid"
+      }
+    },
+    "optional/format/ipv4": {
+      "validation of IP addresses": {
+        "a valid IP address": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "alpha characters are invalid": "pass",
+        "an IP address as an integer": "pass",
+        "an IP address as an integer (decimal)": "pass",
+        "an IP address with out-of-range values": "pass",
+        "an IP address with too many components": "pass",
+        "an IP address without 4 components": "pass",
+        "empty part (double dot) is invalid": "pass",
+        "empty string is invalid": "pass",
+        "exponential notation is invalid": "pass",
+        "hexadecimal notation is invalid": "pass",
+        "internal whitespace is invalid": "pass",
+        "invalid non-ASCII '২' (a Bengali 2)": "pass",
+        "leading dot is invalid": "pass",
+        "leading whitespace is invalid": "pass",
+        "maximum valid IPv4 address": "pass",
+        "minimum valid IPv4 address": "pass",
+        "negative sign is invalid": "pass",
+        "netmask is not a part of ipv4 address": "pass",
+        "octal notation explicit is invalid": "pass",
+        "plus sign is invalid": "pass",
+        "single octet out of range in last position": "pass",
+        "tab character is invalid": "pass",
+        "trailing dot is invalid": "pass",
+        "trailing newline is invalid": "pass",
+        "trailing whitespace is invalid": "pass",
+        "with port number is invalid": "pass"
+      }
+    },
+    "optional/format/ipv6": {
+      "validation of IPv6 addresses": {
+        "8 octets": "pass",
+        "a long invalid ipv6, below length limit, first": "pass",
+        "a long invalid ipv6, below length limit, second": "pass",
+        "a long valid ipv6": "false_negative",
+        "a valid IPv6 address": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "an IPv6 address containing illegal characters": "pass",
+        "an IPv6 address with out-of-range values": "pass",
+        "an IPv6 address with too many components": "pass",
+        "insufficient octets without double colons": "pass",
+        "invalid non-ASCII '৪' (a Bengali 4)": "pass",
+        "invalid non-ASCII '৪' (a Bengali 4) in the IPv4 portion": "pass",
+        "ipv4 is not ipv6": "pass",
+        "ipv4 segment must have 4 octets": "pass",
+        "leading colons is valid": "pass",
+        "leading whitespace is invalid": "pass",
+        "missing leading octet is invalid": "pass",
+        "missing leading octet with omitted octets later": "pass",
+        "missing trailing octet is invalid": "pass",
+        "mixed format with double colons between the sections": "false_negative",
+        "mixed format with ipv4 section with a hex octet": "pass",
+        "mixed format with ipv4 section with octet out of range": "pass",
+        "mixed format with leading double colons (ipv4-mapped ipv6 address)": "false_negative",
+        "mixed format with the ipv4 section as decimal octets": "false_negative",
+        "netmask is not a part of ipv6 address": "pass",
+        "no colons is invalid": "pass",
+        "no digits is valid": "pass",
+        "single set of double colons in the middle is valid": "pass",
+        "trailing 4 hex symbols is valid": "pass",
+        "trailing 5 hex symbols is invalid": "pass",
+        "trailing colons is valid": "pass",
+        "trailing whitespace is invalid": "pass",
+        "triple colons is invalid": "pass",
+        "two sets of double colons is invalid": "pass",
+        "zone id is not a part of ipv6 address": "pass"
+      }
+    },
+    "optional/format/iri": {
+      "validation of IRIs": {
+        "a valid IRI based on IPv6": "compile_error_valid",
+        "a valid IRI with URL-encoded stuff": "compile_error_valid",
+        "a valid IRI with anchor tag": "compile_error_valid",
+        "a valid IRI with anchor tag and parentheses": "compile_error_valid",
+        "a valid IRI with many special characters": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "an invalid IRI": "compile_error_valid",
+        "an invalid IRI based on IPv6": "compile_error_valid",
+        "an invalid IRI though valid IRI reference": "compile_error_valid",
+        "an invalid relative IRI Reference": "compile_error_valid"
+      }
+    },
+    "optional/format/iri-reference": {
+      "validation of IRI References": {
+        "a valid IRI": "compile_error_valid",
+        "a valid IRI Reference": "compile_error_valid",
+        "a valid IRI fragment": "compile_error_valid",
+        "a valid protocol-relative IRI Reference": "compile_error_valid",
+        "a valid relative IRI Reference": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "an invalid IRI Reference": "compile_error_valid",
+        "an invalid IRI fragment": "compile_error_valid"
+      }
+    },
+    "optional/format/json-pointer": {
+      "validation of JSON-pointers (JSON String Representation)": {
+        "a valid JSON-pointer": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "not a valid JSON-pointer (URI Fragment Identifier) #1": "compile_error_valid",
+        "not a valid JSON-pointer (URI Fragment Identifier) #2": "compile_error_valid",
+        "not a valid JSON-pointer (URI Fragment Identifier) #3": "compile_error_valid",
+        "not a valid JSON-pointer (isn't empty nor starts with /) #1": "compile_error_valid",
+        "not a valid JSON-pointer (isn't empty nor starts with /) #2": "compile_error_valid",
+        "not a valid JSON-pointer (isn't empty nor starts with /) #3": "compile_error_valid",
+        "not a valid JSON-pointer (multiple characters not escaped)": "compile_error_valid",
+        "not a valid JSON-pointer (some escaped, but not all) #1": "compile_error_valid",
+        "not a valid JSON-pointer (some escaped, but not all) #2": "compile_error_valid",
+        "not a valid JSON-pointer (wrong escape character) #1": "compile_error_valid",
+        "not a valid JSON-pointer (wrong escape character) #2": "compile_error_valid",
+        "not a valid JSON-pointer (~ not escaped)": "compile_error_valid",
+        "valid JSON-pointer (- used as object member name)": "compile_error_valid",
+        "valid JSON-pointer (escaped with fraction part) #1": "compile_error_valid",
+        "valid JSON-pointer (escaped with fraction part) #2": "compile_error_valid",
+        "valid JSON-pointer (multiple escaped characters)": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #1": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #10": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #11": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #12": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #2": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #3": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #4": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #5": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #6": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #7": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #8": "compile_error_valid",
+        "valid JSON-pointer as stated in RFC 6901 #9": "compile_error_valid",
+        "valid JSON-pointer used adding to the last array position": "compile_error_valid",
+        "valid JSON-pointer with empty segment": "compile_error_valid",
+        "valid JSON-pointer with the last empty segment": "compile_error_valid"
+      }
+    },
+    "optional/format/regex": {
+      "validation of regular expressions": {
+        "a regular expression with unclosed parens is invalid": "compile_error_valid",
+        "a valid regular expression": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid"
+      }
+    },
+    "optional/format/relative-json-pointer": {
+      "validation of Relative JSON Pointers (RJP)": {
+        "## is not a valid json-pointer": "compile_error_valid",
+        "a valid RJP taking the member or index name": "compile_error_valid",
+        "a valid downwards RJP": "compile_error_valid",
+        "a valid up and then down RJP, with array index": "compile_error_valid",
+        "a valid upwards RJP": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "an invalid RJP that is a valid JSON Pointer": "compile_error_valid",
+        "empty string": "compile_error_valid",
+        "explicit positive prefix": "compile_error_valid",
+        "multi-digit integer prefix": "compile_error_valid",
+        "negative prefix": "compile_error_valid",
+        "zero cannot be followed by other digits, plus json-pointer": "compile_error_valid",
+        "zero cannot be followed by other digits, plus octothorpe": "compile_error_valid"
+      }
+    },
+    "optional/format/time": {
+      "validation of time strings": {
+        "a valid time string": "pass",
+        "a valid time string with case-insensitive Z": "pass",
+        "a valid time string with leap second, Zulu": "pass",
+        "a valid time string with minus offset": "pass",
+        "a valid time string with plus offset": "pass",
+        "a valid time string with precise second fraction": "pass",
+        "a valid time string with second fraction": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "an invalid offset indicator": "pass",
+        "an invalid time string in date-time format": "pass",
+        "an invalid time string with invalid hour": "pass",
+        "an invalid time string with invalid leap second (wrong hour)": "false_positive",
+        "an invalid time string with invalid leap second (wrong minute)": "false_positive",
+        "an invalid time string with invalid minute": "pass",
+        "an invalid time string with invalid second": "pass",
+        "an invalid time string with invalid time numoffset hour": "pass",
+        "an invalid time string with invalid time numoffset minute": "pass",
+        "an invalid time string with invalid time with both Z and numoffset": "pass",
+        "contains letters": "pass",
+        "hour, minute in time-offset must be two digits": "pass",
+        "hour, minute, second must be two digits": "pass",
+        "invalid leap second, Zulu (wrong hour)": "false_positive",
+        "invalid leap second, Zulu (wrong minute)": "false_positive",
+        "invalid leap second, negative time-offset (wrong hour)": "false_positive",
+        "invalid leap second, negative time-offset (wrong minute)": "false_positive",
+        "invalid leap second, positive time-offset (wrong hour)": "false_positive",
+        "invalid leap second, positive time-offset (wrong minute)": "false_positive",
+        "invalid leap second, zero time-offset (wrong hour)": "false_positive",
+        "invalid leap second, zero time-offset (wrong minute)": "false_positive",
+        "invalid non-ASCII '২' (a Bengali 2)": "pass",
+        "invalid time string with extra leading zeros": "pass",
+        "invalid time string with no leading zero for single digit": "pass",
+        "no time offset": "pass",
+        "no time offset with second fraction": "pass",
+        "offset not starting with plus or minus": "pass",
+        "only RFC3339 not all of ISO 8601 are valid": "pass",
+        "time with unknown local offset is valid": "pass",
+        "valid leap second, large negative time-offset": "pass",
+        "valid leap second, large positive time-offset": "pass",
+        "valid leap second, negative time-offset": "pass",
+        "valid leap second, positive time-offset": "pass",
+        "valid leap second, zero time-offset": "pass"
+      }
+    },
+    "optional/format/unknown": {
+      "unknown format": {
+        "unknown formats ignore arrays": "pass",
+        "unknown formats ignore booleans": "pass",
+        "unknown formats ignore floats": "pass",
+        "unknown formats ignore integers": "pass",
+        "unknown formats ignore nulls": "pass",
+        "unknown formats ignore objects": "pass",
+        "unknown formats ignore strings": "pass"
+      }
+    },
+    "optional/format/uri": {
+      "validation of URIs": {
+        "URI with leading-zero IPv4 is structurally valid as a reg-name": "pass",
+        "URI with out-of-bounds IPv4 is structurally valid as a reg-name": "pass",
+        "a valid URL ": "pass",
+        "a valid URL based on IPv4": "pass",
+        "a valid URL for a simple text file": "pass",
+        "a valid URL with URL-encoded stuff": "pass",
+        "a valid URL with anchor tag": "pass",
+        "a valid URL with anchor tag and parentheses": "pass",
+        "a valid URL with ftp scheme": "pass",
+        "a valid URL with many special characters": "pass",
+        "a valid URN": "pass",
+        "a valid mailto URI": "pass",
+        "a valid newsgroup URI": "pass",
+        "a valid puny-coded URL ": "pass",
+        "a valid tel URI": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "an invalid URI": "pass",
+        "an invalid URI though valid URI reference": "pass",
+        "an invalid URI with comma in scheme": "pass",
+        "an invalid URI with spaces": "pass",
+        "an invalid URI with spaces and missing scheme": "pass",
+        "an invalid protocol-relative URI Reference": "pass",
+        "an invalid relative URI Reference": "pass",
+        "incomplete percent-encoding triplet": "pass",
+        "invalid \" character": "pass",
+        "invalid <> characters": "pass",
+        "invalid SPACE character": "pass",
+        "invalid ^ character": "pass",
+        "invalid ` character": "pass",
+        "invalid backslash character": "pass",
+        "invalid character in scheme": "pass",
+        "invalid percent-encoding with non-hex digits": "pass",
+        "invalid userinfo": "pass",
+        "invalid {} characters": "pass",
+        "invalid | character": "pass",
+        "lone percent sign is invalid": "pass",
+        "non-numeric port is invalid": "pass",
+        "scheme must start with a letter": "pass",
+        "unescaped non US-ASCII characters": "pass"
+      }
+    },
+    "optional/format/uri-reference": {
+      "validation of URI References": {
+        "URI with leading-zero IPv4 is structurally valid as a reg-name": "compile_error_valid",
+        "URI with out-of-bounds IPv4 is structurally valid as a reg-name": "compile_error_valid",
+        "a valid URI": "compile_error_valid",
+        "a valid URI Reference": "compile_error_valid",
+        "a valid URI fragment": "compile_error_valid",
+        "a valid protocol-relative URI Reference": "compile_error_valid",
+        "a valid relative URI Reference": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "an invalid URI Reference": "compile_error_valid",
+        "an invalid URI fragment": "compile_error_valid",
+        "invalid backslash character": "compile_error_valid",
+        "unescaped non US-ASCII characters": "compile_error_valid"
+      }
+    },
+    "optional/format/uri-template": {
+      "format: uri-template": {
+        "a valid relative uri-template": "compile_error_valid",
+        "a valid uri-template": "compile_error_valid",
+        "a valid uri-template without variables": "compile_error_valid",
+        "all string formats ignore arrays": "compile_error_valid",
+        "all string formats ignore booleans": "compile_error_valid",
+        "all string formats ignore floats": "compile_error_valid",
+        "all string formats ignore integers": "compile_error_valid",
+        "all string formats ignore nulls": "compile_error_valid",
+        "all string formats ignore objects": "compile_error_valid",
+        "an invalid uri-template": "compile_error_valid"
+      }
+    },
+    "optional/format/uuid": {
+      "uuid format": {
+        "all lower-case": "pass",
+        "all string formats ignore arrays": "pass",
+        "all string formats ignore booleans": "pass",
+        "all string formats ignore floats": "pass",
+        "all string formats ignore integers": "pass",
+        "all string formats ignore nulls": "pass",
+        "all string formats ignore objects": "pass",
+        "all upper-case": "pass",
+        "all zeroes is valid": "pass",
+        "bad characters (not hex)": "pass",
+        "dashes in the wrong spot": "pass",
+        "hypothetical version 15": "pass",
+        "hypothetical version 6": "pass",
+        "missing section": "pass",
+        "mixed case": "pass",
+        "no dashes": "pass",
+        "shifted dashes": "pass",
+        "too few dashes": "pass",
+        "too many dashes": "pass",
+        "valid version 4": "pass",
+        "valid version 5": "pass",
+        "wrong length": "pass"
+      }
+    },
+    "pattern": {
+      "pattern is not anchored": {
+        "matches a substring": "pass"
+      },
+      "pattern validation": {
+        "a matching pattern is valid": "pass",
+        "a non-matching pattern is invalid": "pass",
+        "ignores arrays": "pass",
+        "ignores booleans": "pass",
+        "ignores floats": "pass",
+        "ignores integers": "pass",
+        "ignores null": "pass",
+        "ignores objects": "pass"
+      },
+      "pattern with Unicode property escape requires unicode mode": {
+        "ASCII letters match": "pass",
+        "Digits do not match": "pass",
+        "Non-ASCII letters match": "pass"
+      }
+    },
+    "patternProperties": {
+      "multiple simultaneous patternProperties are validated": {
+        "a simultaneous match is valid": "compile_error_valid",
+        "a single valid match is valid": "compile_error_valid",
+        "an invalid due to both is invalid": "compile_error_valid",
+        "an invalid due to one is invalid": "compile_error_valid",
+        "an invalid due to the other is invalid": "compile_error_valid",
+        "multiple matches is valid": "compile_error_valid"
+      },
+      "patternProperties validates properties matching a regex": {
+        "a single invalid match is invalid": "pass",
+        "a single valid match is valid": "pass",
+        "ignores arrays": "pass",
+        "ignores other non-objects": "pass",
+        "ignores strings": "pass",
+        "multiple invalid matches is invalid": "pass",
+        "multiple valid matches is valid": "pass"
+      },
+      "patternProperties with Unicode property escape": {
+        "Non-letter property name does not match pattern": "pass",
+        "Unicode letter property name matches": "pass"
+      },
+      "patternProperties with boolean schemas": {
+        "empty object is valid": "compile_error_valid",
+        "object with a property matching both true and false is invalid": "compile_error_valid",
+        "object with both properties is invalid": "compile_error_valid",
+        "object with property matching schema false is invalid": "compile_error_valid",
+        "object with property matching schema true is valid": "compile_error_valid"
+      },
+      "patternProperties with null valued instance properties": {
+        "allows null values": "pass"
+      },
+      "regexes are not anchored by default and are case sensitive": {
+        "non recognized members are ignored": "compile_error_valid",
+        "recognized members are accounted for": "compile_error_valid",
+        "regexes are case sensitive": "compile_error_valid",
+        "regexes are case sensitive, 2": "compile_error_valid"
+      }
+    },
+    "prefixItems": {
+      "a schema given for prefixItems": {
+        "JavaScript pseudo-array is valid": "pass",
+        "array with additional items": "pass",
+        "correct types": "pass",
+        "empty array": "pass",
+        "incomplete array of items": "pass",
+        "wrong types": "pass"
+      },
+      "additional items are allowed by default": {
+        "only the first item is validated": "pass"
+      },
+      "prefixItems with boolean schemas": {
+        "array with one item is valid": "pass",
+        "array with two items is invalid": "pass",
+        "empty array is valid": "pass"
+      },
+      "prefixItems with null instance elements": {
+        "allows null elements": "pass"
+      }
+    },
+    "properties": {
+      "object properties validation": {
+        "both properties invalid is invalid": "pass",
+        "both properties present and valid is valid": "pass",
+        "doesn't invalidate other properties": "pass",
+        "ignores arrays": "pass",
+        "ignores other non-objects": "pass",
+        "one property invalid is invalid": "pass"
+      },
+      "properties whose names are Javascript object property names": {
+        "__proto__ not valid": "pass",
+        "all present and valid": "pass",
+        "constructor not valid": "pass",
+        "ignores arrays": "pass",
+        "ignores other non-objects": "pass",
+        "none of the properties mentioned": "pass",
+        "toString not valid": "pass"
+      },
+      "properties with boolean schema": {
+        "both properties present is invalid": "pass",
+        "no property present is valid": "pass",
+        "only 'false' property present is invalid": "pass",
+        "only 'true' property present is valid": "pass"
+      },
+      "properties with escaped characters": {
+        "object with all numbers is valid": "pass",
+        "object with strings is invalid": "pass"
+      },
+      "properties with null valued instance properties": {
+        "allows null values": "pass"
+      },
+      "properties, patternProperties, additionalProperties interaction": {
+        "additionalProperty ignores property": "pass",
+        "additionalProperty invalidates others": "pass",
+        "additionalProperty validates others": "pass",
+        "patternProperty invalidates nonproperty": "pass",
+        "patternProperty invalidates property": "pass",
+        "patternProperty validates nonproperty": "pass",
+        "property invalidates property": "pass",
+        "property validates property": "pass"
+      }
+    },
+    "propertyNames": {
+      "propertyNames validation": {
+        "all property names valid": "skip_compile",
+        "ignores arrays": "skip_compile",
+        "ignores other non-objects": "skip_compile",
+        "ignores strings": "skip_compile",
+        "object without properties is valid": "skip_compile",
+        "some property names invalid": "skip_compile"
+      },
+      "propertyNames validation with pattern": {
+        "matching property names valid": "skip_compile",
+        "non-matching property name is invalid": "skip_compile",
+        "object without properties is valid": "skip_compile"
+      },
+      "propertyNames with boolean schema false": {
+        "empty object is valid": "skip_compile",
+        "object with any properties is invalid": "skip_compile"
+      },
+      "propertyNames with boolean schema true": {
+        "empty object is valid": "skip_compile",
+        "object with any properties is valid": "skip_compile"
+      },
+      "propertyNames with const": {
+        "empty object is valid": "skip_compile",
+        "object with any other property is invalid": "skip_compile",
+        "object with property foo is valid": "skip_compile"
+      },
+      "propertyNames with enum": {
+        "empty object is valid": "skip_compile",
+        "object with any other property is invalid": "skip_compile",
+        "object with property foo and bar is valid": "skip_compile",
+        "object with property foo is valid": "skip_compile"
+      }
+    },
+    "ref": {
+      "$id must be resolved against nearest parent, not just immediate parent": {
+        "non-number is invalid": "pass",
+        "number is valid": "pass"
+      },
+      "$id with file URI still resolves pointers - *nix": {
+        "non-number is invalid": "pass",
+        "number is valid": "pass"
+      },
+      "$id with file URI still resolves pointers - windows": {
+        "non-number is invalid": "pass",
+        "number is valid": "pass"
+      },
+      "$ref to boolean schema false": {
+        "any value is invalid": "compile_error_all_invalid"
+      },
+      "$ref to boolean schema true": {
+        "any value is valid": "pass"
+      },
+      "Recursive references between schemas": {
+        "invalid tree": "pass",
+        "valid tree": "pass"
+      },
+      "URN base URI with NSS": {
+        "a non-string is invalid": "pass",
+        "a string is valid": "pass"
+      },
+      "URN base URI with URN and JSON pointer ref": {
+        "a non-string is invalid": "pass",
+        "a string is valid": "pass"
+      },
+      "URN base URI with URN and anchor ref": {
+        "a non-string is invalid": "pass",
+        "a string is valid": "pass"
+      },
+      "URN base URI with q-component": {
+        "a non-string is invalid": "pass",
+        "a string is valid": "pass"
+      },
+      "URN base URI with r-component": {
+        "a non-string is invalid": "pass",
+        "a string is valid": "pass"
+      },
+      "URN ref with nested pointer ref": {
+        "a non-string is invalid": "pass",
+        "a string is valid": "pass"
+      },
+      "empty tokens in $ref json-pointer": {
+        "non-number is invalid": "pass",
+        "number is valid": "pass"
+      },
+      "escaped pointer ref": {
+        "percent invalid": "pass",
+        "percent valid": "pass",
+        "slash invalid": "pass",
+        "slash valid": "pass",
+        "tilde invalid": "pass",
+        "tilde valid": "pass"
+      },
+      "naive replacement of $ref with its destination is not correct": {
+        "do not evaluate the $ref inside the enum, definition exact match": "pass",
+        "do not evaluate the $ref inside the enum, matching any string": "pass",
+        "match the enum exactly": "pass"
+      },
+      "nested refs": {
+        "nested ref invalid": "pass",
+        "nested ref valid": "pass"
+      },
+      "order of evaluation: $id and $anchor and $ref": {
+        "data is invalid against first definition": "pass",
+        "data is valid against first definition": "pass"
+      },
+      "order of evaluation: $id and $ref": {
+        "data is invalid against first definition": "pass",
+        "data is valid against first definition": "pass"
+      },
+      "order of evaluation: $id and $ref on nested schema": {
+        "data is invalid against nested sibling": "pass",
+        "data is valid against nested sibling": "pass"
+      },
+      "property named $ref that is not a reference": {
+        "property named $ref invalid": "pass",
+        "property named $ref valid": "pass"
+      },
+      "property named $ref, containing an actual $ref": {
+        "property named $ref invalid": "pass",
+        "property named $ref valid": "pass"
+      },
+      "ref applies alongside sibling keywords": {
+        "ref invalid": "pass",
+        "ref valid, maxItems invalid": "pass",
+        "ref valid, maxItems valid": "pass"
+      },
+      "ref creates new scope when adjacent to keywords": {
+        "referenced subschema doesn't see annotations from properties": "skip_compile"
+      },
+      "ref to else": {
+        "a non-integer is invalid due to the $ref": "skip_compile",
+        "an integer is valid": "skip_compile"
+      },
+      "ref to if": {
+        "a non-integer is invalid due to the $ref": "skip_compile",
+        "an integer is valid": "skip_compile"
+      },
+      "ref to then": {
+        "a non-integer is invalid due to the $ref": "skip_compile",
+        "an integer is valid": "skip_compile"
+      },
+      "ref with absolute-path-reference": {
+        "a string is valid": "pass",
+        "an integer is invalid": "pass"
+      },
+      "refs with quote": {
+        "object with numbers is valid": "pass",
+        "object with strings is invalid": "pass"
+      },
+      "refs with relative uris and defs": {
+        "invalid on inner field": "pass",
+        "invalid on outer field": "pass",
+        "valid on both fields": "pass"
+      },
+      "relative pointer ref to array": {
+        "match array": "pass",
+        "mismatch array": "pass"
+      },
+      "relative pointer ref to object": {
+        "match": "pass",
+        "mismatch": "pass"
+      },
+      "relative refs with absolute uris and defs": {
+        "invalid on inner field": "pass",
+        "invalid on outer field": "pass",
+        "valid on both fields": "pass"
+      },
+      "remote ref, containing refs itself": {
+        "remote ref invalid": "skip_compile",
+        "remote ref valid": "skip_compile"
+      },
+      "root pointer ref": {
+        "match": "pass",
+        "mismatch": "pass",
+        "recursive match": "pass",
+        "recursive mismatch": "pass"
+      },
+      "simple URN base URI with $ref via the URN": {
+        "invalid under the URN IDed schema": "pass",
+        "valid under the URN IDed schema": "pass"
+      },
+      "simple URN base URI with JSON pointer": {
+        "a non-string is invalid": "pass",
+        "a string is valid": "pass"
+      }
+    },
+    "refRemote": {
+      "$ref to $ref finds detached $anchor": {
+        "non-number is invalid": "compile_error_valid",
+        "number is valid": "compile_error_valid"
+      },
+      "Location-independent identifier in remote ref": {
+        "integer is valid": "compile_error_valid",
+        "string is invalid": "compile_error_valid"
+      },
+      "anchor within remote ref": {
+        "remote anchor invalid": "compile_error_valid",
+        "remote anchor valid": "compile_error_valid"
+      },
+      "base URI change": {
+        "base URI change ref invalid": "compile_error_valid",
+        "base URI change ref valid": "compile_error_valid"
+      },
+      "base URI change - change folder": {
+        "number is valid": "compile_error_valid",
+        "string is invalid": "compile_error_valid"
+      },
+      "base URI change - change folder in subschema": {
+        "number is valid": "compile_error_valid",
+        "string is invalid": "compile_error_valid"
+      },
+      "fragment within remote ref": {
+        "remote fragment invalid": "compile_error_valid",
+        "remote fragment valid": "compile_error_valid"
+      },
+      "ref within remote ref": {
+        "ref within ref invalid": "compile_error_valid",
+        "ref within ref valid": "compile_error_valid"
+      },
+      "remote HTTP ref with different $id": {
+        "number is invalid": "compile_error_valid",
+        "string is valid": "compile_error_valid"
+      },
+      "remote HTTP ref with different URN $id": {
+        "number is invalid": "compile_error_valid",
+        "string is valid": "compile_error_valid"
+      },
+      "remote HTTP ref with nested absolute ref": {
+        "number is invalid": "compile_error_valid",
+        "string is valid": "compile_error_valid"
+      },
+      "remote ref": {
+        "remote ref invalid": "compile_error_valid",
+        "remote ref valid": "compile_error_valid"
+      },
+      "remote ref with ref to defs": {
+        "invalid": "compile_error_valid",
+        "valid": "compile_error_valid"
+      },
+      "retrieved nested refs resolve relative to their URI not $id": {
+        "number is invalid": "compile_error_valid",
+        "string is valid": "compile_error_valid"
+      },
+      "root ref in remote ref": {
+        "null is valid": "compile_error_valid",
+        "object is invalid": "compile_error_valid",
+        "string is valid": "compile_error_valid"
+      }
+    },
+    "required": {
+      "required default validation": {
+        "not required by default": "pass"
+      },
+      "required properties whose names are Javascript object property names": {
+        "__proto__ present": "pass",
+        "all present": "pass",
+        "constructor present": "pass",
+        "ignores arrays": "pass",
+        "ignores other non-objects": "pass",
+        "none of the properties mentioned": "pass",
+        "toString present": "pass"
+      },
+      "required validation": {
+        "ignores arrays": "pass",
+        "ignores boolean": "pass",
+        "ignores null": "pass",
+        "ignores other non-objects": "pass",
+        "ignores strings": "pass",
+        "non-present required property is invalid": "pass",
+        "present required property is valid": "pass"
+      },
+      "required with empty array": {
+        "property not required": "pass"
+      },
+      "required with escaped characters": {
+        "object with all properties present is valid": "pass",
+        "object with some properties missing is invalid": "pass"
+      }
+    },
+    "type": {
+      "array type matches arrays": {
+        "a boolean is not an array": "pass",
+        "a float is not an array": "pass",
+        "a string is not an array": "pass",
+        "an array is an array": "pass",
+        "an integer is not an array": "pass",
+        "an object is not an array": "pass",
+        "null is not an array": "pass"
+      },
+      "boolean type matches booleans": {
+        "a float is not a boolean": "pass",
+        "a string is not a boolean": "pass",
+        "an array is not a boolean": "pass",
+        "an empty string is not a boolean": "pass",
+        "an integer is not a boolean": "pass",
+        "an object is not a boolean": "pass",
+        "false is a boolean": "pass",
+        "null is not a boolean": "pass",
+        "true is a boolean": "pass",
+        "zero is not a boolean": "pass"
+      },
+      "integer type matches integers": {
+        "a boolean is not an integer": "pass",
+        "a float is not an integer": "pass",
+        "a float with zero fractional part is an integer": "false_negative",
+        "a string is not an integer": "pass",
+        "a string is still not an integer, even if it looks like one": "pass",
+        "an array is not an integer": "pass",
+        "an integer is an integer": "pass",
+        "an object is not an integer": "pass",
+        "null is not an integer": "pass"
+      },
+      "multiple types can be specified in an array": {
+        "a boolean is invalid": "pass",
+        "a float is invalid": "pass",
+        "a string is valid": "pass",
+        "an array is invalid": "pass",
+        "an integer is valid": "pass",
+        "an object is invalid": "pass",
+        "null is invalid": "pass"
+      },
+      "null type matches only the null object": {
+        "a float is not null": "pass",
+        "a string is not null": "pass",
+        "an array is not null": "pass",
+        "an empty string is not null": "pass",
+        "an integer is not null": "pass",
+        "an object is not null": "pass",
+        "false is not null": "pass",
+        "null is null": "pass",
+        "true is not null": "pass",
+        "zero is not null": "pass"
+      },
+      "number type matches numbers": {
+        "a boolean is not a number": "pass",
+        "a float is a number": "pass",
+        "a float with zero fractional part is a number (and an integer)": "pass",
+        "a string is not a number": "pass",
+        "a string is still not a number, even if it looks like one": "pass",
+        "an array is not a number": "pass",
+        "an integer is a number": "pass",
+        "an object is not a number": "pass",
+        "null is not a number": "pass"
+      },
+      "object type matches objects": {
+        "a boolean is not an object": "pass",
+        "a float is not an object": "pass",
+        "a string is not an object": "pass",
+        "an array is not an object": "pass",
+        "an integer is not an object": "pass",
+        "an object is an object": "pass",
+        "null is not an object": "pass"
+      },
+      "string type matches strings": {
+        "1 is not a string": "pass",
+        "a boolean is not a string": "pass",
+        "a float is not a string": "pass",
+        "a string is a string": "pass",
+        "a string is still a string, even if it looks like a number": "pass",
+        "an array is not a string": "pass",
+        "an empty string is still a string": "pass",
+        "an object is not a string": "pass",
+        "null is not a string": "pass"
+      },
+      "type as array with one item": {
+        "number is invalid": "pass",
+        "string is valid": "pass"
+      },
+      "type: array or object": {
+        "array is valid": "pass",
+        "null is invalid": "pass",
+        "number is invalid": "pass",
+        "object is valid": "pass",
+        "string is invalid": "pass"
+      },
+      "type: array, object or null": {
+        "array is valid": "pass",
+        "null is valid": "pass",
+        "number is invalid": "pass",
+        "object is valid": "pass",
+        "string is invalid": "pass"
+      }
+    },
+    "unevaluatedItems": {
+      "Evaluated items collection needs to consider instance location": {
+        "with an unevaluated item that exists at another location": "skip_compile"
+      },
+      "item is evaluated in an uncle schema to unevaluatedItems": {
+        "no extra items": "skip_compile",
+        "uncle keyword evaluation is not significant": "skip_compile"
+      },
+      "non-array instances are valid": {
+        "ignores booleans": "skip_compile",
+        "ignores floats": "skip_compile",
+        "ignores integers": "skip_compile",
+        "ignores null": "skip_compile",
+        "ignores objects": "skip_compile",
+        "ignores strings": "skip_compile"
+      },
+      "unevaluatedItems and contains interact to control item dependency relationship": {
+        "a's and b's are valid": "skip_compile",
+        "a's, b's and c's are valid": "skip_compile",
+        "empty array is valid": "skip_compile",
+        "only a's and c's are invalid": "skip_compile",
+        "only a's are valid": "skip_compile",
+        "only b's and c's are invalid": "skip_compile",
+        "only b's are invalid": "skip_compile",
+        "only c's are invalid": "skip_compile"
+      },
+      "unevaluatedItems as schema": {
+        "with invalid unevaluated items": "skip_compile",
+        "with no unevaluated items": "skip_compile",
+        "with valid unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems before $ref": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems can see annotations from if without then and else": {
+        "invalid in case if is evaluated": "skip_compile",
+        "valid in case if is evaluated": "skip_compile"
+      },
+      "unevaluatedItems can't see inside cousins": {
+        "always fails": "skip_compile"
+      },
+      "unevaluatedItems depends on adjacent contains": {
+        "contains fails, second item is not evaluated": "skip_compile",
+        "contains passes, second item is not evaluated": "skip_compile",
+        "second item is evaluated by contains": "skip_compile"
+      },
+      "unevaluatedItems depends on multiple nested contains": {
+        "5 not evaluated, passes unevaluatedItems": "skip_compile",
+        "7 not evaluated, fails unevaluatedItems": "skip_compile"
+      },
+      "unevaluatedItems false": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems true": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with $dynamicRef": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with $ref": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with anyOf": {
+        "when one schema matches and has no unevaluated items": "skip_compile",
+        "when one schema matches and has unevaluated items": "skip_compile",
+        "when two schemas match and has no unevaluated items": "skip_compile",
+        "when two schemas match and has unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with boolean schemas": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with if/then/else": {
+        "when if doesn't match and it has no unevaluated items": "skip_compile",
+        "when if doesn't match and it has unevaluated items": "skip_compile",
+        "when if matches and it has no unevaluated items": "skip_compile",
+        "when if matches and it has unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with items": {
+        "invalid under items": "skip_compile",
+        "valid under items": "skip_compile"
+      },
+      "unevaluatedItems with items and prefixItems": {
+        "unevaluatedItems doesn't apply": "skip_compile"
+      },
+      "unevaluatedItems with minContains = 0": {
+        "all items evaluated by contains": "skip_compile",
+        "empty array is valid": "skip_compile",
+        "no items evaluated by contains": "skip_compile",
+        "some but not all items evaluated by contains": "skip_compile"
+      },
+      "unevaluatedItems with nested items": {
+        "with invalid additional item": "skip_compile",
+        "with no additional items": "skip_compile",
+        "with only (valid) additional items": "skip_compile"
+      },
+      "unevaluatedItems with nested prefixItems and items": {
+        "with additional items": "skip_compile",
+        "with no additional items": "skip_compile"
+      },
+      "unevaluatedItems with nested tuple": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with nested unevaluatedItems": {
+        "with additional items": "skip_compile",
+        "with no additional items": "skip_compile"
+      },
+      "unevaluatedItems with not": {
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with null instance elements": {
+        "allows null elements": "skip_compile"
+      },
+      "unevaluatedItems with oneOf": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with tuple": {
+        "with no unevaluated items": "skip_compile",
+        "with unevaluated items": "skip_compile"
+      },
+      "unevaluatedItems with uniform items": {
+        "unevaluatedItems doesn't apply": "skip_compile"
+      }
+    },
+    "unevaluatedProperties": {
+      "Evaluated properties collection needs to consider instance location": {
+        "with an unevaluated property that exists at another location": "skip_compile"
+      },
+      "cousin unevaluatedProperties, true and false, false with properties": {
+        "with nested unevaluated properties": "skip_compile",
+        "with no nested unevaluated properties": "skip_compile"
+      },
+      "cousin unevaluatedProperties, true and false, true with properties": {
+        "with nested unevaluated properties": "skip_compile",
+        "with no nested unevaluated properties": "skip_compile"
+      },
+      "dependentSchemas with unevaluatedProperties": {
+        "unevaluatedProperties doesn't consider dependentSchemas": "skip_compile",
+        "unevaluatedProperties doesn't see bar when foo2 is absent": "skip_compile",
+        "unevaluatedProperties sees bar when foo2 is present": "skip_compile"
+      },
+      "dynamic evalation inside nested refs": {
+        "Empty is invalid": "skip_compile",
+        "a + b is invalid": "skip_compile",
+        "a + c is invalid": "skip_compile",
+        "a + d is invalid": "skip_compile",
+        "a is valid": "skip_compile",
+        "all + a is invalid": "skip_compile",
+        "all + foo is valid": "skip_compile",
+        "all is valid": "skip_compile",
+        "b + c is invalid": "skip_compile",
+        "b + d is invalid": "skip_compile",
+        "b is valid": "skip_compile",
+        "c + d is invalid": "skip_compile",
+        "c is valid": "skip_compile",
+        "d is valid": "skip_compile",
+        "xx + a is invalid": "skip_compile",
+        "xx + b is invalid": "skip_compile",
+        "xx + c is invalid": "skip_compile",
+        "xx + d is invalid": "skip_compile",
+        "xx + foo is invalid": "skip_compile",
+        "xx + foox is valid": "skip_compile",
+        "xx is valid": "skip_compile"
+      },
+      "in-place applicator siblings, allOf has unevaluated": {
+        "base case: both properties present": "skip_compile",
+        "in place applicator siblings, bar is missing": "skip_compile",
+        "in place applicator siblings, foo is missing": "skip_compile"
+      },
+      "in-place applicator siblings, anyOf has unevaluated": {
+        "base case: both properties present": "skip_compile",
+        "in place applicator siblings, bar is missing": "skip_compile",
+        "in place applicator siblings, foo is missing": "skip_compile"
+      },
+      "nested unevaluatedProperties, outer false, inner true, properties inside": {
+        "with nested unevaluated properties": "skip_compile",
+        "with no nested unevaluated properties": "skip_compile"
+      },
+      "nested unevaluatedProperties, outer false, inner true, properties outside": {
+        "with nested unevaluated properties": "skip_compile",
+        "with no nested unevaluated properties": "skip_compile"
+      },
+      "nested unevaluatedProperties, outer true, inner false, properties inside": {
+        "with nested unevaluated properties": "skip_compile",
+        "with no nested unevaluated properties": "skip_compile"
+      },
+      "nested unevaluatedProperties, outer true, inner false, properties outside": {
+        "with nested unevaluated properties": "skip_compile",
+        "with no nested unevaluated properties": "skip_compile"
+      },
+      "non-object instances are valid": {
+        "ignores arrays": "skip_compile",
+        "ignores booleans": "skip_compile",
+        "ignores floats": "skip_compile",
+        "ignores integers": "skip_compile",
+        "ignores null": "skip_compile",
+        "ignores strings": "skip_compile"
+      },
+      "property is evaluated in an uncle schema to unevaluatedProperties": {
+        "no extra properties": "skip_compile",
+        "uncle keyword evaluation is not significant": "skip_compile"
+      },
+      "unevaluatedProperties + ref inside allOf / oneOf": {
+        "Empty is invalid (no x or y)": "skip_compile",
+        "a and b and x and y are invalid": "skip_compile",
+        "a and b and x are valid": "skip_compile",
+        "a and b and y are valid": "skip_compile",
+        "a and b are invalid (no x or y)": "skip_compile",
+        "a and x are valid": "skip_compile",
+        "a and y are valid": "skip_compile",
+        "x and y are invalid": "skip_compile"
+      },
+      "unevaluatedProperties + single cyclic ref": {
+        "Deep nested is valid": "skip_compile",
+        "Empty is valid": "skip_compile",
+        "Nested is valid": "skip_compile",
+        "Single is valid": "skip_compile",
+        "Unevaluated on 1st level is invalid": "skip_compile",
+        "Unevaluated on 2nd level is invalid": "skip_compile",
+        "Unevaluated on 3rd level is invalid": "skip_compile"
+      },
+      "unevaluatedProperties before $ref": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties can see annotations from if without then and else": {
+        "invalid in case if is evaluated": "skip_compile",
+        "valid in case if is evaluated": "skip_compile"
+      },
+      "unevaluatedProperties can't see inside cousins": {
+        "always fails": "skip_compile"
+      },
+      "unevaluatedProperties can't see inside cousins (reverse order)": {
+        "always fails": "skip_compile"
+      },
+      "unevaluatedProperties false": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties not affected by propertyNames": {
+        "allows only number properties": "skip_compile",
+        "string property is invalid": "skip_compile"
+      },
+      "unevaluatedProperties schema": {
+        "with invalid unevaluated properties": "skip_compile",
+        "with no unevaluated properties": "skip_compile",
+        "with valid unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties true": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with $dynamicRef": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with $ref": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with adjacent bool additionalProperties": {
+        "with additional properties": "skip_compile",
+        "with no additional properties": "skip_compile"
+      },
+      "unevaluatedProperties with adjacent non-bool additionalProperties": {
+        "with additional properties": "skip_compile",
+        "with no additional properties": "skip_compile"
+      },
+      "unevaluatedProperties with adjacent patternProperties": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with adjacent properties": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with anyOf": {
+        "when one matches and has no unevaluated properties": "skip_compile",
+        "when one matches and has unevaluated properties": "skip_compile",
+        "when two match and has no unevaluated properties": "skip_compile",
+        "when two match and has unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with boolean schemas": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with dependentSchemas": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with if/then/else": {
+        "when if is false and has no unevaluated properties": "skip_compile",
+        "when if is false and has unevaluated properties": "skip_compile",
+        "when if is true and has no unevaluated properties": "skip_compile",
+        "when if is true and has unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with if/then/else, else not defined": {
+        "when if is false and has no unevaluated properties": "skip_compile",
+        "when if is false and has unevaluated properties": "skip_compile",
+        "when if is true and has no unevaluated properties": "skip_compile",
+        "when if is true and has unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with if/then/else, then not defined": {
+        "when if is false and has no unevaluated properties": "skip_compile",
+        "when if is false and has unevaluated properties": "skip_compile",
+        "when if is true and has no unevaluated properties": "skip_compile",
+        "when if is true and has unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with nested additionalProperties": {
+        "with additional properties": "skip_compile",
+        "with no additional properties": "skip_compile"
+      },
+      "unevaluatedProperties with nested patternProperties": {
+        "with additional properties": "skip_compile",
+        "with no additional properties": "skip_compile"
+      },
+      "unevaluatedProperties with nested properties": {
+        "with additional properties": "skip_compile",
+        "with no additional properties": "skip_compile"
+      },
+      "unevaluatedProperties with nested unevaluatedProperties": {
+        "with nested unevaluated properties": "skip_compile",
+        "with no nested unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with not": {
+        "with unevaluated properties": "skip_compile"
+      },
+      "unevaluatedProperties with null valued instance properties": {
+        "allows null valued properties": "skip_compile"
+      },
+      "unevaluatedProperties with oneOf": {
+        "with no unevaluated properties": "skip_compile",
+        "with unevaluated properties": "skip_compile"
+      }
+    },
+    "uniqueItems": {
+      "uniqueItems validation": {
+        "0 and false are unique": "skip_compile",
+        "1 and true are unique": "skip_compile",
+        "[0] and [false] are unique": "skip_compile",
+        "[1] and [true] are unique": "skip_compile",
+        "different objects are unique": "skip_compile",
+        "false is not equal to zero": "skip_compile",
+        "nested [0] and [false] are unique": "skip_compile",
+        "nested [1] and [true] are unique": "skip_compile",
+        "non-unique array of arrays is invalid": "skip_compile",
+        "non-unique array of integers is invalid": "skip_compile",
+        "non-unique array of more than two arrays is invalid": "skip_compile",
+        "non-unique array of more than two integers is invalid": "skip_compile",
+        "non-unique array of nested objects is invalid": "skip_compile",
+        "non-unique array of objects is invalid": "skip_compile",
+        "non-unique array of strings is invalid": "skip_compile",
+        "non-unique heterogeneous types are invalid": "skip_compile",
+        "numbers are unique if mathematically unequal": "skip_compile",
+        "objects are non-unique despite key order": "skip_compile",
+        "property order of array of objects is ignored": "skip_compile",
+        "true is not equal to one": "skip_compile",
+        "unique array of arrays is valid": "skip_compile",
+        "unique array of integers is valid": "skip_compile",
+        "unique array of nested objects is valid": "skip_compile",
+        "unique array of objects is valid": "skip_compile",
+        "unique array of strings is valid": "skip_compile",
+        "unique heterogeneous types are valid": "skip_compile",
+        "{\"a\": false} and {\"a\": 0} are unique": "skip_compile",
+        "{\"a\": true} and {\"a\": 1} are unique": "skip_compile"
+      },
+      "uniqueItems with an array of items": {
+        "[false, false] from items array is not valid": "skip_compile",
+        "[false, true] from items array is valid": "skip_compile",
+        "[true, false] from items array is valid": "skip_compile",
+        "[true, true] from items array is not valid": "skip_compile",
+        "non-unique array extended from [false, true] is not valid": "skip_compile",
+        "non-unique array extended from [true, false] is not valid": "skip_compile",
+        "unique array extended from [false, true] is valid": "skip_compile",
+        "unique array extended from [true, false] is valid": "skip_compile"
+      },
+      "uniqueItems with an array of items and additionalItems=false": {
+        "[false, false] from items array is not valid": "skip_compile",
+        "[false, true] from items array is valid": "skip_compile",
+        "[true, false] from items array is valid": "skip_compile",
+        "[true, true] from items array is not valid": "skip_compile",
+        "extra items are invalid even if unique": "skip_compile"
+      },
+      "uniqueItems=false validation": {
+        "0 and false are unique": "skip_compile",
+        "1 and true are unique": "skip_compile",
+        "false is not equal to zero": "skip_compile",
+        "non-unique array of arrays is valid": "skip_compile",
+        "non-unique array of integers is valid": "skip_compile",
+        "non-unique array of nested objects is valid": "skip_compile",
+        "non-unique array of objects is valid": "skip_compile",
+        "non-unique heterogeneous types are valid": "skip_compile",
+        "numbers are unique if mathematically unequal": "skip_compile",
+        "true is not equal to one": "skip_compile",
+        "unique array of arrays is valid": "skip_compile",
+        "unique array of integers is valid": "skip_compile",
+        "unique array of nested objects is valid": "skip_compile",
+        "unique array of objects is valid": "skip_compile",
+        "unique heterogeneous types are valid": "skip_compile"
+      },
+      "uniqueItems=false with an array of items": {
+        "[false, false] from items array is valid": "skip_compile",
+        "[false, true] from items array is valid": "skip_compile",
+        "[true, false] from items array is valid": "skip_compile",
+        "[true, true] from items array is valid": "skip_compile",
+        "non-unique array extended from [false, true] is valid": "skip_compile",
+        "non-unique array extended from [true, false] is valid": "skip_compile",
+        "unique array extended from [false, true] is valid": "skip_compile",
+        "unique array extended from [true, false] is valid": "skip_compile"
+      },
+      "uniqueItems=false with an array of items and additionalItems=false": {
+        "[false, false] from items array is valid": "skip_compile",
+        "[false, true] from items array is valid": "skip_compile",
+        "[true, false] from items array is valid": "skip_compile",
+        "[true, true] from items array is valid": "skip_compile",
+        "extra items are invalid even if unique": "skip_compile"
+      }
+    },
+    "vocabulary": {
+      "ignore unrecognized optional vocabulary": {
+        "number value": "compile_error_valid",
+        "string value": "compile_error_valid"
+      },
+      "schema that uses custom metaschema with with no validation vocabulary": {
+        "applicator vocabulary still works": "compile_error_valid",
+        "no validation: invalid number, but it still validates": "compile_error_valid",
+        "no validation: valid number": "compile_error_valid"
+      }
+    }
+  }
+}

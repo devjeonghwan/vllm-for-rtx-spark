@@ -1,0 +1,126 @@
+name: Code Coverage
+permissions:
+  contents: read
+
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      commit_id:
+        description: 'Branch or Commit ID (optional)'
+        required: false
+        type: string
+
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-Cinstrument-coverage"
+  LLVM_PROFILE_FILE: "llg-%p-%m.profraw"
+
+
+jobs:
+  code-cov-rust:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo at ${{ github.event_name == 'workflow_dispatch' && inputs.commit_id || github.sha }}
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_id || github.sha }}
+
+    - name: Update toolchain
+      run: rustup component add llvm-tools
+
+    - name: Install grcov
+      run: cargo install grcov
+
+    - name: Build everything
+      run: cargo build
+
+    - name: Run tests
+      run: cargo test
+
+    - name: Check environment
+      run: |
+        echo "CARGO_TERM_COLOR: $CARGO_TERM_COLOR"
+        echo "RUSTFLAGS: $RUSTFLAGS"
+        echo "LLVM_PROFILE_FILE: $LLVM_PROFILE_FILE"
+
+    - name: Generate coverage report
+      run: |
+        grcov . -s . --binary-path target/debug/ -t html --branch --ignore-not-existing -o target/debug/coverage/
+
+    - name: Check output
+      run: ls target/debug/coverage/
+
+    - uses: actions/upload-artifact@v6
+      with:
+        name: coverage-report-rust
+        path: target/debug/coverage/
+
+  code-cov-python:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo at ${{ github.event_name == 'workflow_dispatch' && inputs.commit_id || github.sha }}
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_id || github.sha }}
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.11"
+
+    - name: Check environment
+      run: |
+        echo "CARGO_TERM_COLOR: $CARGO_TERM_COLOR"
+        echo "RUSTFLAGS: $RUSTFLAGS"
+        echo "LLVM_PROFILE_FILE: $LLVM_PROFILE_FILE"
+
+    - name: Update toolchain
+      run: rustup component add llvm-tools
+
+    - name: Install grcov
+      run: cargo install grcov
+
+    - name: Clone guidance
+      run: |
+        git clone -b main https://github.com/guidance-ai/guidance
+
+    - name: Install guidance
+      run: |
+        cd guidance
+        pip install .[all,test]
+
+    - name: Install local llguidance
+      run: |
+        pip uninstall -y llguidance || :
+        pip install -v -e .
+
+    - name: Verify llguidance being used
+      run: pip show llguidance
+
+    - name: Run tests
+      run: |
+        cd guidance
+        python -m pytest tests/unit
+
+    - name: See all outputs
+      run: ls -R
+
+    - name: Generate coverage report
+      run: |
+        grcov . -s . --binary-path . -t html --branch --ignore-not-existing -o target/debug/coverage/
+
+    - name: Check output
+      run: ls target/debug/coverage/
+
+    - uses: actions/upload-artifact@v6
+      with:
+        name: coverage-report-python
+        path: target/debug/coverage/
+

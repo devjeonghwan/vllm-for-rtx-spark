@@ -1,0 +1,94 @@
+host: 127.0.0.1
+port: 8000
+api-server-count: 1
+served-model-name: Qwen/Qwen3.8-Flash-Next
+engram-config:
+  cpu_offload: false
+kernel-config:
+  linear_backend_per_quant:
+    mxfp8: b12x
+  moe_backend: marlin
+load-format: mbx
+distributed-executor-backend: mp
+gpu-memory-utilization: 0.88
+kv-cache-dtype: fp8
+max-model-len: 409600
+hf-overrides:
+  text_config:
+    max_position_embeddings: 409600
+    rope_parameters:
+      rope_type: yarn
+      factor: 1.5625
+      original_max_position_embeddings: 262144
+      rope_theta: 10000000
+      partial_rotary_factor: 0.25
+      mrope_section:
+      - 11
+      - 11
+      - 10
+      mrope_interleaved: true
+block-size: 3456
+prefix-match-unit: 64
+compilation-config:
+  cudagraph_mode: FULL_AND_PIECEWISE
+  cudagraph_capture_sizes:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 10
+  - 12
+  - 14
+  - 15
+  - 16
+  - 18
+  - 20
+  - 21
+  - 24
+  - 28
+  - 32
+  - 36
+  - 40
+  - 48
+  - 56
+  - 64
+  - 72
+  - 80
+  - 88
+  - 96
+  - 104
+  - 112
+  - 120
+  - 128
+  compile_ranges_endpoints:
+  - 32
+max-num-seqs: 16
+max-num-batched-tokens: 8192
+enable-prefix-caching: true
+enable-prompt-tokens-details: true
+enable-auto-tool-choice: true
+tool-call-parser: qwen3_xml
+reasoning-parser: qwen3
+speculative-config:
+  method: mtp
+  num_speculative_tokens: 7
+  rejection_sample_method: block
+  draft_sample_method: probabilistic
+  max_model_len: 409600
+async-scheduling: true
+use-replayssm: true
+kv-cache-memory-bytes: 27000000000
+dtype: bfloat16
+tensor-parallel-size: 1
+pipeline-parallel-size: 1
+mamba-cache-mode: align
+additional-config:
+  gdn_prefill_backend: flashinfer
+  rtx_spark:
+    model: qwen3.8-flash-next
+    draft_fp8: true
+    draft_head2: true

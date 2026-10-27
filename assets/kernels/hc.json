@@ -1,0 +1,124 @@
+{
+  "status": "linked_original_HC_AOT_native_execution_pending",
+  "rank": 320,
+  "HC": 4,
+  "K": 10240,
+  "logical_N": 324,
+  "library": "lib/hc.dll",
+  "library_sha256": "45ec64ec29dc977d15ef863fdd4e9c0d044ccece4eee2dae8613e3eef0c5cb9d",
+  "variants": [
+    {
+      "backend": "fma",
+      "M": 1,
+      "original_dispatch_key": [
+        "fma",
+        1,
+        10240,
+        128
+      ],
+      "prefetch_pdl_weights": true,
+      "name": "original_hc_fma_m1",
+      "init_symbol": "original_hc_fma_m1_cuda_init",
+      "load_symbol": "original_hc_fma_m1_cuda_load",
+      "invoke_symbol": "_mlir_original_hc_fma_m1__mlir_ciface_cutlass___call___original_HC_FMA_unchangedHcDownSiluFma_object_at__FakeTensorBFloat16110240102401_FakeTensorBFloat16div110240102401_FakeTensorBFloat161div1i64div11_1_10240_1_CUstre"
+    },
+    {
+      "backend": "fma",
+      "M": 2,
+      "original_dispatch_key": [
+        "fma",
+        2,
+        10240,
+        128
+      ],
+      "prefetch_pdl_weights": false,
+      "name": "original_hc_fma_m2",
+      "init_symbol": "original_hc_fma_m2_cuda_init",
+      "load_symbol": "original_hc_fma_m2_cuda_load",
+      "invoke_symbol": "_mlir_original_hc_fma_m2__mlir_ciface_cutlass___call___original_HC_FMA_unchangedHcDownSiluFma_object_at__FakeTensorBFloat16210240102401_FakeTensorBFloat16div110240102401_FakeTensorBFloat162div1i64div11_2_10240_1_CUstre"
+    },
+    {
+      "backend": "fma",
+      "M": 3,
+      "original_dispatch_key": [
+        "fma",
+        3,
+        10240,
+        128
+      ],
+      "prefetch_pdl_weights": false,
+      "name": "original_hc_fma_m3",
+      "init_symbol": "original_hc_fma_m3_cuda_init",
+      "load_symbol": "original_hc_fma_m3_cuda_load",
+      "invoke_symbol": "_mlir_original_hc_fma_m3__mlir_ciface_cutlass___call___original_HC_FMA_unchangedHcDownSiluFma_object_at__FakeTensorBFloat16310240102401_FakeTensorBFloat16div110240102401_FakeTensorBFloat163div1i64div11_3_10240_1_CUstre"
+    },
+    {
+      "backend": "fma",
+      "M": 4,
+      "original_dispatch_key": [
+        "fma",
+        4,
+        10240,
+        128
+      ],
+      "prefetch_pdl_weights": false,
+      "name": "original_hc_fma_m4",
+      "init_symbol": "original_hc_fma_m4_cuda_init",
+      "load_symbol": "original_hc_fma_m4_cuda_load",
+      "invoke_symbol": "_mlir_original_hc_fma_m4__mlir_ciface_cutlass___call___original_HC_FMA_unchangedHcDownSiluFma_object_at__FakeTensorBFloat16410240102401_FakeTensorBFloat16div110240102401_FakeTensorBFloat164div1i64div11_4_10240_1_CUstre"
+    },
+    {
+      "backend": "mma",
+      "M_range": [
+        5,
+        16
+      ],
+      "original_dispatch_key": [
+        "mma",
+        6,
+        5,
+        8
+      ],
+      "name": "original_hc_mma_stages5_n8",
+      "init_symbol": "original_hc_mma_stages5_n8_cuda_init",
+      "load_symbol": "original_hc_mma_stages5_n8_cuda_load",
+      "invoke_symbol": "_mlir_original_hc_mma_stages5_n8__mlir_ciface_cutlass___call___original_HC_MMA_unchangedHcDownSiluMma_object_at__FakeTensorBFloat16div1div8i64div81_FakeTensorBFloat16div1div8i64div81_FakeTensorBFloat16div1div1i64div11_CUstream"
+    },
+    {
+      "backend": "mma",
+      "M_range": [
+        17,
+        32
+      ],
+      "original_dispatch_key": [
+        "mma",
+        6,
+        5,
+        16
+      ],
+      "name": "original_hc_mma_stages5_n16",
+      "init_symbol": "original_hc_mma_stages5_n16_cuda_init",
+      "load_symbol": "original_hc_mma_stages5_n16_cuda_load",
+      "invoke_symbol": "_mlir_original_hc_mma_stages5_n16__mlir_ciface_cutlass___call___original_HC_MMA_unchangedHcDownSiluMma_object_at__FakeTensorBFloat16div1div8i64div81_FakeTensorBFloat16div1div8i64div81_FakeTensorBFloat16div1div1i64div11_CUstream"
+    },
+    {
+      "backend": "mma",
+      "M_range": [
+        33,
+        48
+      ],
+      "original_dispatch_key": [
+        "mma",
+        6,
+        4,
+        16
+      ],
+      "name": "original_hc_mma_stages4_n16",
+      "init_symbol": "original_hc_mma_stages4_n16_cuda_init",
+      "load_symbol": "original_hc_mma_stages4_n16_cuda_load",
+      "invoke_symbol": "_mlir_original_hc_mma_stages4_n16__mlir_ciface_cutlass___call___original_HC_MMA_unchangedHcDownSiluMma_object_at__FakeTensorBFloat16div1div8i64div81_FakeTensorBFloat16div1div8i64div81_FakeTensorBFloat16div1div1i64div11_CUstream"
+    }
+  ],
+  "original_GPU_math_modified": false,
+  "runtime_executed": false
+}

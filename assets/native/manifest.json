@@ -1,0 +1,43 @@
+{
+  "format_version": 1,
+  "host": "win_arm64",
+  "gpu": "sm_121a",
+  "files": {
+    "csf_host": {
+      "file": "mbx_original_csf_native_host.dll",
+      "sha256": "d2c4bda2a7ff96737eac8e3413a35f889e1a32f102c8fb4c71932314fc37804b",
+      "bytes": 201728,
+      "origin": "Built from src/kernels/csf; original host API with Windows Driver boundary"
+    },
+    "csf_cubin": {
+      "file": "marlin_csf.sm121a.cubin",
+      "sha256": "c1bb55bca1818454d2888ddbd1fd3b0cbd85842006b7da12fec85a8b2f529219",
+      "bytes": 1748200,
+      "origin": "myllmbox v5.3.1 libmbx_marlin_csf.so; original SM121a device payload"
+    },
+    "ple_nvme": {
+      "file": "mbx_ple_nvme.dll",
+      "sha256": "e612e776aa49f952963d328df3cb7faba582f43c32de15c427b790ce537bdd82",
+      "bytes": 144896,
+      "origin": "Built from src/runtime/ple/native/nvme.cpp"
+    },
+    "ple_async": {
+      "file": "mbx_ple_async.dll",
+      "sha256": "4311cd1f5136ba48444944449e4aefb59ed4e586553a075eab15c35436c5e2ae",
+      "bytes": 128000,
+      "origin": "Built from src/runtime/ple/native/async.cpp"
+    },
+    "depth": {
+      "file": "mbx_mtp.dll",
+      "sha256": "fada31674c280106540fe4b3da6fdf60fd62ed6ad11fbbc759cacd796371f64e",
+      "bytes": 103424,
+      "origin": "Built from src/runtime/depth/mbx_mtp.cpp"
+    },
+    "sampling": {
+      "file": "flashinfer_sampling.dll",
+      "sha256": "602c2b5ccea90bdd57b4b96138eabf2a32a6bc266f44857258691f6b7ae32cec",
+      "bytes": 1587712,
+      "origin": "Built from original FlashInfer CUDA sources; third_party/flashinfer-native"
+    }
+  }
+}

@@ -1,0 +1,711 @@
+import json
+from typing import Generic, Sequence
+
+from typing_extensions import assert_never
+
+from mistral_common.exceptions import InvalidRequestException
+from mistral_common.protocol.instruct.chunk import (
+    ContentChunk,
+    TextChunk,
+)
+from mistral_common.protocol.instruct.messages import (
+    UATS,
+    AssistantMessage,
+    AssistantMessageType,
+    FinetuningAssistantMessage,
+    Roles,
+    SystemMessage,
+    SystemMessageType,
+    ToolMessage,
+    ToolMessageType,
+    UserMessage,
+    UserMessageType,
+)
+from mistral_common.protocol.instruct.request import ChatCompletionRequest, InstructRequest, ModelSettings
+from mistral_common.protocol.instruct.tool_calls import FunctionCall, Tool, ToolCall
+from mistral_common.tokens.tokenizers.base import InstructRequestType, TokenizerVersion
+from mistral_common.tokens.tokenizers.model_settings_builder import ModelSettingsBuilder
+
+_DEFAULT_JOIN_STR = "\n\n"
+
+
+def _aggregate_content_chunks_impl(
+    contents: list[list[ContentChunk] | str | None],
+    msg_join_str: str,
+    chunk_join_str: str,
+) -> list[ContentChunk] | str:
+    r"""Coalesce TextChunks within the same message and across different messages.
+
+    Adjacent TextChunks within the same message are joined with `chunk_join_str`.
+    Text from different messages is joined with `msg_join_str`.
+
+    Args:
+        contents: A list of message contents, where each element is either a string,
+            a list of ContentChunks, or `None`. This is typically
+            `[message.content for message in messages]`.
+        msg_join_str: Separator inserted between text from different messages.
+        chunk_join_str: Separator inserted between adjacent text chunks within
+            the same message.
+
+    Returns:
+        A plain string if only text chunks were present, otherwise a list of
+        ContentChunks with adjacent text coalesced.
+    """
+    all_content: list[ContentChunk] = []
+    cur_text_parts: list[str] = []
+
+    def _flush_text() -> None:
+        if cur_text_parts:
+            all_content.append(TextChunk(text="".join(cur_text_parts)))
+            cur_text_parts.clear()
+
+    for content in contents:
+        needs_new_msg_sep = bool(cur_text_parts)
+        if not content:  # skip None or empty string
+            continue
+        elif isinstance(content, str):
+            join = msg_join_str if needs_new_msg_sep else ""
+            cur_text_parts.append(join + content)
+        else:  # list[ContentChunk]
+            for chunk in content:
+                if isinstance(chunk, TextChunk):
+                    if not chunk.text:  # skip empty text chunks
+                        continue
+                    if not cur_text_parts:
+                        join = ""
+                    elif needs_new_msg_sep:
+                        join = msg_join_str
+                    else:
+                        join = chunk_join_str
+                    cur_text_parts.append(join + chunk.text)
+                    needs_new_msg_sep = False
+                else:
+                    _flush_text()
+                    all_content.append(chunk)
+
+    if not all_content:
+        # Only text encountered: return as str
+        return "".join(cur_text_parts)
+
+    _flush_text()
+
+    return all_content
+
+
+class InstructRequestNormalizer(
+    Generic[UserMessageType, AssistantMessageType, ToolMessageType, SystemMessageType, InstructRequestType]
+):
+    r"""Takes a [ChatCompletionRequest][mistral_common.protocol.instruct.request.ChatCompletionRequest] and normalizes
+    it into an [InstructRequest][mistral_common.protocol.instruct.request.InstructRequest].
+
+    The normalization process does several things such as:
+    - Aggregate consecutive messages of the same role
+    - Aggregate system prompts
+    - Normalize json content
+    - Normalize tool calls
+
+    Examples:
+        >>> normalizer = InstructRequestNormalizer.normalizer()
+    """
+
+    _system_prompt_in_begin: bool = False
+    _allow_tool_call_and_content: bool = False
+    _chunk_join_str: str = _DEFAULT_JOIN_STR
+    _msg_join_str: str = _DEFAULT_JOIN_STR
+
+    def __init__(
+        self,
+        user_message_class: type[UserMessageType],
+        assistant_message_class: type[AssistantMessageType],
+        tool_message_class: type[ToolMessageType],
+        system_message_class: type[SystemMessageType],
+        instruct_request_class: type[InstructRequestType],
+        model_settings_builder: ModelSettingsBuilder | None,
+    ):
+        r"""Initialize the normalizer with the appropriate message classes.
+
+        Prefer the normalizer() static methods over direct construction.
+
+        Args:
+           user_message_class: Class used to construct aggregated user messages.
+           assistant_message_class: Class used to construct aggregated assistant messages.
+           tool_message_class: Class used to construct aggregated tool messages.
+           system_message_class: Class used to construct system messages. Currently
+               unused, but kept for API symmetry.
+           instruct_request_class: Class used to construct the final InstructRequest.
+           model_settings_builder: Builder for model settings, or `None` if the
+               tokenizer version does not support model settings.
+        """
+        self._user_message_class = user_message_class
+        self._assistant_message_class = assistant_message_class
+        self._tool_message_class = tool_message_class
+        self._instruct_request_class = instruct_request_class
+        # this is unused but makes creation nicer
+        self._system_message_class = system_message_class
+        self._model_settings_builder = model_settings_builder
+
+    @staticmethod
+    def normalizer(model_settings_builder: ModelSettingsBuilder | None = None) -> "InstructRequestNormalizer":
+        r"""Return a normalizer for the default instruct request.
+
+        Args:
+            model_settings_builder: Must be `None` for this normalizer version.
+
+        Returns:
+            A normalizer for the default instruct request.
+
+        Raises:
+            ValueError: If `model_settings_builder` is not `None`.
+
+        Examples:
+            >>> normalizer = InstructRequestNormalizer.normalizer()
+        """
+        if model_settings_builder is not None:
+            raise ValueError(
+                f"model_settings_builder must be None for InstructRequestNormalizer, got {model_settings_builder}"
+            )
+        return InstructRequestNormalizer(
+            UserMessage, AssistantMessage, ToolMessage, SystemMessage, InstructRequest[UATS, Tool], None
+        )
+
+    def build_settings(self, request: ChatCompletionRequest) -> ModelSettings:
+        r"""Build model settings from a chat completion request.
+
+        For pre-v15 normalizers, model settings are all `None`.
+
+        Args:
+            request: The chat completion request whose settings are built.
+
+        Returns:
+            Returns `ModelSettings.none()`.
+
+        Raises:
+            InvalidRequestException: If a model settings builder is configured
+                for a normalizer that does not support model settings.
+        """
+        if self._model_settings_builder is not None:
+            raise InvalidRequestException(
+                f"model_settings_builder should be None for {type(self).__name__}, got {self._model_settings_builder}"
+            )
+        return ModelSettings.none()
+
+    def _build_instruct_request(
+        self,
+        *,
+        messages: list[UATS],
+        system_prompt: str | None,
+        request: ChatCompletionRequest[UATS],
+        settings: ModelSettings,
+    ) -> InstructRequestType:
+        r"""Construct the configured instruct request class.
+
+        Args:
+            messages: The normalized messages.
+            system_prompt: The normalized system prompt.
+            request: The source chat completion request.
+            settings: The model settings.
+
+        Returns:
+            The configured instruct request.
+        """
+        return self._instruct_request_class(
+            messages=messages,
+            system_prompt=system_prompt,
+            available_tools=request.tools,
+            settings=settings,
+        )
+
+    def _normalize_json_content(self, content: str | None) -> str:
+        if content is None or len(content) == 0:
+            return "{}"
+
+        try:
+            parsed_json = json.loads(content)
+            normalized_content = json.dumps(parsed_json, ensure_ascii=False)
+        except json.JSONDecodeError:
+            normalized_content = content
+        return normalized_content
+
+    def _aggregate_content_chunks(self, messages: list[UATS]) -> list[ContentChunk] | str:
+        r"""Coalesce neighboring blocks of ContentChunks across messages."""
+        return _aggregate_content_chunks_impl(
+            [message.content for message in messages],
+            msg_join_str=self._msg_join_str,
+            chunk_join_str=self._chunk_join_str,
+        )
+
+    def _aggregate_content_chunks_to_str_same_message(self, message: UATS) -> str:
+        r"""Aggregate a single message's content chunks to a string.
+
+        Args:
+            message: A single message with role system or tool.
+
+        Returns:
+            The aggregated content as a string.
+        """
+        assert message.role in (Roles.system, Roles.tool), message.role
+        aggregated = self._aggregate_content_chunks([message])
+        assert isinstance(aggregated, str), aggregated
+        return aggregated
+
+    def _aggregate_system_prompts(self, messages: list[UATS]) -> str | None:
+        system_prompt: list[str] = []
+
+        for message in messages:
+            if message.role == Roles.system and message.content:
+                system_prompt.append(self._aggregate_content_chunks_to_str_same_message(message))
+
+        return self._msg_join_str.join(system_prompt) if len(system_prompt) else None
+
+    def _aggregate_tool_messages(self, messages: list[UATS], latest_call_ids: list[str]) -> list[ToolMessageType]:
+        r"""Normalize tool messages without aggregation across messages.
+
+        Each tool message's content is JSON-normalized; chunk types are guaranteed by the validator.
+
+        Returns:
+            The tool messages with normalized content, one per input message.
+        """
+        tool_messages: list[ToolMessageType] = []
+        for message in messages:
+            assert isinstance(message, self._tool_message_class), "Expected tool message"
+            content = self._aggregate_content_chunks([message])
+            assert isinstance(content, str), (
+                f"Unexpected content chunk types in tool message: {[type(c).__name__ for c in content]}"
+            )
+            normalized_content = self._normalize_json_content(content)
+
+            tool_messages.append(
+                self._tool_message_class(
+                    content=normalized_content, tool_call_id=message.tool_call_id, name=message.name
+                )
+            )
+
+        return tool_messages
+
+    def _normalize_tool_call(self, tool_call: ToolCall) -> ToolCall:
+        normalized_function_aruments = self._normalize_json_content(tool_call.function.arguments)
+        return ToolCall(
+            function=FunctionCall(name=tool_call.function.name, arguments=normalized_function_aruments),
+            id=tool_call.id,
+        )
+
+    def _aggregate_system_messages(self, messages: list[UATS]) -> list[SystemMessageType]:
+        return []
+
+    def _aggregate_assistant_messages(self, messages: list[UATS]) -> AssistantMessageType:
+        tool_calls: list[ToolCall] = []
+        prefix: bool = False
+        weight: float | None = None
+
+        content = self._aggregate_content_chunks(messages)
+
+        for message in messages:
+            assert isinstance(message, self._assistant_message_class), "Expected assistant message"
+
+            if not self._allow_tool_call_and_content and (message.tool_calls and message.content):
+                raise ValueError(f"Tool calls and content cannot be used together in the same message. {message}")
+
+            if message.tool_calls:
+                for tool_call in message.tool_calls:
+                    normalized_tool_call = self._normalize_tool_call(tool_call)
+                    tool_calls.append(normalized_tool_call)
+
+            prefix |= message.prefix
+
+            if isinstance(message, FinetuningAssistantMessage):
+                if weight is not None:
+                    assert weight == message.weight, (
+                        "Expected weights of aggregated FinetuningAssistantMessage to be equal"
+                    )
+                weight = message.weight
+
+        aggregated_message = self._assistant_message_class(
+            content=content,
+            tool_calls=tool_calls or None,
+            prefix=prefix,
+        )
+
+        if weight is not None and hasattr(aggregated_message, "weight"):
+            aggregated_message.weight = weight
+        return aggregated_message
+
+    def _aggregate_user_messages(self, messages: list[UATS]) -> UserMessageType:
+        r"""Coalesce neighboring blocks of ContentChunks in user messages."""
+        content = self._aggregate_content_chunks(messages)
+        return self._user_message_class(content=content)
+
+    def _aggregate_role(self, messages: list[UATS], role: Roles | None, latest_call_ids: list[str]) -> Sequence[UATS]:
+        if role == Roles.tool:
+            return self._aggregate_tool_messages(messages, latest_call_ids)
+        elif role == Roles.assistant:
+            return [self._aggregate_assistant_messages(messages)]
+        elif role == Roles.user:
+            return [self._aggregate_user_messages(messages)]
+        else:  # System messages are ignored
+            return self._aggregate_system_messages(messages)
+
+    def _aggregate_messages(self, messages: list[UATS]) -> list[UATS]:
+        aggregated_messages: list[UATS] = []
+        messages_to_aggregate: list[UATS] = []
+        current_role: Roles | None = None
+        current_weight: float | None = None
+        latest_call_ids: list[str] = []
+
+        # Collect consecutive lists of messages with the same role and weight
+        for message in messages:
+            new_weight = getattr(message, "weight", None)
+            if current_role != message.role or (new_weight != current_weight):
+                aggregated_messages.extend(self._aggregate_role(messages_to_aggregate, current_role, latest_call_ids))
+
+                if current_role == Roles.assistant:
+                    assistant_message = aggregated_messages[-1]
+                    assert isinstance(aggregated_messages[-1], AssistantMessage)
+                    if assistant_message.tool_calls is not None:
+                        for tool_call in assistant_message.tool_calls:
+                            latest_call_ids.append(tool_call.id)
+
+                elif current_role == Roles.tool:
+                    # reordering only depends on the latest aggregated assistant message
+                    latest_call_ids.clear()
+
+                messages_to_aggregate.clear()
+            current_weight = new_weight
+            current_role = message.role
+            messages_to_aggregate.append(message)
+
+        # Add the last set of messages
+        aggregated_messages.extend(self._aggregate_role(messages_to_aggregate, current_role, latest_call_ids))
+
+        # If the first message is not a user message, or we didn't aggregate
+        # anything (all system messages) for example, add an empty user message
+        if len(aggregated_messages) == 0 or (
+            not self._system_prompt_in_begin and aggregated_messages[0].role != Roles.user
+        ):
+            aggregated_messages.insert(0, self._user_message_class(content=""))
+
+        return aggregated_messages
+
+    def from_chat_completion_request(self, request: ChatCompletionRequest[UATS]) -> InstructRequestType:
+        r"""Convert a chat completion request to an instruct request.
+
+        Aggregates system prompts into a single `system_prompt` string, merges
+        consecutive same-role messages, and normalizes tool call arguments.
+        Requires model settings to be empty for this normalizer version.
+
+        Args:
+            request: The chat completion request to convert.
+
+        Returns:
+            The converted instruct request, ready for tokenization.
+
+        Raises:
+            InvalidRequestException: If the request carries model settings that
+                this normalizer version does not support.
+
+        Examples:
+            >>> from mistral_common.protocol.instruct.messages import UserMessage, AssistantMessage
+            >>> request = ChatCompletionRequest(
+            ...     messages=[
+            ...         UserMessage(content="Hello"),
+            ...         AssistantMessage(content="Hi"),
+            ...     ],
+            ... )
+            >>> normalizer = InstructRequestNormalizer.normalizer()
+            >>> instruct_request = normalizer.from_chat_completion_request(request)
+        """
+        system_prompt = self._aggregate_system_prompts(request.messages)
+        messages = self._aggregate_messages(request.messages)
+
+        settings = self.build_settings(request)
+        if settings != ModelSettings.none():
+            raise InvalidRequestException(f"Model settings are not supported for {type(self).__name__}, got {settings}")
+
+        return self._build_instruct_request(
+            messages=messages,
+            system_prompt=system_prompt,
+            request=request,
+            settings=settings,
+        )
+
+
+class InstructRequestNormalizerV7(
+    InstructRequestNormalizer[
+        UserMessageType, AssistantMessageType, ToolMessageType, SystemMessageType, InstructRequestType
+    ]
+):
+    r"""Normalizer for the v7 tokenizer.
+
+    Examples:
+        >>> normalizer = InstructRequestNormalizerV7.normalizer()
+    """
+
+    _system_prompt_in_begin: bool = True
+    _allow_tool_call_and_content: bool = True
+
+    @staticmethod
+    def normalizer(model_settings_builder: ModelSettingsBuilder | None = None) -> "InstructRequestNormalizerV7":
+        r"""Return a normalizer for the default instruct request.
+
+        Args:
+            model_settings_builder: Must be `None` for this normalizer version.
+
+        Returns:
+            A normalizer for the V7 instruct request.
+
+        Raises:
+            ValueError: If `model_settings_builder` is not `None`.
+
+        Examples:
+            >>> normalizer = InstructRequestNormalizerV7.normalizer()
+        """
+        if model_settings_builder is not None:
+            raise ValueError(
+                f"model_settings_builder must be None for InstructRequestNormalizerV7, got {model_settings_builder}"
+            )
+        return InstructRequestNormalizerV7(
+            UserMessage, AssistantMessage, ToolMessage, SystemMessage, InstructRequest[UATS, Tool], None
+        )
+
+    def _aggregate_tool_messages(self, messages: list[UATS], latest_call_ids: list[str]) -> list[ToolMessageType]:
+        r"""Normalize tool messages without JSON normalization.
+
+        V7+ normalizers skip JSON content normalization for tool messages (chunk-type validation is
+        handled by the validator).
+
+        Returns:
+            The tool messages with their content coalesced to a string, one per input message.
+        """
+        tool_messages: list[ToolMessageType] = []
+        for message in messages:
+            assert isinstance(message, self._tool_message_class), "Expected tool message"
+            content = self._aggregate_content_chunks([message])
+            assert isinstance(content, str), (
+                f"Unexpected content chunk types in tool message: {[type(c).__name__ for c in content]}"
+            )
+            tool_messages.append(
+                self._tool_message_class(content=content, tool_call_id=message.tool_call_id, name=message.name)
+            )
+        return tool_messages
+
+    def _aggregate_system_messages(self, messages: list[UATS]) -> list[SystemMessageType]:
+        aggregated: list[SystemMessageType] = []
+        for message in messages:
+            if isinstance(message, self._system_message_class):
+                content = self._aggregate_content_chunks([message])
+                aggregated.append(self._system_message_class(content=content))
+        return aggregated
+
+    def _aggregate_role(self, messages: list[UATS], role: Roles | None, latest_call_ids: list[str]) -> Sequence[UATS]:
+        if role == Roles.tool:
+            return self._aggregate_tool_messages(messages, latest_call_ids)
+        elif role == Roles.assistant:
+            return [self._aggregate_assistant_messages(messages)]
+        elif role == Roles.user:
+            return [self._aggregate_user_messages(messages)]
+        elif role == Roles.system:
+            return self._aggregate_system_messages(messages)
+        else:
+            assert role is None and len(messages) == 0
+            return []
+
+    def _aggregate_system_prompts(self, messages: list[UATS]) -> str | None:
+        raise NotImplementedError("We should not aggregate system prompts")
+
+    def from_chat_completion_request(self, request: ChatCompletionRequest[UATS]) -> InstructRequestType:
+        r"""Converts a chat completion request to an instruct request.
+
+        Args:
+            request: The chat completion request to convert.
+
+        Returns:
+            The converted instruct request.
+
+        Examples:
+            >>> from mistral_common.protocol.instruct.messages import UserMessage, AssistantMessage
+            >>> request = ChatCompletionRequest(
+            ...     messages=[
+            ...         UserMessage(content="Hello"),
+            ...         AssistantMessage(content="Hi"),
+            ...     ],
+            ... )
+            >>> normalizer = InstructRequestNormalizerV7.normalizer()
+            >>> instruct_request = normalizer.from_chat_completion_request(request)
+        """
+        messages = self._aggregate_messages(request.messages)
+        settings = self.build_settings(request)
+        if settings != ModelSettings.none():
+            raise InvalidRequestException(f"Model settings are not supported for {type(self).__name__}, got {settings}")
+        return self._build_instruct_request(
+            messages=messages,
+            system_prompt=None,
+            request=request,
+            settings=settings,
+        )
+
+
+class InstructRequestNormalizerV13(
+    InstructRequestNormalizerV7[
+        UserMessageType, AssistantMessageType, ToolMessageType, SystemMessageType, InstructRequestType
+    ]
+):
+    r"""Normalizer for the v13 tokenizer.
+
+    It reorders tool messages based on the tool call order.
+
+    Examples:
+        >>> normalizer = InstructRequestNormalizerV13.normalizer()
+    """
+
+    @staticmethod
+    def normalizer(model_settings_builder: ModelSettingsBuilder | None = None) -> "InstructRequestNormalizerV13":
+        r"""Return a normalizer for the default instruct request.
+
+        Args:
+            model_settings_builder: Must be `None` for this normalizer version.
+
+        Returns:
+            A normalizer for the V13 instruct request.
+
+        Raises:
+            ValueError: If `model_settings_builder` is not `None`.
+        """
+        if model_settings_builder is not None:
+            raise ValueError(
+                f"model_settings_builder must be None for InstructRequestNormalizerV13, got {model_settings_builder}"
+            )
+        return InstructRequestNormalizerV13(
+            UserMessage, AssistantMessage, ToolMessage, SystemMessage, InstructRequest[UATS, Tool], None
+        )
+
+    @staticmethod
+    def _inplace_sort_tool_messages(tool_messages: list[ToolMessageType], latest_call_ids: list[str]) -> None:
+        id_to_tool_call_idx = {call_id: idx for idx, call_id in enumerate(latest_call_ids)}
+        id_to_tool_result_idx = {message.tool_call_id: idx for idx, message in enumerate(tool_messages)}
+        # First order by tool call idx and then by tool result idx
+        tool_messages.sort(
+            key=lambda msg: (
+                id_to_tool_call_idx.get(msg.tool_call_id or "null", float("inf")),
+                id_to_tool_result_idx[msg.tool_call_id],
+            ),
+        )
+
+    def _aggregate_tool_messages(self, messages: list[UATS], latest_call_ids: list[str]) -> list[ToolMessageType]:
+        tool_messages: list[ToolMessageType] = super()._aggregate_tool_messages(messages, latest_call_ids)
+        self._inplace_sort_tool_messages(tool_messages=tool_messages, latest_call_ids=latest_call_ids)
+        return tool_messages
+
+
+class InstructRequestNormalizerV15(
+    InstructRequestNormalizerV13[
+        UserMessageType, AssistantMessageType, ToolMessageType, SystemMessageType, InstructRequestType
+    ]
+):
+    r"""Normalizer for the v15 tokenizer.
+
+    It reorders tool messages based on the tool call order and builds model settings.
+
+    Examples:
+        >>> normalizer = InstructRequestNormalizerV15.normalizer()
+    """
+
+    _chunk_join_str: str = ""
+
+    def _aggregate_tool_messages(self, messages: list[UATS], latest_call_ids: list[str]) -> list[ToolMessageType]:
+        r"""V15 keeps all aggregated tool content (validation handled by the validator)."""
+        tool_messages: list[ToolMessageType] = []
+        for message in messages:
+            assert isinstance(message, self._tool_message_class), "Expected tool message"
+            content = self._aggregate_content_chunks([message])
+            tool_messages.append(
+                self._tool_message_class(content=content, tool_call_id=message.tool_call_id, name=message.name)
+            )
+        self._inplace_sort_tool_messages(tool_messages=tool_messages, latest_call_ids=latest_call_ids)
+        return tool_messages
+
+    @staticmethod
+    def normalizer(model_settings_builder: ModelSettingsBuilder | None = None) -> "InstructRequestNormalizerV15":
+        r"""Return a normalizer for the V15 instruct request.
+
+        Args:
+            model_settings_builder: The builder for model settings.
+
+        Returns:
+            A normalizer for the V15 instruct request.
+        """
+        return InstructRequestNormalizerV15(
+            UserMessage,
+            AssistantMessage,
+            ToolMessage,
+            SystemMessage,
+            InstructRequest,
+            model_settings_builder,
+        )
+
+    def build_settings(self, request: ChatCompletionRequest) -> ModelSettings:
+        r"""Build model settings using the configured model settings builder.
+
+        Args:
+            request: The chat completion request.
+
+        Returns:
+            The built model settings.
+
+        Raises:
+            InvalidRequestException: If no model settings builder is configured.
+        """
+        if self._model_settings_builder is None:
+            raise InvalidRequestException(f"model_settings_builder must not be None for {type(self).__name__}")
+        return self._model_settings_builder.build_settings(request)
+
+    def from_chat_completion_request(self, request: ChatCompletionRequest[UATS]) -> InstructRequestType:
+        r"""Converts a chat completion request to an instruct request.
+
+        Args:
+            request: The chat completion request to convert.
+
+        Returns:
+            The converted instruct request.
+        """
+        messages = self._aggregate_messages(request.messages)
+        settings = self.build_settings(request)
+        return self._build_instruct_request(
+            messages=messages,
+            system_prompt=None,
+            request=request,
+            settings=settings,
+        )
+
+
+def get_normalizer(
+    version: TokenizerVersion, model_settings_builder: ModelSettingsBuilder | None = None
+) -> InstructRequestNormalizer:
+    r"""Get the appropriate normalizer for the given tokenizer version.
+
+    Args:
+        version: The tokenizer version to get the normalizer for.
+        model_settings_builder: The builder for model settings, or `None` if the
+            tokenizer version does not support model settings (pre-v15).
+
+    Returns:
+        The appropriate normalizer for the given tokenizer version.
+
+    Raises:
+        ValueError: If `model_settings_builder` is not `None` but the version's
+            normalizer does not support it.
+
+    Examples:
+        >>> normalizer = get_normalizer(TokenizerVersion.v1)
+    """
+    match version:
+        case TokenizerVersion.v1 | TokenizerVersion.v2 | TokenizerVersion.v3:
+            normalizer_cls = InstructRequestNormalizer
+        case TokenizerVersion.v7:
+            normalizer_cls = InstructRequestNormalizerV7
+        case TokenizerVersion.v11 | TokenizerVersion.v13:
+            normalizer_cls = InstructRequestNormalizerV13
+        case TokenizerVersion.v15:
+            normalizer_cls = InstructRequestNormalizerV15
+        case _:
+            assert_never(version)
+
+    return normalizer_cls.normalizer(model_settings_builder=model_settings_builder)

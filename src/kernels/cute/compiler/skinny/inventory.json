@@ -1,0 +1,719 @@
+{
+  "configs": [
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "id": "796e8e00bc3c430d"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "6732c99fe618bc5b"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "e5256e9f2849aa4f"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "541cd000c042b297"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "cb9384d4a8f9235e"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 256,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "8232f18e987f5b94"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 256,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "da18988c41557dec"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "id": "d56e480149cd2e7c"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 1,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "id": "6ae75ec51f42dbb9"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "id": "3e4c74bf36c24928"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 256,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "d2ea8ec0d437ad13"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 256,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "72675f78facbb43d"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "0ca8208132372951"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "8f4488b9be805134"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "id": "8877c65fda8e6a76"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "id": "bd974231a7288e32"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "35a2105d503ab2ba"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "ba738d9233d1a867"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "cbaa0cecb4a81646"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "id": "550d1c3f11324e0f"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 640
+      },
+      "id": "49db1547a3aead02"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 640
+      },
+      "id": "260c3a94a33bba70"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 640
+      },
+      "id": "264ac730c04bae88"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 640
+      },
+      "id": "d7ce4e1254f48379"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 640
+      },
+      "id": "b70cfa48729fabcc"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 6144
+      },
+      "id": "613fb91f837a0e68"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 6144
+      },
+      "id": "5e8ba24ebbdcad78"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 6144
+      },
+      "id": "8073a52b34c219a4"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 6144
+      },
+      "id": "6f69596a25017abe"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 8,
+        "static_k": 6144
+      },
+      "id": "418862d65115206c"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 320
+      },
+      "id": "560d0ababab10232"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 320
+      },
+      "id": "07c8ae5e3eca9075"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 320
+      },
+      "id": "09887ed35ef8ccbe"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 320
+      },
+      "id": "5d7d2327bf00c72b"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "35b678e8f7e0d0a9"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "9b9181a908e2c608"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "0b9d546db85d4816"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "ed80a57d0fe03619"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "279fa3e30f504657"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "082bf8d1325677a7"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "50b94040a68bc8ee"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "59fd71218122493a"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "683be1845d3367e1"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "4420cdf104f2ae5e"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 128,
+        "outputs_per_block": 2,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "ac44d7a3138b8546"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "5b8f6a79265f3495"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "fdba873fc9a6d685"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 4,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "b4b8b76e8ee2e80c"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "37ff4578765526a0"
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "8f24f2a89e49849d"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 8,
+        "static_k": null
+      },
+      "id": "e0e82c7aefe7a8c0"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 3072
+      },
+      "id": "d1b2899748af4ae2"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 3072
+      },
+      "id": "94c1a5160db58133"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 3072
+      },
+      "id": "a9e604a5376681a4"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "e804014dc5a05e97"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "61d29acf3574fe88"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "0fbf440c4b2bdf5e"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 2,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "id": "982c654854a83edb"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "id": "730237382b5310e6"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "328922e185b3190c"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "c0f5f9070aa932ac"
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "5e13e4a2c91577d6"
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "id": "278d934a6405b7b6"
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 2,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": null
+      },
+      "id": "65afb12168d1e5d3"
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": null
+      },
+      "id": "8feeb97290cb1611"
+    }
+  ]
+}

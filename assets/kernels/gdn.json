@@ -1,0 +1,18 @@
+{
+  "library": "lib/gdn.dll",
+  "library_sha256": "99a1b82ad3c8c48414da40bed30eb282ba3b3192d41ff3d8009801878ed6fc92",
+  "variants": {
+    "plain": {
+      "init_symbol": "original_FI_GDN_sm121a_plain_cuda_init",
+      "load_symbol": "original_FI_GDN_sm121a_plain_cuda_load",
+      "invoke_symbol": "_mlir_original_FI_GDN_sm121a_plain__mlir_ciface_cutlass_c_abi_entry_original_aot_flashinfer_gdn_kernels_delta_rule_dsl_delta_rule_sm120_FullyFusedDeltaRuleSm120objectat_FakeTensorBFloat16q_size0i64div1q_size1i64div1q_size2i64div",
+      "inputs": 20
+    },
+    "checkpoint": {
+      "init_symbol": "original_FI_GDN_sm121a_checkpoint_cuda_init",
+      "load_symbol": "original_FI_GDN_sm121a_checkpoint_cuda_load",
+      "invoke_symbol": "_mlir_original_FI_GDN_sm121a_checkpoint__mlir_ciface_cutlass_c_abi_entry_original_aot_flashinfer_gdn_kernels_delta_rule_dsl_delta_rule_sm120_FullyFusedDeltaRuleSm120objectat_FakeTensorBFloat16q_size0i64div1q_size1i64div1q_size2i64div",
+      "inputs": 22
+    }
+  }
+}

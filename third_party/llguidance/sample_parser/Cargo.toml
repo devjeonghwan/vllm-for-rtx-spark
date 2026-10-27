@@ -1,0 +1,24 @@
+[package]
+name = "sample_parser"
+version = "0.1.0"
+edition = "2021"
+default-run = "sample_parser"
+
+[dependencies]
+llguidance = { workspace = true }
+toktrie_hf_tokenizers = { workspace = true }
+toktrie_hf_downloader = { workspace = true }
+anyhow = "1.0.95"
+lazy_static = "1.5.0"
+serde_json = { version = "1.0.138", features = ["preserve_order"] }
+serde = { version = "1.0.217", features = ["derive"] }
+clap = { version = "4.5.31", features = ["derive"] }
+rand = { workspace = true }
+
+[[bin]]
+name = "sample_parser"
+path = "src/sample_parser.rs"
+
+[[bin]]
+name = "minimal"
+path = "src/minimal.rs"

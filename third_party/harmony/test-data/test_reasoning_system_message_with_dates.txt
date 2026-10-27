@@ -1,0 +1,7 @@
+<|start|>system<|message|>You are ChatGPT, a large language model trained by OpenAI.
+Knowledge cutoff: 2021-01
+Current date: 2021-01-01
+
+Reasoning: medium
+
+# Valid channels: analysis, final. Channel must be included for every message.<|end|><|start|>user<|message|>What is 42 * pi?<|end|><|start|>assistant

@@ -1,0 +1,2439 @@
+{
+  "status": "source_ready_original_SM121_skinny_native_manifest",
+  "library": "lib/skinny.dll",
+  "library_sha256": "e4dcc95459c0dece5f4118232daf0f2270ba9b088435eada41b0793f3b9896c6",
+  "variants": [
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        64,
+        1,
+        2,
+        8,
+        2560
+      ],
+      "init_symbol": "original_skinny_796e8e00bc3c430d_cuda_init",
+      "load_symbol": "original_skinny_796e8e00bc3c430d_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_796e8e00bc3c430d__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div81_FakeTensorBFloat16div12560i64div81_FakeTensorBFloat161div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        64,
+        1,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_6732c99fe618bc5b_cuda_init",
+      "load_symbol": "original_skinny_6732c99fe618bc5b_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_6732c99fe618bc5b__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat162div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        128,
+        1,
+        1,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_e5256e9f2849aa4f_cuda_init",
+      "load_symbol": "original_skinny_e5256e9f2849aa4f_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_e5256e9f2849aa4f__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat164div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        8,
+        128,
+        1,
+        4,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_541cd000c042b297_cuda_init",
+      "load_symbol": "original_skinny_541cd000c042b297_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_541cd000c042b297__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1682560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat168div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        16,
+        128,
+        1,
+        1,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_cb9384d4a8f9235e_cuda_init",
+      "load_symbol": "original_skinny_cb9384d4a8f9235e_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_cb9384d4a8f9235e__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat16162560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat1616div1i64div11_Fake",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 256,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        256,
+        1,
+        4,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_8232f18e987f5b94_cuda_init",
+      "load_symbol": "original_skinny_8232f18e987f5b94_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_8232f18e987f5b94__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat161div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 256,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        256,
+        1,
+        4,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_da18988c41557dec_cuda_init",
+      "load_symbol": "original_skinny_da18988c41557dec_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_da18988c41557dec__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat162div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        64,
+        1,
+        2,
+        8,
+        2560
+      ],
+      "init_symbol": "original_skinny_d56e480149cd2e7c_cuda_init",
+      "load_symbol": "original_skinny_d56e480149cd2e7c_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_d56e480149cd2e7c__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div81_FakeTensorBFloat16div12560i64div81_FakeTensorBFloat164div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 1,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "config_key": [
+        8,
+        64,
+        2,
+        1,
+        8,
+        2560
+      ],
+      "init_symbol": "original_skinny_6ae75ec51f42dbb9_cuda_init",
+      "load_symbol": "original_skinny_6ae75ec51f42dbb9_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_6ae75ec51f42dbb9__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1682560i64div81_FakeTensorBFloat16div22560i64div81_FakeTensorBFloat168div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "config_key": [
+        16,
+        64,
+        2,
+        2,
+        8,
+        2560
+      ],
+      "init_symbol": "original_skinny_3e4c74bf36c24928_cuda_init",
+      "load_symbol": "original_skinny_3e4c74bf36c24928_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_3e4c74bf36c24928__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat16162560i64div81_FakeTensorBFloat16div22560i64div81_FakeTensorBFloat1616div2i64div11_Fake",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 256,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        256,
+        1,
+        1,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_d2ea8ec0d437ad13_cuda_init",
+      "load_symbol": "original_skinny_d2ea8ec0d437ad13_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_d2ea8ec0d437ad13__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat161div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 256,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        256,
+        1,
+        1,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_72675f78facbb43d_cuda_init",
+      "load_symbol": "original_skinny_72675f78facbb43d_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_72675f78facbb43d__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat162div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        128,
+        1,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_0ca8208132372951_cuda_init",
+      "load_symbol": "original_skinny_0ca8208132372951_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_0ca8208132372951__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat164div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        8,
+        128,
+        1,
+        1,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_8f4488b9be805134_cuda_init",
+      "load_symbol": "original_skinny_8f4488b9be805134_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_8f4488b9be805134__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1682560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat168div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "config_key": [
+        16,
+        64,
+        1,
+        1,
+        8,
+        2560
+      ],
+      "init_symbol": "original_skinny_8877c65fda8e6a76_cuda_init",
+      "load_symbol": "original_skinny_8877c65fda8e6a76_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_8877c65fda8e6a76__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat16162560i64div81_FakeTensorBFloat16div12560i64div81_FakeTensorBFloat1616div1i64div11_Fake",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        32,
+        1,
+        2,
+        8,
+        2560
+      ],
+      "init_symbol": "original_skinny_bd974231a7288e32_cuda_init",
+      "load_symbol": "original_skinny_bd974231a7288e32_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_bd974231a7288e32__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div81_FakeTensorBFloat16div12560i64div81_FakeTensorBFloat161div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        64,
+        1,
+        1,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_35a2105d503ab2ba_cuda_init",
+      "load_symbol": "original_skinny_35a2105d503ab2ba_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_35a2105d503ab2ba__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat162div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        128,
+        1,
+        4,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_ba738d9233d1a867_cuda_init",
+      "load_symbol": "original_skinny_ba738d9233d1a867_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_ba738d9233d1a867__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat164div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        8,
+        128,
+        1,
+        2,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_cbaa0cecb4a81646_cuda_init",
+      "load_symbol": "original_skinny_cbaa0cecb4a81646_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_cbaa0cecb4a81646__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1682560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat168div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "config_key": [
+        16,
+        32,
+        1,
+        2,
+        8,
+        2560
+      ],
+      "init_symbol": "original_skinny_550d1c3f11324e0f_cuda_init",
+      "load_symbol": "original_skinny_550d1c3f11324e0f_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_550d1c3f11324e0f__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat16162560i64div81_FakeTensorBFloat16div12560i64div81_FakeTensorBFloat1616div1i64div11_Fake",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 640
+      },
+      "config_key": [
+        1,
+        64,
+        1,
+        4,
+        2,
+        640
+      ],
+      "init_symbol": "original_skinny_49db1547a3aead02_cuda_init",
+      "load_symbol": "original_skinny_49db1547a3aead02_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_49db1547a3aead02__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat161640i64div21_FakeTensorBFloat16div1640i64div21_FakeTensorBFloat161div1i64div11_FakeTens",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 640
+      },
+      "config_key": [
+        2,
+        64,
+        1,
+        1,
+        2,
+        640
+      ],
+      "init_symbol": "original_skinny_260c3a94a33bba70_cuda_init",
+      "load_symbol": "original_skinny_260c3a94a33bba70_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_260c3a94a33bba70__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat162640i64div21_FakeTensorBFloat16div1640i64div21_FakeTensorBFloat162div1i64div11_FakeTens",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 640
+      },
+      "config_key": [
+        4,
+        64,
+        1,
+        1,
+        2,
+        640
+      ],
+      "init_symbol": "original_skinny_264ac730c04bae88_cuda_init",
+      "load_symbol": "original_skinny_264ac730c04bae88_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_264ac730c04bae88__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat164640i64div21_FakeTensorBFloat16div1640i64div21_FakeTensorBFloat164div1i64div11_FakeTens",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 640
+      },
+      "config_key": [
+        8,
+        32,
+        1,
+        4,
+        4,
+        640
+      ],
+      "init_symbol": "original_skinny_d7ce4e1254f48379_cuda_init",
+      "load_symbol": "original_skinny_d7ce4e1254f48379_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_d7ce4e1254f48379__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat168640i64div41_FakeTensorBFloat16div1640i64div41_FakeTensorBFloat168div1i64div11_FakeTens",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 640
+      },
+      "config_key": [
+        16,
+        32,
+        1,
+        2,
+        4,
+        640
+      ],
+      "init_symbol": "original_skinny_b70cfa48729fabcc_cuda_init",
+      "load_symbol": "original_skinny_b70cfa48729fabcc_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_b70cfa48729fabcc__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1616640i64div41_FakeTensorBFloat16div1640i64div41_FakeTensorBFloat1616div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 6144
+      },
+      "config_key": [
+        1,
+        64,
+        2,
+        1,
+        4,
+        6144
+      ],
+      "init_symbol": "original_skinny_613fb91f837a0e68_cuda_init",
+      "load_symbol": "original_skinny_613fb91f837a0e68_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_613fb91f837a0e68__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1616144i64div41_FakeTensorBFloat16div26144i64div41_FakeTensorBFloat161div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 6144
+      },
+      "config_key": [
+        2,
+        64,
+        1,
+        4,
+        4,
+        6144
+      ],
+      "init_symbol": "original_skinny_5e8ba24ebbdcad78_cuda_init",
+      "load_symbol": "original_skinny_5e8ba24ebbdcad78_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_5e8ba24ebbdcad78__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1626144i64div41_FakeTensorBFloat16div16144i64div41_FakeTensorBFloat162div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 6144
+      },
+      "config_key": [
+        4,
+        64,
+        1,
+        4,
+        4,
+        6144
+      ],
+      "init_symbol": "original_skinny_8073a52b34c219a4_cuda_init",
+      "load_symbol": "original_skinny_8073a52b34c219a4_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_8073a52b34c219a4__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1646144i64div41_FakeTensorBFloat16div16144i64div41_FakeTensorBFloat164div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 6144
+      },
+      "config_key": [
+        8,
+        128,
+        1,
+        1,
+        2,
+        6144
+      ],
+      "init_symbol": "original_skinny_6f69596a25017abe_cuda_init",
+      "load_symbol": "original_skinny_6f69596a25017abe_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_6f69596a25017abe__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1686144i64div21_FakeTensorBFloat16div16144i64div21_FakeTensorBFloat168div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 8,
+        "static_k": 6144
+      },
+      "config_key": [
+        16,
+        32,
+        1,
+        1,
+        8,
+        6144
+      ],
+      "init_symbol": "original_skinny_418862d65115206c_cuda_init",
+      "load_symbol": "original_skinny_418862d65115206c_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_418862d65115206c__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat16166144i64div81_FakeTensorBFloat16div16144i64div81_FakeTensorBFloat1616div1i64div11_Fake",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 320
+      },
+      "config_key": [
+        1,
+        32,
+        1,
+        2,
+        2,
+        320
+      ],
+      "init_symbol": "original_skinny_560d0ababab10232_cuda_init",
+      "load_symbol": "original_skinny_560d0ababab10232_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_560d0ababab10232__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat161320i64div21_FakeTensorBFloat16div1320i64div21_FakeTensorBFloat161div1i64div11_FakeTens",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 320
+      },
+      "config_key": [
+        2,
+        32,
+        1,
+        1,
+        2,
+        320
+      ],
+      "init_symbol": "original_skinny_07c8ae5e3eca9075_cuda_init",
+      "load_symbol": "original_skinny_07c8ae5e3eca9075_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_07c8ae5e3eca9075__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat162320i64div21_FakeTensorBFloat16div1320i64div21_FakeTensorBFloat162div1i64div11_FakeTens",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 320
+      },
+      "config_key": [
+        4,
+        32,
+        1,
+        2,
+        2,
+        320
+      ],
+      "init_symbol": "original_skinny_09887ed35ef8ccbe_cuda_init",
+      "load_symbol": "original_skinny_09887ed35ef8ccbe_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_09887ed35ef8ccbe__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat164320i64div21_FakeTensorBFloat16div1320i64div21_FakeTensorBFloat164div1i64div11_FakeTens",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 320
+      },
+      "config_key": [
+        8,
+        32,
+        1,
+        1,
+        2,
+        320
+      ],
+      "init_symbol": "original_skinny_5d7d2327bf00c72b_cuda_init",
+      "load_symbol": "original_skinny_5d7d2327bf00c72b_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_5d7d2327bf00c72b__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat168320i64div21_FakeTensorBFloat16div1320i64div21_FakeTensorBFloat168div1i64div11_FakeTens",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        128,
+        1,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_35b678e8f7e0d0a9_cuda_init",
+      "load_symbol": "original_skinny_35b678e8f7e0d0a9_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_35b678e8f7e0d0a9__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat161div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        128,
+        1,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_9b9181a908e2c608_cuda_init",
+      "load_symbol": "original_skinny_9b9181a908e2c608_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_9b9181a908e2c608__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat162div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        32,
+        1,
+        1,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_0b9d546db85d4816_cuda_init",
+      "load_symbol": "original_skinny_0b9d546db85d4816_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_0b9d546db85d4816__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat164div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        8,
+        64,
+        1,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_ed80a57d0fe03619_cuda_init",
+      "load_symbol": "original_skinny_ed80a57d0fe03619_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_ed80a57d0fe03619__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1682560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat168div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        16,
+        128,
+        1,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_279fa3e30f504657_cuda_init",
+      "load_symbol": "original_skinny_279fa3e30f504657_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_279fa3e30f504657__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat16162560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat1616div1i64div11_Fake",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        32,
+        1,
+        1,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_082bf8d1325677a7_cuda_init",
+      "load_symbol": "original_skinny_082bf8d1325677a7_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_082bf8d1325677a7__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat161div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        32,
+        1,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_50b94040a68bc8ee_cuda_init",
+      "load_symbol": "original_skinny_50b94040a68bc8ee_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_50b94040a68bc8ee__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat162div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        8,
+        64,
+        1,
+        1,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_59fd71218122493a_cuda_init",
+      "load_symbol": "original_skinny_59fd71218122493a_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_59fd71218122493a__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1682560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat168div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        16,
+        32,
+        1,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_683be1845d3367e1_cuda_init",
+      "load_symbol": "original_skinny_683be1845d3367e1_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_683be1845d3367e1__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat16162560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat1616div1i64div11_Fake",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        128,
+        1,
+        4,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_4420cdf104f2ae5e_cuda_init",
+      "load_symbol": "original_skinny_4420cdf104f2ae5e_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_4420cdf104f2ae5e__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat161div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 128,
+        "outputs_per_block": 2,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        128,
+        2,
+        4,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_ac44d7a3138b8546_cuda_init",
+      "load_symbol": "original_skinny_ac44d7a3138b8546_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_ac44d7a3138b8546__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div41_FakeTensorBFloat16div22560i64div41_FakeTensorBFloat162div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        128,
+        1,
+        4,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_5b8f6a79265f3495_cuda_init",
+      "load_symbol": "original_skinny_5b8f6a79265f3495_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_5b8f6a79265f3495__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div41_FakeTensorBFloat16div12560i64div41_FakeTensorBFloat164div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        128,
+        4,
+        2,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_fdba873fc9a6d685_cuda_init",
+      "load_symbol": "original_skinny_fdba873fc9a6d685_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_fdba873fc9a6d685__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div21_FakeTensorBFloat16div42560i64div21_FakeTensorBFloat161div4i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 4,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        64,
+        4,
+        1,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_b4b8b76e8ee2e80c_cuda_init",
+      "load_symbol": "original_skinny_b4b8b76e8ee2e80c_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_b4b8b76e8ee2e80c__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div21_FakeTensorBFloat16div42560i64div21_FakeTensorBFloat162div4i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        128,
+        4,
+        1,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_37ff4578765526a0_cuda_init",
+      "load_symbol": "original_skinny_37ff4578765526a0_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_37ff4578765526a0__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div21_FakeTensorBFloat16div42560i64div21_FakeTensorBFloat164div4i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 8,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        8,
+        128,
+        4,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_8f24f2a89e49849d_cuda_init",
+      "load_symbol": "original_skinny_8f24f2a89e49849d_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_8f24f2a89e49849d__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1682560i64div41_FakeTensorBFloat16div42560i64div41_FakeTensorBFloat168div4i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 64,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 8,
+        "static_k": null
+      },
+      "config_key": [
+        16,
+        64,
+        1,
+        1,
+        8,
+        null
+      ],
+      "init_symbol": "original_skinny_e0e82c7aefe7a8c0_cuda_init",
+      "load_symbol": "original_skinny_e0e82c7aefe7a8c0_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_e0e82c7aefe7a8c0__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1616div512i64div81_FakeTensorBFloat16div1div512i64div81_FakeTensorBFloat1616div1i64div11_",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": true,
+      "dynamic_shape_order": {
+        "A": [
+          "K"
+        ],
+        "B": [
+          "N",
+          "K"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 3072
+      },
+      "config_key": [
+        1,
+        128,
+        2,
+        2,
+        4,
+        3072
+      ],
+      "init_symbol": "original_skinny_d1b2899748af4ae2_cuda_init",
+      "load_symbol": "original_skinny_d1b2899748af4ae2_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_d1b2899748af4ae2__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1613072i64div41_FakeTensorBFloat16div23072i64div41_FakeTensorBFloat161div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 3072
+      },
+      "config_key": [
+        2,
+        64,
+        2,
+        2,
+        8,
+        3072
+      ],
+      "init_symbol": "original_skinny_94c1a5160db58133_cuda_init",
+      "load_symbol": "original_skinny_94c1a5160db58133_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_94c1a5160db58133__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1623072i64div81_FakeTensorBFloat16div23072i64div81_FakeTensorBFloat162div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 3072
+      },
+      "config_key": [
+        4,
+        64,
+        2,
+        2,
+        8,
+        3072
+      ],
+      "init_symbol": "original_skinny_a9e604a5376681a4_cuda_init",
+      "load_symbol": "original_skinny_a9e604a5376681a4_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_a9e604a5376681a4__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1643072i64div81_FakeTensorBFloat16div23072i64div81_FakeTensorBFloat164div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        128,
+        4,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_e804014dc5a05e97_cuda_init",
+      "load_symbol": "original_skinny_e804014dc5a05e97_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_e804014dc5a05e97__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div41_FakeTensorBFloat16div42560i64div41_FakeTensorBFloat161div4i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 128,
+        "outputs_per_block": 4,
+        "k_unroll": 2,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        128,
+        4,
+        2,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_61d29acf3574fe88_cuda_init",
+      "load_symbol": "original_skinny_61d29acf3574fe88_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_61d29acf3574fe88__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div41_FakeTensorBFloat16div42560i64div41_FakeTensorBFloat162div4i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        64,
+        2,
+        4,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_0fbf440c4b2bdf5e_cuda_init",
+      "load_symbol": "original_skinny_0fbf440c4b2bdf5e_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_0fbf440c4b2bdf5e__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div41_FakeTensorBFloat16div22560i64div41_FakeTensorBFloat164div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 2,
+        "k_unroll": 1,
+        "vector_width": 4,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        128,
+        2,
+        1,
+        4,
+        2560
+      ],
+      "init_symbol": "original_skinny_982c654854a83edb_cuda_init",
+      "load_symbol": "original_skinny_982c654854a83edb_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_982c654854a83edb__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div41_FakeTensorBFloat16div22560i64div41_FakeTensorBFloat161div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        64,
+        2,
+        2,
+        8,
+        2560
+      ],
+      "init_symbol": "original_skinny_730237382b5310e6_cuda_init",
+      "load_symbol": "original_skinny_730237382b5310e6_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_730237382b5310e6__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div81_FakeTensorBFloat16div22560i64div81_FakeTensorBFloat162div2i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 4,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        1,
+        32,
+        1,
+        4,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_328922e185b3190c_cuda_init",
+      "load_symbol": "original_skinny_328922e185b3190c_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_328922e185b3190c__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1612560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat161div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 1,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        2,
+        32,
+        1,
+        1,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_c0f5f9070aa932ac_cuda_init",
+      "load_symbol": "original_skinny_c0f5f9070aa932ac_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_c0f5f9070aa932ac__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1622560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat162div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 4,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        4,
+        32,
+        1,
+        2,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_5e13e4a2c91577d6_cuda_init",
+      "load_symbol": "original_skinny_5e13e4a2c91577d6_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_5e13e4a2c91577d6__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat1642560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat164div1i64div11_FakeTe",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 16,
+        "block_size": 32,
+        "outputs_per_block": 1,
+        "k_unroll": 2,
+        "vector_width": 2,
+        "static_k": 2560
+      },
+      "config_key": [
+        16,
+        32,
+        1,
+        2,
+        2,
+        2560
+      ],
+      "init_symbol": "original_skinny_278d934a6405b7b6_cuda_init",
+      "load_symbol": "original_skinny_278d934a6405b7b6_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_278d934a6405b7b6__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat16162560i64div21_FakeTensorBFloat16div12560i64div21_FakeTensorBFloat1616div1i64div11_Fake",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": false,
+      "dynamic_shape_order": {
+        "A": [],
+        "B": [
+          "N"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 1,
+        "block_size": 128,
+        "outputs_per_block": 2,
+        "k_unroll": 4,
+        "vector_width": 4,
+        "static_k": null
+      },
+      "config_key": [
+        1,
+        128,
+        2,
+        4,
+        4,
+        null
+      ],
+      "init_symbol": "original_skinny_65afb12168d1e5d3_cuda_init",
+      "load_symbol": "original_skinny_65afb12168d1e5d3_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_65afb12168d1e5d3__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat161div512i64div41_FakeTensorBFloat16div2div512i64div41_FakeTensorBFloat161div2i64div11_Fa",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": true,
+      "dynamic_shape_order": {
+        "A": [
+          "K"
+        ],
+        "B": [
+          "N",
+          "K"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    },
+    {
+      "config": {
+        "num_rows": 2,
+        "block_size": 64,
+        "outputs_per_block": 2,
+        "k_unroll": 2,
+        "vector_width": 8,
+        "static_k": null
+      },
+      "config_key": [
+        2,
+        64,
+        2,
+        2,
+        8,
+        null
+      ],
+      "init_symbol": "original_skinny_8feeb97290cb1611_cuda_init",
+      "load_symbol": "original_skinny_8feeb97290cb1611_cuda_load",
+      "invoke_symbol": "_mlir_original_skinny_8feeb97290cb1611__mlir_ciface_cutlass___call___original_skinny_kernel_unchangedCuteSkinnyGemm_object_at__FakeTensorBFloat162div512i64div81_FakeTensorBFloat16div2div512i64div81_FakeTensorBFloat162div2i64div11_Fa",
+      "inputs": 5,
+      "use_pdl": true,
+      "has_residual": false,
+      "dynamic_K": true,
+      "dynamic_shape_order": {
+        "A": [
+          "K"
+        ],
+        "B": [
+          "N",
+          "K"
+        ],
+        "residual": [
+          "N"
+        ],
+        "output": [
+          "N"
+        ]
+      }
+    }
+  ],
+  "original_compile_receipt_sha256": [
+    "3e2d3e92ffe6e166450528b39935facc2d6f13b30ec9e98b6df11719065b1179",
+    "21dacce1ba69bbb1b94f4b385cb16e7f7c2ebda1d37db362b20de616cdfbafde",
+    "04016275554740d618fe69038a5767e1f5e15bdcfadddae50445064b6d4a4a1e"
+  ],
+  "native_link_receipt_sha256": "869d0c8f6d72e475df4efb8c1deb0a07ba356e775253f717d75056c7c6a0df41",
+  "original_quack_shape_dtype": "int32",
+  "original_quack_stride_dtype": "int64",
+  "header_argument_inputs": 5,
+  "TensorStride_bytes": 16,
+  "TensorShapeStride_bytes": 24,
+  "TensorShapeStride_stride_offset": 16,
+  "TensorTwoShapeStride_bytes": 24,
+  "original_table_unique_configs": 65,
+  "dynamic_K_original_variants": 3,
+  "runtime_support_scope": "TP1 actual model; original table's unused TP2 configurations archived, not a TP2 support claim",
+  "Torch_imported": false,
+  "GPU_executed": false
+}

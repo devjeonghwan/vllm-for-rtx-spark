@@ -1,0 +1,509 @@
+use std::fmt::Display;
+use std::{borrow::Cow, sync::Arc};
+
+use llguidance::api::TopLevelGrammar;
+use llguidance::api::{GrammarInit, ParserLimits};
+use llguidance::earley::SlicedBiasComputer;
+use llguidance::toktrie::{
+    self, AnythingGoes, ApproximateTokEnv, InferenceCapabilities, TokEnv, TokRxInfo, TokTrie,
+    TokenId, TokenizerEnv,
+};
+use llguidance::{HashMap, JsonCompileOptions, ParserFactory};
+use pyo3::{exceptions::PyValueError, prelude::*};
+use serde_json::Value;
+use toktrie_hf_tokenizers::ByteTokenizer;
+use toktrie_tiktoken::TikTokenBPE;
+
+use crate::llamatokenizer::tokenv_from_llamacpp;
+
+/// Extract EOS tokens from a Python value that must be an int or a non-empty list[int].
+/// Returns a Vec<u32> on success, or raises PyValueError if the value is invalid or the list is empty.
+fn extract_eos_tokens(obj: &Bound<'_, PyAny>) -> PyResult<Vec<u32>> {
+    if let Ok(single) = obj.extract::<u32>() {
+        Ok(vec![single])
+    } else if let Ok(list) = obj.extract::<Vec<u32>>() {
+        if list.is_empty() {
+            return Err(PyValueError::new_err("eos_token list must not be empty"));
+        }
+        Ok(list)
+    } else {
+        Err(PyValueError::new_err(
+            "eos_token must be an int or a non-empty list of ints",
+        ))
+    }
+}
+
+/// Validate that all EOS token IDs are within vocab range.
+fn validate_eos_tokens(eos_tokens: &[u32], vocab_size: u32) -> PyResult<()> {
+    for &id in eos_tokens {
+        if id >= vocab_size {
+            return Err(PyValueError::new_err(format!(
+                "EOS token ID {id} is out of range (vocab_size={vocab_size})"
+            )));
+        }
+    }
+    Ok(())
+}
+
+struct PyTokenizer {
+    tok_trie: Arc<toktrie::TokTrie>,
+    tokenizer_fun: Py<PyAny>,
+    #[allow(dead_code)]
+    tok_bos: Option<u32>,
+}
+
+#[derive(Clone)]
+#[pyclass(frozen, skip_from_py_object)]
+pub(crate) struct LLTokenizer {
+    factory: Arc<ParserFactory>,
+}
+
+#[pymethods]
+impl LLTokenizer {
+    #[new]
+    #[pyo3(signature = (tokenizer, n_vocab=None, eos_token=None, slices=None))]
+    fn py_new(
+        tokenizer: Bound<'_, PyAny>,
+        n_vocab: Option<usize>,
+        eos_token: Option<Bound<'_, PyAny>>,
+        slices: Option<Vec<String>>,
+    ) -> PyResult<Self> {
+        let eos_tokens = eos_token.as_ref().map(extract_eos_tokens).transpose()?;
+        let tok_env: TokEnv = if let Ok(tokenizer_str) = tokenizer.extract::<String>() {
+            if tokenizer_str == "byte" {
+                ApproximateTokEnv::single_byte_env()
+            } else {
+                let mut tok = if tokenizer_str.starts_with("{") {
+                    ByteTokenizer::from_json_bytes(tokenizer_str.as_bytes()).map_err(val_error)?
+                } else {
+                    ByteTokenizer::from_file(&tokenizer_str).map_err(val_error)?
+                };
+                if let Some(ref eos_tokens) = eos_tokens {
+                    validate_eos_tokens(eos_tokens, tok.tokrx_info().vocab_size)?;
+                    tok.set_eos_tokens(eos_tokens);
+                }
+                tok.into_tok_env(n_vocab).map_err(val_error)?
+            }
+        } else {
+            let mut py_tok = PyTokenizer::py_new(tokenizer)?;
+            if let Some(ref eos_tokens) = eos_tokens {
+                validate_eos_tokens(eos_tokens, py_tok.tok_trie.vocab_size() as u32)?;
+                py_tok.tok_trie = Arc::new(py_tok.tok_trie.with_eos_tokens(eos_tokens));
+            }
+            Arc::new(py_tok)
+        };
+        let factory = ParserFactory::new(
+            &tok_env,
+            InferenceCapabilities::default(),
+            &slices.unwrap_or_else(SlicedBiasComputer::general_slices),
+        )
+        .map_err(val_error)?;
+
+        Ok(LLTokenizer {
+            factory: Arc::new(factory),
+        })
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (
+        *, encoder, special_tokens, pattern,
+        eos_token, n_vocab = None, slices = None
+    ))]
+    fn from_tiktoken(
+        encoder: HashMap<Vec<u8>, u32>,
+        special_tokens: HashMap<String, u32>,
+        pattern: &str,
+        eos_token: Bound<'_, PyAny>,
+        n_vocab: Option<usize>,
+        slices: Option<Vec<String>>,
+    ) -> PyResult<Self> {
+        let eos_tokens = extract_eos_tokens(&eos_token)?;
+        let mut bpe = TikTokenBPE::new(
+            encoder.into_iter().collect(),
+            special_tokens.into_iter().collect(),
+            pattern,
+            n_vocab,
+            eos_tokens[0],
+        )
+        .map_err(val_error)?;
+        validate_eos_tokens(&eos_tokens, bpe.tokrx_info().vocab_size)?;
+        if eos_tokens.len() > 1 {
+            bpe.set_eos_tokens(&eos_tokens);
+        }
+        let tok_env = bpe.to_env();
+
+        let factory = ParserFactory::new(
+            &tok_env,
+            InferenceCapabilities::default(),
+            &slices.unwrap_or_else(SlicedBiasComputer::general_slices),
+        )
+        .map_err(val_error)?;
+        Ok(LLTokenizer {
+            factory: Arc::new(factory),
+        })
+    }
+
+    #[staticmethod]
+    #[pyo3(signature = (*, tokens, vocab_ptr, tokenize_fptr, eos_token, slices=None))]
+    fn from_llamacpp(
+        tokens: Vec<Vec<u8>>,
+        vocab_ptr: usize,
+        tokenize_fptr: usize,
+        eos_token: Bound<'_, PyAny>,
+        slices: Option<Vec<String>>,
+    ) -> PyResult<Self> {
+        let eos_tokens = extract_eos_tokens(&eos_token)?;
+        let tok_env = tokenv_from_llamacpp(tokens, vocab_ptr, tokenize_fptr, &eos_tokens)
+            .map_err(val_error)?;
+
+        let factory = ParserFactory::new(
+            &tok_env,
+            InferenceCapabilities::default(),
+            &slices.unwrap_or_else(SlicedBiasComputer::general_slices),
+        )
+        .map_err(val_error)?;
+        Ok(LLTokenizer {
+            factory: Arc::new(factory),
+        })
+    }
+
+    fn with_slices(&self, slices: Vec<String>) -> PyResult<Self> {
+        let factory = self.factory.with_slices(&slices)?;
+        Ok(LLTokenizer {
+            factory: Arc::new(factory),
+        })
+    }
+
+    #[pyo3(signature = (utf8bytes, *, parse_special = false))]
+    fn tokenize_bytes(&self, utf8bytes: &[u8], parse_special: bool) -> Vec<TokenId> {
+        if parse_special {
+            self.tok_env().tokenize_bytes_special(utf8bytes)
+        } else {
+            self.tok_env().tokenize_bytes(utf8bytes)
+        }
+    }
+
+    #[getter]
+    fn is_canonical(&self) -> bool {
+        self.tok_env().tokenize_is_canonical()
+    }
+
+    #[staticmethod]
+    fn general_slices() -> Vec<String> {
+        SlicedBiasComputer::general_slices()
+    }
+
+    #[staticmethod]
+    fn json_slices() -> Vec<String> {
+        SlicedBiasComputer::json_slices()
+    }
+
+    #[pyo3(signature = (text, *, parse_special = false))]
+    fn tokenize_str(&self, text: &str, parse_special: bool) -> Vec<TokenId> {
+        if parse_special {
+            self.tok_env().tokenize_bytes_special(text.as_bytes())
+        } else {
+            self.tok_env().tokenize_bytes(text.as_bytes())
+        }
+    }
+
+    fn greedy_tokenize(&self, text: &str) -> Vec<u32> {
+        self.tok_trie().greedy_tokenize(text.as_bytes())
+    }
+
+    fn is_special_token(&self, token: u32) -> bool {
+        self.tok_trie().is_special_token(token)
+    }
+
+    fn test_trace_tokens(&self, tokens: Vec<u32>) -> String {
+        self.tok_trie()
+            .test_trace_tokens(&tokens)
+            .replace("\\n", "\n")
+    }
+
+    fn dbg_tokens(&self, tokens: Vec<u32>) -> String {
+        self.tok_trie().tokens_dbg(&tokens)
+    }
+
+    fn decode_str(&self, tokens: Vec<u32>) -> String {
+        self.tok_trie().decode_str(&tokens)
+    }
+
+    fn decode_bytes(&self, tokens: Vec<u32>) -> Cow<'_, [u8]> {
+        let r = self.tok_trie().decode(&tokens);
+        Cow::Owned(r)
+    }
+
+    #[pyo3(signature = (new_bytes, recent_tokens = None))]
+    fn tokenize_partial(
+        &self,
+        new_bytes: &[u8],
+        recent_tokens: Option<Vec<u32>>,
+    ) -> (Vec<u32>, Cow<'_, [u8]>) {
+        if new_bytes.is_empty() {
+            return (Vec::new(), Cow::Borrowed(&[]));
+        }
+
+        let recent_tokens = recent_tokens.unwrap_or_default();
+        let (mut existing_tokens, mut all_bytes) = if recent_tokens.is_empty() {
+            (Vec::new(), Vec::new())
+        } else {
+            // just 1 token back for now
+            let ex_tok = recent_tokens[recent_tokens.len() - 1..].to_vec();
+            let ex_bytes = self.tok_trie().decode_raw(&ex_tok);
+            (ex_tok, ex_bytes)
+        };
+
+        let num_recent_bytes = all_bytes.len();
+        all_bytes.extend_from_slice(new_bytes);
+
+        let (mut tokens, mut num_fixed) = self.tok_env().tokenize_bytes_marker(&all_bytes);
+        if !tokens.starts_with(&existing_tokens) {
+            // whoops, re-tokenize without the prefix
+            (tokens, num_fixed) = self
+                .tok_env()
+                .tokenize_bytes_marker(&all_bytes[num_recent_bytes..]);
+            existing_tokens.clear();
+        } else {
+            num_fixed = std::cmp::max(existing_tokens.len(), num_fixed);
+        }
+
+        let (chop_tokens, chop_bytes) = self
+            .tok_trie()
+            .chop_tokens(&mut AnythingGoes, &tokens[num_fixed..]);
+
+        let token_prefix = all_bytes[all_bytes.len() - chop_bytes..].to_vec();
+        let res_tokens = tokens[existing_tokens.len()..tokens.len() - chop_tokens].to_vec();
+        (res_tokens, Cow::Owned(token_prefix))
+    }
+
+    #[getter]
+    fn vocab_size(&self) -> usize {
+        self.tok_trie().vocab_size()
+    }
+
+    #[getter]
+    fn eos_token(&self) -> u32 {
+        self.tok_trie().eos_token()
+    }
+
+    #[getter]
+    fn eos_tokens(&self) -> Vec<u32> {
+        self.tok_trie().eos_tokens().to_vec()
+    }
+}
+
+impl LLTokenizer {
+    pub fn tok_env(&self) -> &TokEnv {
+        self.factory().tok_env()
+    }
+    pub fn tok_trie(&self) -> &toktrie::TokTrie {
+        self.tok_env().tok_trie()
+    }
+    pub fn factory(&self) -> &ParserFactory {
+        &self.factory
+    }
+}
+
+impl PyTokenizer {
+    fn py_new(tokenizer: Bound<'_, PyAny>) -> PyResult<Self> {
+        let is_tokenizer = tokenizer
+            .getattr("is_tokenizer_wrapper")
+            .map(|v| v.extract::<bool>())
+            .unwrap_or(Ok(false))
+            .unwrap_or(false);
+        if !is_tokenizer {
+            return Err(PyValueError::new_err(
+                "Expecting a TokenizerWrapper() class",
+            ));
+        }
+
+        let mut tokens = tokenizer.getattr("tokens")?.extract::<Vec<Vec<u8>>>()?;
+
+        // no eos_token only applies to ByteTokenizer from Guidance, which we
+        // hopefully will not actually use
+        let tok_eos = tokenizer
+            .getattr("eos_token_id")?
+            .extract::<Option<u32>>()?
+            .unwrap_or_else(|| {
+                let r = tokens.len() as u32;
+                tokens.push(vec![]);
+                r
+            });
+        let tok_bos = tokenizer
+            .getattr("bos_token_id")?
+            .extract::<Option<u32>>()?;
+
+        let special_token_ids = tokenizer
+            .getattr("special_token_ids")?
+            .extract::<Vec<u32>>()?;
+
+        for tok_id in special_token_ids {
+            let tok_ix = tok_id as usize;
+            if let Some(token) = tokens.get_mut(tok_ix) {
+                if token
+                    .first()
+                    .is_none_or(|&first_byte| first_byte != TokTrie::SPECIAL_TOKEN_MARKER)
+                {
+                    token.insert(0, TokTrie::SPECIAL_TOKEN_MARKER);
+                }
+            }
+        }
+
+        let info = TokRxInfo::new(tokens.len() as u32, tok_eos);
+        let tok_trie = TokTrie::from(&info, &tokens);
+        Ok(PyTokenizer {
+            tok_trie: Arc::new(tok_trie),
+            tokenizer_fun: tokenizer.into(),
+            tok_bos,
+        })
+    }
+}
+
+impl TokenizerEnv for PyTokenizer {
+    fn tok_trie(&self) -> &toktrie::TokTrie {
+        &self.tok_trie
+    }
+
+    fn tokenize_bytes(&self, utf8bytes: &[u8]) -> Vec<TokenId> {
+        self.tok_trie.tokenize_with_greedy_fallback(utf8bytes, |s| {
+            Python::attach(|py| {
+                let r = self.tokenizer_fun.call1(py, (s,)).unwrap();
+                r.extract::<Vec<TokenId>>(py).unwrap()
+            })
+        })
+    }
+}
+
+#[derive(Clone)]
+#[pyclass(frozen, skip_from_py_object)]
+struct JsonCompiler {
+    item_separator: String,
+    key_separator: String,
+    whitespace_flexible: bool,
+    whitespace_pattern: Option<String>,
+    coerce_one_of: bool,
+    json_allowed_escapes: Option<String>,
+}
+
+#[pymethods]
+impl JsonCompiler {
+    #[new]
+    #[pyo3(signature = (separators = None, whitespace_flexible = false, coerce_one_of = false, whitespace_pattern = None, json_allowed_escapes = None))]
+    fn py_new(
+        separators: Option<(String, String)>,
+        whitespace_flexible: bool,
+        coerce_one_of: bool,
+        whitespace_pattern: Option<String>,
+        json_allowed_escapes: Option<String>,
+    ) -> Self {
+        let (item_separator, key_separator) = separators.unwrap_or_else(|| {
+            if whitespace_flexible {
+                (",".to_owned(), ":".to_owned())
+            } else {
+                (", ".to_owned(), ": ".to_owned())
+            }
+        });
+        JsonCompiler {
+            item_separator,
+            key_separator,
+            whitespace_flexible,
+            coerce_one_of,
+            whitespace_pattern,
+            json_allowed_escapes,
+        }
+    }
+    #[pyo3(signature = (schema, check = true))]
+    fn compile(&self, schema: &str, check: bool) -> PyResult<String> {
+        let mut schema: Value = serde_json::from_str(schema).map_err(val_error)?;
+        let compile_options = JsonCompileOptions {
+            item_separator: self.item_separator.clone(),
+            key_separator: self.key_separator.clone(),
+            whitespace_flexible: self.whitespace_flexible,
+            coerce_one_of: self.coerce_one_of,
+            whitespace_pattern: self.whitespace_pattern.clone(),
+            lenient: false,
+            json_allowed_escapes: self.json_allowed_escapes.clone(),
+            retriever: None,
+        };
+        compile_options.apply_to(&mut schema);
+        check_grammar(TopLevelGrammar::from_json_schema(schema), check)
+    }
+}
+
+fn check_grammar(grm: TopLevelGrammar, check: bool) -> PyResult<String> {
+    let res = serde_json::to_string(&grm).map_err(val_error)?;
+    if check {
+        let g_init = GrammarInit::Serialized(grm);
+        // this compiles the grammar and signals errors
+        let _ = g_init
+            .to_internal(None, ParserLimits::default())
+            .map_err(val_error)?;
+    }
+    Ok(res)
+}
+
+#[derive(Clone)]
+#[pyclass(frozen, skip_from_py_object)]
+struct LarkCompiler {}
+
+#[pymethods]
+impl LarkCompiler {
+    #[new]
+    fn py_new() -> Self {
+        LarkCompiler {}
+    }
+    #[pyo3(signature = (lark, check = true))]
+    fn compile(&self, lark: &str, check: bool) -> PyResult<String> {
+        let grammar = TopLevelGrammar::from_lark(lark.to_string());
+        check_grammar(grammar, check)
+    }
+}
+
+#[derive(Clone)]
+#[pyclass(frozen, skip_from_py_object)]
+struct RegexCompiler {}
+
+#[pymethods]
+impl RegexCompiler {
+    #[new]
+    fn py_new() -> Self {
+        RegexCompiler {}
+    }
+
+    #[pyo3(signature = (regex, check = true))]
+    fn compile(&self, regex: &str, check: bool) -> PyResult<String> {
+        let grammar = TopLevelGrammar::from_regex(regex);
+        check_grammar(grammar, check)
+    }
+}
+
+#[pyfunction]
+#[pyo3(signature = (regex, use_ascii = None))]
+fn regex_to_lark(regex: &str, use_ascii: Option<&str>) -> String {
+    llguidance::regex_to_lark(regex, use_ascii.unwrap_or(""))
+}
+
+/// Returns the version string of llguidance and its key dependencies.
+#[pyfunction]
+fn get_version() -> String {
+    format!(
+        "llguidance@{} {}",
+        env!("CARGO_PKG_VERSION"),
+        llguidance::derivre::VERSION
+    )
+}
+
+pub(crate) fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<LLTokenizer>()?;
+    m.add_class::<JsonCompiler>()?;
+    m.add_class::<LarkCompiler>()?;
+    m.add_class::<RegexCompiler>()?;
+    m.add_function(wrap_pyfunction!(regex_to_lark, m)?)?;
+    m.add_function(wrap_pyfunction!(get_version, m)?)?;
+    Ok(())
+}
+
+fn val_error(e: impl Display) -> PyErr {
+    PyValueError::new_err(format!("{e}"))
+}

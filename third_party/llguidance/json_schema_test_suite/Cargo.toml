@@ -1,0 +1,15 @@
+[package]
+name = "json_schema_test_suite"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+llg_test_utils = { workspace = true }
+anyhow = "1.0.95"
+clap = { version = "4", features = ["derive"] }
+serde_json = { version = "1.0.138", features = ["preserve_order"] }
+serde = { version = "1.0.217", features = ["derive"] }
+
+[[bin]]
+name = "json_schema_test_suite"
+path = "src/main.rs"

@@ -1,0 +1,4 @@
+[console_scripts]
+generate-supervisor-config=model_hosting_container_standards.supervisor.scripts.generate_supervisor_config:main
+standard-supervisor=model_hosting_container_standards.supervisor.scripts.standard_supervisor:main
+

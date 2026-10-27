@@ -1,0 +1,1 @@
+<|start|>user<|message|>What is 2 + 2?<|end|><|start|>assistant<|channel|>analysis<|message|>User asks a simple question: "What is 2 + 2?" The answer: 4.<|end|><|start|>assistant<|channel|>final<|message|>2 + 2 equals 4.<|end|><|start|>user<|message|>What about 9 / 2?<|end|><|start|>assistant

@@ -1,0 +1,1 @@
+<|start|>user<|message|>What is 2 + 2?<|end|><|start|>assistant<|channel|>final<|message|>4<|end|><|start|>user<|message|>What is 3 + 5?<|end|><|start|>assistant<|channel|>analysis<|message|>thinking 3+5<|end|><|start|>assistant<|channel|>final<|message|>8<|end|>

@@ -1,0 +1,553 @@
+import warnings
+from abc import ABC, abstractmethod
+from enum import Enum
+from pathlib import Path
+from typing import Any, Generic, TypeVar
+
+import numpy as np
+from pydantic import ConfigDict, Field, PrivateAttr
+
+from mistral_common.base import MistralBase
+from mistral_common.deprecation import warn_once
+from mistral_common.protocol.fim.request import FIMRequest
+from mistral_common.protocol.instruct.chunk import ContentChunk
+from mistral_common.protocol.instruct.messages import SystemMessage, UserMessage
+from mistral_common.protocol.instruct.request import InstructRequest, ModelSettings
+from mistral_common.protocol.instruct.tool_calls import Tool
+from mistral_common.protocol.speech.request import SpeechRequest
+from mistral_common.protocol.transcription.request import TranscriptionRequest
+from mistral_common.tokens.tokenizers.audio import Audio, AudioEncoder
+from mistral_common.tokens.tokenizers.image import ImageEncoder
+from mistral_common.tokens.tokenizers.model_settings_builder import ModelSettingsBuilder
+
+
+class UserMessagePosition(str, Enum):
+    r"""Where to encode available tools in the token stream.
+
+    Attributes:
+        first: Encode the available tools section before the message.
+        last: Encode the available tools section after the message.
+    """
+
+    first = "first"
+    last = "last"
+
+
+class SpecialTokens(str, Enum):
+    r"""Enum of special tokens used in the tokenizer.
+
+    Attributes:
+        unk: The unknown token.
+        bos: The beginning of string token.
+        eos: The end of string token.
+        begin_inst: The beginning of instruction token.
+        end_inst: The end of instruction token.
+        begin_tools: The beginning of tools token.
+        end_tools: The end of tools token.
+        begin_tool_results: The beginning of tool results token.
+        end_tool_results: The end of tool results token.
+        tool_calls: The tool calls token.
+        img: The image token.
+        pad: The pad token.
+        img_break: The image break token.
+        img_end: The image end token.
+        prefix: The prefix token for FIM.
+        middle: The middle token for FIM.
+        suffix: The suffix token for FIM.
+        begin_system: The beginning of system prompt token.
+        end_system: The end of system prompt token.
+        begin_tool_content: The beginning of tool content token.
+        args: The args token.
+        call_id: The call id token.
+        audio: The audio token.
+        begin_audio: The beginning of audio token.
+        transcribe: The transcribe token.
+        begin_think: The beginning of think token.
+        end_think: The end of think token.
+        streaming_pad: The streaming pad token.
+        streaming_word: The streaming word token.
+        text_to_audio: The text to audio token.
+        audio_to_text: The audio to text token.
+        begin_model_settings: The beginning of model settings token.
+        end_model_settings: The end of model settings token.
+
+    Examples:
+        >>> unk = SpecialTokens.unk
+    """
+
+    unk = "<unk>"
+    bos = "<s>"
+    eos = "</s>"
+    begin_inst = "[INST]"
+    end_inst = "[/INST]"
+    begin_tools = "[AVAILABLE_TOOLS]"
+    end_tools = "[/AVAILABLE_TOOLS]"
+    begin_tool_results = "[TOOL_RESULTS]"
+    end_tool_results = "[/TOOL_RESULTS]"
+    tool_calls = "[TOOL_CALLS]"
+    img = "[IMG]"
+    pad = "<pad>"
+    img_break = "[IMG_BREAK]"
+    img_end = "[IMG_END]"
+    prefix = "[PREFIX]"
+    middle = "[MIDDLE]"
+    suffix = "[SUFFIX]"
+    begin_system = "[SYSTEM_PROMPT]"
+    end_system = "[/SYSTEM_PROMPT]"
+    begin_tool_content = "[TOOL_CONTENT]"
+    args = "[ARGS]"
+    call_id = "[CALL_ID]"
+    audio = "[AUDIO]"
+    begin_audio = "[BEGIN_AUDIO]"
+    transcribe = "[TRANSCRIBE]"
+    begin_think = "[THINK]"
+    end_think = "[/THINK]"
+    streaming_pad = "[STREAMING_PAD]"
+    streaming_word = "[STREAMING_WORD]"
+    text_to_audio = "[NEXT_AUDIO_TEXT]"
+    audio_to_text = "[REPEAT_AUDIO_TEXT]"
+    begin_model_settings = "[MODEL_SETTINGS]"
+    end_model_settings = "[/MODEL_SETTINGS]"
+
+
+class SpecialTokenPolicy(str, Enum):
+    r"""What to do with special tokens when encoding/decoding.
+
+    Attributes:
+        IGNORE: Drop special tokens from the output.
+        KEEP: Include special token strings in the output.
+        RAISE: Raise an error if special tokens are found.
+
+    Note:
+        Integer values 0, 1, 2 are still accepted for backward compatibility,
+        mapping to IGNORE, KEEP, RAISE respectively.
+    """
+
+    IGNORE = "ignore"
+    KEEP = "keep"
+    RAISE = "raise"
+
+    @classmethod
+    def _missing_(cls, value: Any) -> Any:
+        # Backward compatibility of int values.
+        match value:
+            case 0:
+                return SpecialTokenPolicy.IGNORE
+            case 1:
+                return SpecialTokenPolicy.KEEP
+            case 2:
+                return SpecialTokenPolicy.RAISE
+        return super()._missing_(value)
+
+
+class TokenizerVersion(str, Enum):
+    r"""Enum of tokenizer versions, ordered and comparable.
+
+    Allows distinguishing between tokenizer generations and maintaining
+    backward compatibility. Instances compare by numeric version
+    (e.g., `TokenizerVersion.v13 > TokenizerVersion.v7`).
+
+    Attributes:
+        v1: First version of the tokenizer.
+        v2: Adds special control tokens [INST], [/INST].
+        v3: Adds improved function calling.
+        v7: Adds improved system prompt and function calling.
+        v11: Adds improved function calling.
+        v13: Removes call id tokenization and improves prompt caching.
+        v15: Adds model settings support (e.g., reasoning effort).
+
+    Examples:
+        >>> version = TokenizerVersion.v1
+        >>> TokenizerVersion.v15.supports_model_settings
+        True
+    """
+
+    @property
+    def _version_num(self) -> int:
+        warnings.warn(
+            "`TokenizerVersion._version_num` is deprecated in favor to `TokenizerVersion.version_num` and will "
+            "be removed in 1.13.0."
+        )
+        return self.version_num
+
+    @property
+    def version_num(self) -> int:
+        r"""Numeric part of the version string.
+
+        Returns:
+            The integer version, e.g. 13 for `TokenizerVersion.v13`.
+        """
+        return int(self.value[1:])
+
+    @property
+    def supports_model_settings(self) -> bool:
+        r"""Whether this version supports model settings.
+
+        Returns:
+            True for v15 and later, False for earlier versions.
+        """
+        return self >= TokenizerVersion.v15
+
+    def __lt__(self, other: "str | TokenizerVersion") -> bool:
+        if isinstance(other, str):
+            other = TokenizerVersion(other)
+        return self.version_num < other.version_num
+
+    def __le__(self, other: "str | TokenizerVersion") -> bool:
+        if isinstance(other, str):
+            other = TokenizerVersion(other)
+        return self.version_num <= other.version_num
+
+    def __gt__(self, other: "str | TokenizerVersion") -> bool:
+        if isinstance(other, str):
+            other = TokenizerVersion(other)
+        return self.version_num > other.version_num
+
+    def __ge__(self, other: "str | TokenizerVersion") -> bool:
+        if isinstance(other, str):
+            other = TokenizerVersion(other)
+        return self.version_num >= other.version_num
+
+    v1 = "v1"  # vocab_size = 32000
+    v2 = "v2"  # vocab_size = 32768 with special control tokens [INST], [\INST]
+    v3 = "v3"  # vocab_size = 32768 (spm) OR 131072 (tekken) with improved function calling
+    v7 = "v7"  # vocab_size = 32768 (spm) or 131072 (tekken) with improved system prompt and function calling
+    v11 = "v11"  # 131072 (tekken) with improved function calling
+    v13 = "v13"  # 131072 (tekken) with no call id and better prompt caching
+    v15 = "v15"  # 131072 (tekken) with model settings
+
+
+class Tokenized(MistralBase):
+    r"""A tokenized [`InstructRequest`][mistral_common.protocol.instruct.request.InstructRequest].
+
+    Attributes:
+        tokens: The token IDs of the encoded request.
+        prefix_ids: The token IDs of the prefix section, set for FIM requests.
+            `None` for non-FIM requests.
+        images: Loaded images referenced by the tokens, as arrays ready for
+            the model. Empty if the request has no images.
+        audios: Loaded audio referenced by the tokens, as processed Audio
+            objects. Empty if the request has no audio.
+
+    Examples:
+        >>> tokenized = Tokenized(tokens=[1, 2, 3], prefix_ids=[1], images=[], audios=[])
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    tokens: list[int]
+    prefix_ids: list[int] | None = None
+    images: list[np.ndarray] = Field(default_factory=list)
+    audios: list[Audio] = Field(default_factory=list)
+    _text: str | None = PrivateAttr(default=None)
+
+    @property
+    def text(self) -> str | None:
+        r"""The text representation of the tokens, decoded with special tokens kept.
+
+        Deprecated: Use `tokenizer.decode(tokens=tokenized.tokens, special_token_policy=SpecialTokenPolicy.KEEP)`
+        instead. Will be removed in 1.13.0.
+
+        Returns:
+            The decoded string, or `None` if it was not set by the tokenizer that produced this `Tokenized`.
+        """
+        warn_once(
+            key="Tokenized.text",
+            message=(
+                "`text` property of `Tokenized` will be removed in 1.13.0. To decode the token ids, use "
+                "`tokenizer.decode(tokens=tokenized.tokens, special_token_policy=SpecialTokenPolicy.KEEP)`."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._text
+
+
+class Tokenizer(ABC):
+    r"""Abstract text tokenizer interface.
+
+    Defines the encode/decode and vocabulary introspection API shared by the
+    tekken and sentencepiece implementations.
+    """
+
+    @property
+    @abstractmethod
+    def n_words(self) -> int:
+        r"""Vocabulary size of the tokenizer."""
+
+    @property
+    @abstractmethod
+    def special_ids(self) -> set[int]:
+        r"""Ids of the special tokens."""
+
+    @property
+    @abstractmethod
+    def num_special_tokens(self) -> int:
+        r"""The number of special tokens of the tokenizer."""
+
+    @property
+    @abstractmethod
+    def model_settings_builder(self) -> ModelSettingsBuilder | None:
+        r"""The model settings builder, or `None` if unsupported by this version."""
+
+    @abstractmethod
+    def vocab(self) -> list[str]:
+        r"""All tokens in the vocabulary as strings."""
+
+    @abstractmethod
+    def id_to_piece(self, token_id: int) -> str:
+        r"""Convert a token id to the token str."""
+
+    @property
+    @abstractmethod
+    def bos_id(self) -> int:
+        r"""id of the Beginning of String token."""
+
+    @property
+    @abstractmethod
+    def eos_id(self) -> int:
+        r"""id of the End of String token."""
+
+    @property
+    @abstractmethod
+    def pad_id(self) -> int:
+        r"""id of the Pad token."""
+
+    @property
+    @abstractmethod
+    def unk_id(self) -> int:
+        r"""id of the Unk token."""
+
+    @abstractmethod
+    def encode(self, s: str, bos: bool, eos: bool) -> list[int]:
+        r"""Convert a string to a list of token IDs.
+
+        Args:
+            s: The string to encode.
+            bos: If `True`, prepend the beginning-of-sentence token ID.
+            eos: If `True`, append the end-of-sentence token ID.
+
+        Returns:
+            The encoded token IDs.
+        """
+
+    @abstractmethod
+    def decode(self, tokens: list[int], special_token_policy: SpecialTokenPolicy = SpecialTokenPolicy.IGNORE) -> str:
+        r"""Decode the token ids to a string.
+
+        Args:
+            tokens: The token ids to decode.
+            special_token_policy: The policy to use for special tokens.
+
+        Returns:
+            The decoded string.
+        """
+
+    @abstractmethod
+    def get_special_token(self, s: str) -> int:
+        r"""Get the id of a control token."""
+
+    @abstractmethod
+    def is_special(self, token: int | np.integer | str) -> bool:
+        r"""Check if token id or token str is a special token."""
+
+    @property
+    @abstractmethod
+    def version(self) -> TokenizerVersion:
+        r"""Get the version of the tokenizer."""
+
+    @abstractmethod
+    def _to_string(self, tokens: list[int]) -> str: ...
+
+    @property
+    @abstractmethod
+    def file_path(self) -> Path:
+        r"""The file path of the tokenizer."""
+        ...
+
+
+InstructRequestType = TypeVar("InstructRequestType", bound=InstructRequest)
+FIMRequestType = TypeVar("FIMRequestType", bound=FIMRequest)
+TokenizedType = TypeVar("TokenizedType", bound=Tokenized)
+
+
+class InstructTokenizer(Generic[InstructRequestType, FIMRequestType, TokenizedType]):
+    r"""Base class for instruct tokenizers.
+
+    Combines a text tokenizer with optional image and audio encoders, and
+    defines the encode/decode API for instruct, transcription, speech, and
+    FIM requests.
+
+    Attributes:
+        tokenizer: The text tokenizer to use.
+        image_encoder: The image encoder to use, or `None` if image support is
+            not configured.
+        audio_encoder: The audio encoder to use, or `None` if audio support is
+            not configured.
+    """
+
+    tokenizer: Tokenizer
+    image_encoder: ImageEncoder | None
+    audio_encoder: AudioEncoder | None
+
+    @property
+    def version(self) -> TokenizerVersion:
+        r"""The version of the tokenizer.
+
+        Returns:
+            The TokenizerVersion of the underlying text tokenizer.
+        """
+        return self.tokenizer.version
+
+    def __init__(
+        self, tokenizer: Tokenizer, image_encoder: ImageEncoder | None, audio_encoder: AudioEncoder | None
+    ) -> None:
+        r"""Initialize the instruct tokenizer.
+
+        Args:
+            tokenizer: The text tokenizer to use.
+            image_encoder: The image encoder to use, or `None` if image support
+                is not configured for this tokenizer.
+            audio_encoder: The audio encoder to use, or `None` if audio support
+                is not configured for this tokenizer.
+        """
+
+    @abstractmethod
+    def encode_instruct(self, request: InstructRequestType) -> TokenizedType:
+        r"""Encode an instruct request into a Tokenized object.
+
+        Args:
+            request: The instruct request to encode.
+
+        Returns:
+            The tokenized instruct request.
+        """
+
+    @abstractmethod
+    def encode_transcription(self, request: TranscriptionRequest) -> TokenizedType:
+        r"""
+        Encodes an audio transcription request into a tokenized format.
+
+        This method processes a transcription request containing audio data,
+        encodes the user message, and returns the tokenized output.
+
+        Args:
+            request: The transcription request object containing
+                the audio data to be encoded.
+
+        Returns:
+            Tokenized: The tokenized representation of the audio data, including processed audio and tokens
+        """
+
+    @abstractmethod
+    def encode_speech_request(self, request: SpeechRequest) -> TokenizedType:
+        r"""Encodes a speech synthesis request into a tokenized format.
+
+        This method processes a speech request containing text input and
+        optional reference audio or voice preset, and returns the tokenized output.
+
+        Args:
+            request: The speech request object containing the text and voice/audio data.
+
+        Returns:
+            Tokenized: The tokenized representation of the speech request.
+        """
+
+    @abstractmethod
+    def decode(self, tokens: list[int], special_token_policy: SpecialTokenPolicy) -> str:
+        r"""Decode the token IDs to a string.
+
+        Args:
+            tokens: The token IDs to decode.
+            special_token_policy: The policy to use for special tokens
+                (IGNORE, KEEP, or RAISE).
+
+        Returns:
+            The decoded string.
+        """
+
+    @abstractmethod
+    def encode_fim(self, request: FIMRequestType) -> TokenizedType:
+        r"""Encode a FIM request into a Tokenized object.
+
+        Wraps the prompt and suffix with FIM markers ([PREFIX], [SUFFIX],
+        [MIDDLE]) so the model completes the middle section.
+
+        Args:
+            request: The FIM request to encode.
+
+        Returns:
+            The tokenized FIM request.
+        """
+
+    @abstractmethod
+    def encode_user_message(
+        self,
+        message: UserMessage,
+        available_tools: list[Tool] | None,
+        is_last: bool,
+        is_first: bool,
+        system_prompt: str | None = None,
+        force_img_first: bool = False,
+        settings: ModelSettings = ModelSettings.none(),
+    ) -> tuple[list[int], list[np.ndarray], list[Audio]]:
+        r"""Encode a user message.
+
+        Args:
+            message: The user message to encode.
+            available_tools: The tools available to the assistant, or `None`.
+                Depending on the tokenizer version, wrapped in an
+                [AVAILABLE_TOOLS] section.
+            is_last: `True` if this is the last message of the conversation.
+            is_first: `True` if this is the first message of the conversation.
+            system_prompt: The system prompt, or `None`. Its placement depends on
+                the tokenizer version.
+            force_img_first: If `True`, image tokens are placed before text
+                tokens within the message.
+            settings: The model settings to encode into the token stream.
+
+        Returns:
+            A tuple of (tokens, images, audios): the encoded token IDs, the
+            loaded images, and the loaded audio for this message.
+        """
+        ...
+
+    @abstractmethod
+    def encode_system_message(self, message: SystemMessage) -> tuple[list[int], list[Audio]]:
+        r"""Encode a system message.
+
+        Args:
+            message: The system message to encode.
+
+        Returns:
+            A tuple of (tokens, audios): the encoded token IDs and the loaded
+            audio for this message.
+        """
+        ...
+
+    @abstractmethod
+    def encode_user_content(
+        self,
+        content: str | list[ContentChunk],
+        is_last: bool,
+        system_prompt: str | None = None,
+        force_img_first: bool = False,
+    ) -> tuple[list[int], list[np.ndarray], list[Audio]]:
+        r"""Encode user content.
+
+        Args:
+            content: The user content to encode. A plain string or a list of
+                content chunks (text, image, audio).
+            is_last: `True` if this is the last content of the conversation.
+            system_prompt: The system prompt, or `None`. Its placement depends
+                on the tokenizer version.
+            force_img_first: If `True`, image tokens are placed before text
+                tokens.
+
+        Returns:
+            A tuple of (tokens, images, audios): the encoded token IDs, the
+            loaded images, and the loaded audio for this content.
+        """
+        ...
+
+    @abstractmethod
+    def _to_string(self, tokens: list[int]) -> str: ...

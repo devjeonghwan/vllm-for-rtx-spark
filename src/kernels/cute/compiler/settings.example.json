@@ -1,0 +1,8 @@
+{
+  "python": "C:/Python313-x64/python.exe",
+  "cuda_root": "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.4",
+  "cute_lib": "C:/Python313-x64/Lib/site-packages/nvidia_cutlass_dsl/cu13/lib",
+  "visual_studio": "C:/Program Files/Microsoft Visual Studio/2022/Community",
+  "llvm_nm": "C:/Program Files/LLVM/bin/llvm-nm.exe",
+  "python_paths": []
+}
