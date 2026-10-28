@@ -6,15 +6,13 @@ Currently supported: [Qwen3.8-Flash-Next-FP4-Local](https://huggingface.co/nvidi
 
 ## Benchmarks
 
-Measured with the earlier 27 GB KV configuration, FP8 drafter and HEAD2, before min3 became the default.
-
-### 1. DGX Spark (Original MyLLMBox v5.3 Recipe) vs RTX Spark (This project)
+### 1. DGX Spark (MyLLMBox v5.3 Recipe) vs RTX Spark (This project)
 
 | Workload | RTX Spark, 1 request | DGX Spark, 1 request | RTX Spark, 16 requests | DGX Spark, 16 requests |
 |---|---:|---:|---:|---:|
-| Mixed | 51.45 | 57.58 | 194.90 | 187.78 |
+| Mixed | 52.23 | 57.58 | 195.68 | 187.78 |
 | Code | 50.35 | 57.23 | 249.65 | 268.15 |
-| JSON schema | 41.63 | 44.90 | 215.83 | 222.28 |
+| JSON schema | 42.18 | 44.90 | 215.83 | 222.28 |
 | Prose | 38.15 | 44.53 | 190.28 | 212.20 |
 
 ### 2. RTX Spark: NVIDIA recipe (llama.cpp) vs This project
@@ -23,8 +21,8 @@ NVIDIA figures are from its [published Windows recipe](https://nvidia.github.io/
 
 | Benchmark | NVIDIA llama.cpp, IQ4_XS | This project, NVFP4 |
 |---|---:|---:|
-| AA-AgentPerf-local completion, full replay | 1,118.16 s | **847.11 s** |
-| SPEED-Bench coding decode, all 80 conversations | 35.37 tok/s | **53.20 tok/s** |
+| AA-AgentPerf-local completion, full replay | 1,118.16 s | **838.19 s** |
+| SPEED-Bench coding decode, all 80 conversations | 35.37 tok/s | **58.61 tok/s** |
 
 ## Install
 
