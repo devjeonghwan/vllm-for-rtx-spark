@@ -307,10 +307,9 @@ def observe(idx_mapping, num_sampled, num_rejected):
     _time_step(int(num_sampled.shape[0]))                     # 4e50c..4e640
     accepted = (num_sampled.to(torch.int32) - 1).clamp(min=0)  # 4e6a8..4e7d8
     drafted = accepted + num_rejected.to(torch.int32)         # 4e870..4e8fc
-    D.st_hist += torch.bincount(                             # 4e95c..4ef54
-        drafted.clamp(max=D.K).long(),                       # 4eab8/4eb30
-        minlength=D.K + 1,                                  # 4ec7c/4ecb0
-    )[:D.K + 1]                                             # 4ee4c..4ee6c
+    # Fixed-size statistics avoid bincount CUDA min/max readback.
+    histogram_indices = drafted.clamp(max=D.K).long()
+    D.st_hist.index_add_(0, histogram_indices, torch.ones_like(histogram_indices))
     D.st_drafted += (drafted[:, None] >= D.pos[None, :]).sum(0) # 4eff4..4f1c8
     D.st_accepted += (accepted[:, None] >= D.pos[None, :]).sum(0) # 4f2f0..4f404
     if D.steps % 64 == 0:                                   # 4f490..4f53c
