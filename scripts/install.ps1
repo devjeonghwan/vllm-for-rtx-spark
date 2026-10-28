@@ -9,7 +9,7 @@ $manifestPath = Join-Path $root 'manifest.json'
 if (Test-Path -LiteralPath $manifestPath) {
     $manifestSpec = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 } else {
-    $manifestJson = & $Python -c 'import json,runpy,sys; v=runpy.run_path(sys.argv[1]); print(json.dumps(v["load_manifest"]()))' `
+    $manifestJson = & $Python -c "import json,runpy,sys; v=runpy.run_path(sys.argv[1]); print(json.dumps(v['load_manifest']()))" `
         (Join-Path $root 'src/version.py')
     if ($LASTEXITCODE) { throw 'Cannot read the release manifest.' }
     $manifestSpec = $manifestJson | ConvertFrom-Json
@@ -46,7 +46,7 @@ Assert-NativePython $envPython
 & $envPython -m pip install --only-binary=:all: --extra-index-url https://pypi.nvidia.com/nvtorch_oot/ `
     -c (Join-Path $root $manifestSpec.requirements.constraints) @wheelPaths
 if ($LASTEXITCODE) { throw 'Package installation failed.' }
-$legacyInstalled = & $envPython -c 'import importlib.metadata as m; print(any(d.metadata["Name"] == "vllm-rtx-spark" for d in m.distributions()))'
+$legacyInstalled = & $envPython -c "import importlib.metadata as m; print(any(d.metadata['Name'] == 'vllm-rtx-spark' for d in m.distributions()))"
 if ($LASTEXITCODE) { throw 'Cannot inspect the virtual environment.' }
 if ($legacyInstalled -eq 'True') {
     & $envPython -m pip uninstall -y vllm-rtx-spark

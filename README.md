@@ -30,6 +30,17 @@ NVIDIA figures are from its [published Windows recipe](https://nvidia.github.io/
 
 Requirements: ARM64 Python 3.13, an NVIDIA driver compatible with CUDA 13.4, and the model checkpoint. Allow several GB for dependencies and at least 32 GB of free NVMe space for the PLE cache.
 
+On the **RTX Spark N1X 128 GB**, set dedicated GPU memory to **96 GB**. This leaves about **32 GB for Windows**.
+
+Set a custom Windows paging file:
+
+- **Initial size (MB): 98304**
+- **Maximum size (MB): 131072**
+
+Open **Advanced system settings → Performance → Settings → Advanced → Virtual memory → Change**. Turn off **Automatically manage paging file size for all drives**. Select your NVMe drive and choose **Custom size**. Enter the values above, click **Set**, then **OK**, and restart Windows.
+
+CUDA allocations also use Windows system commit. A small paging file can cause OOM errors even when GPU memory is still free. See the [memory issue report](https://forums.developer.nvidia.com/t/rtx-spark-on-windows-cuda-allocations-consume-system-commit-even-with-96-gib-dedicated-gpu-memory/386453).
+
 Download the Windows ARM64 ZIP from [Releases](https://github.com/devjeonghwan/vllm-for-rtx-spark/releases), extract it, and run:
 
 ```powershell
