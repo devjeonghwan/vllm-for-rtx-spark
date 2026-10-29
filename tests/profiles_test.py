@@ -1,4 +1,4 @@
-"""Memory profiles must preserve the verified fast execution settings."""
+"""Memory and draft-KV profiles preserve the verified fast execution settings."""
 
 from collections import defaultdict
 from copy import deepcopy
@@ -44,19 +44,27 @@ def uniform_decode_routes(capture_sizes, minimum_depth, maximum_depth, max_reque
 class ProfileTests(unittest.TestCase):
     def test_memory_tiers_preserve_the_fast_pipeline(self):
         directory = ROOT / "configs/qwen3.8-flash-next"
-        budgets = {"gpu-90gb": 12_000_000_000, "gpu-94gb": 16_000_000_000, "gpu-96gb": 18_000_000_000}
-        self.assertEqual({path.name for path in directory.iterdir()}, {name + ".yaml" for name in budgets})
+        budgets = {"gpu-90gb": 12_000_000_000, "gpu-96gb": 18_000_000_000, "gpu-108gb": 27_000_000_000}
+        draft_kv = {"bf16": ["48"], "fp8": []}
+        expected_files = {f"{name}-draft-kv-{dtype}.yaml" for name in budgets for dtype in draft_kv}
+        self.assertEqual({path.name for path in directory.iterdir()}, expected_files)
         common = None
         for name, budget in budgets.items():
-            with self.subTest(profile=name):
-                profile = yaml.safe_load((directory / (name + ".yaml")).read_text(encoding="utf-8"))
-                self.assertIs(type(profile["kv-cache-memory-bytes"]), int)
-                self.assertEqual(profile["kv-cache-memory-bytes"], budget)
-                normalized = deepcopy(profile)
-                del normalized["kv-cache-memory-bytes"]
-                if common is None:
-                    common = normalized
-                self.assertEqual(normalized, common)
+            for dtype, skip_layers in draft_kv.items():
+                filename = f"{name}-draft-kv-{dtype}.yaml"
+                with self.subTest(profile=filename):
+                    profile = yaml.safe_load((directory / filename).read_text(encoding="utf-8"))
+                    self.assertIs(type(profile["kv-cache-memory-bytes"]), int)
+                    self.assertEqual(profile["kv-cache-memory-bytes"], budget)
+                    self.assertIs(type(profile["kv-cache-dtype-skip-layers"]), list)
+                    self.assertEqual(profile["kv-cache-dtype-skip-layers"], skip_layers)
+                    self.assertTrue(all(type(layer) is str for layer in profile["kv-cache-dtype-skip-layers"]))
+                    normalized = deepcopy(profile)
+                    del normalized["kv-cache-memory-bytes"]
+                    del normalized["kv-cache-dtype-skip-layers"]
+                    if common is None:
+                        common = normalized
+                    self.assertEqual(normalized, common)
 
         expected = {
             "load-format": "mbx",

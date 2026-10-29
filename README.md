@@ -50,22 +50,22 @@ This creates `.venv` and installs the bundled vLLM wheel and its dependencies. P
 ## Run
 
 ```powershell
-.\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-94gb.yaml
+.\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-96gb-draft-kv-bf16.yaml
 ```
 
 The API is available at `http://127.0.0.1:8000/v1`, with model name `Qwen/Qwen3.8-Flash-Next`. The first start prepares the PLE cache and can take several minutes.
 
-All three profiles target the same GPU 96 GB / CPU 32 GB allocation. They use FP8 drafter projections, HEAD2, dynamic draft depth 3–7, FP8 KV, NVMe PLE, decode graphs, a 409,600-token context and up to 16 requests. Only the KV cache budget changes.
+All six profiles use the same GPU 96 GB / CPU 32 GB allocation, FP8 drafter projections, HEAD2, dynamic draft depth 3–7, NVMe PLE, decode graphs, a 409,600-token context and up to 16 requests.
 
-Config names indicate approximate total GPU memory use, rounded up for headroom.
+The suffix selects **MTP draft KV** precision; target KV stays FP8. BF16 was faster in our tests when KV capacity was available. FP8 holds about 7% more cached tokens at the same budget and can be faster near the KV limit.
 
-| Config | KV budget | Use |
-|---|---:|---|
-| [gpu-90gb.yaml](configs/qwen3.8-flash-next/gpu-90gb.yaml) | 12 GB | More room for Windows and other applications |
-| [gpu-94gb.yaml](configs/qwen3.8-flash-next/gpu-94gb.yaml) | 16 GB | Recommended starting point |
-| [gpu-96gb.yaml](configs/qwen3.8-flash-next/gpu-96gb.yaml) | 18 GB | More room for concurrent long contexts; close to the 96 GB allocation |
+| Approx. GPU use | KV budget | BF16 draft KV | FP8 draft KV |
+|---|---:|---|---|
+| 90 GB | 12 GB | [Config](configs/qwen3.8-flash-next/gpu-90gb-draft-kv-bf16.yaml) | [Config](configs/qwen3.8-flash-next/gpu-90gb-draft-kv-fp8.yaml) |
+| 96 GB | 18 GB | [Config (default)](configs/qwen3.8-flash-next/gpu-96gb-draft-kv-bf16.yaml) | [Config](configs/qwen3.8-flash-next/gpu-96gb-draft-kv-fp8.yaml) |
+| 108 GB | 27 GB | [Config](configs/qwen3.8-flash-next/gpu-108gb-draft-kv-bf16.yaml) | [Config](configs/qwen3.8-flash-next/gpu-108gb-draft-kv-fp8.yaml) |
 
-Model allocations, activations and Windows add to these budgets; no profile guarantees that WDDM shared memory will stay unused. The profiles accept vLLM command-line overrides. `draft_min_depth` under `additional-config.rtx_spark` overrides the default minimum of 3.
+Memory figures are estimates. The 108 GB profiles may use WDDM shared memory and are experimental with the current draft KV setup. The profiles accept vLLM command-line overrides; `draft_min_depth` under `additional-config.rtx_spark` overrides the default minimum of 3.
 
 ## Build
 
