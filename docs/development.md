@@ -1,6 +1,6 @@
 # Development
 
-Each project release supports one pinned vLLM revision. Project 0.1.1 uses vLLM 0.32.0 at `5df63a7203cdb9328d824a27b682e77c7b9928be`. A later project release can update vLLM after integration and validation.
+Each project release supports one pinned vLLM revision. This release uses vLLM 0.32.0 at `5df63a7203cdb9328d824a27b682e77c7b9928be`. A later project release can update vLLM after integration and validation.
 
 Change `PROJECT_VERSION` in `src/version.py` for a project release. Its wheel version is derived as `<vllm version>+rtx_spark.<project version>`.
 
