@@ -26,6 +26,11 @@
     "sampling": {
       "file": "flashinfer_sampling.dll",
       "origin": "Built from original FlashInfer CUDA sources; third_party/flashinfer-native"
+    },
+    "hc_upmix": {
+      "file": "rtx_hc_upmix.dll",
+      "abi": 2,
+      "origin": "Built from this repository's src and third_party trees"
     }
   }
 }

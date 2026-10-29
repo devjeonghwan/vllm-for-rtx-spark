@@ -69,10 +69,27 @@ class RuntimeTests(unittest.TestCase):
         return Path(os.environ["MBX_DEPTH_CFG"])
 
     def test_bootstrap_import_is_cpu_only(self):
-        from _rtx_spark.runtime import bootstrap
-
-        self.assertTrue(callable(bootstrap.initialize))
-        self.assertNotIn("torch", sys.modules)
+        # Other CPU tests legitimately import Torch. Check this import contract
+        # in a fresh interpreter rather than depending on suite execution order.
+        script = """
+import json, runpy, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+runpy.run_path(str(root / "scripts/load_source_package.py"))["load"]()
+from _rtx_spark.runtime import bootstrap
+print(json.dumps({"initialize_callable": callable(bootstrap.initialize),
+                  "torch_imported": "torch" in sys.modules,
+                  "vllm_imported": "vllm" in sys.modules}))
+"""
+        result = subprocess.run(
+            [sys.executable, "-I", "-c", script, str(ROOT)],
+            check=True, capture_output=True, text=True,
+            stdin=subprocess.DEVNULL, timeout=30,
+        )
+        receipt = json.loads(result.stdout)
+        self.assertTrue(receipt["initialize_callable"])
+        self.assertFalse(receipt["torch_imported"])
+        self.assertFalse(receipt["vllm_imported"])
 
     def test_checkout_and_installed_paths(self):
         self.assertEqual(source_root(), ROOT / "src")

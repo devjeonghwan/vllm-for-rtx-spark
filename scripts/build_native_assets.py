@@ -113,7 +113,7 @@ def build(args):
 
     produced = {}
     chosen = set(args.components.split(","))
-    unknown = chosen - {"ple", "depth", "csf", "sampling", "tiktoken", "llguidance"}
+    unknown = chosen - {"ple", "depth", "csf", "sampling", "hc_upmix", "tiktoken", "llguidance"}
     if unknown:
         raise ValueError("Unknown components: " + ",".join(sorted(unknown)))
     for component, source, file, key in (
@@ -132,6 +132,23 @@ def build(args):
         run(command, key)
         produced[key] = destination
     cuda = args.cuda_root.resolve()
+    if "hc_upmix" in chosen:
+        source = ROOT / "src/kernels/hc_upmix/native/hc_upmix.cu"
+        obj = output / "hc_upmix.obj"
+        flags = ["-std=c++17", "-O3", "-use_fast_math", "-gencode=arch=compute_121,code=sm_121",
+                 "-Xcompiler", "/MD,/EHsc,/bigobj,/Zc:__cplusplus,/Zc:preprocessor",
+                 "-ccbin", str(Path(compiler).parent)]
+        run([str(cuda / "bin/nvcc.exe"), *flags, "-c", str(source), "-o", str(obj)], "hc-upmix-compile")
+        destination = output / "rtx_hc_upmix.dll"
+        run([shutil.which("link"), "/nologo", "/DLL", "/MACHINE:ARM64", "/INCREMENTAL:NO",
+             "/OUT:" + str(destination), "/IMPLIB:" + str(output / "hc_upmix.lib"), str(obj),
+             str(cuda / "lib/arm64/cudart.lib")], "hc-upmix-link")
+        run([shutil.which("dumpbin"), "/exports", str(destination)], "hc-upmix-exports")
+        exports = (output / "hc-upmix-exports.log").read_text(encoding="utf-8")
+        names = set(re.findall(r"^\s+\d+\s+[0-9A-Fa-f]+\s+[0-9A-Fa-f]+\s+(rtx_hc_\S+)", exports, re.M))
+        if names != {"rtx_hc_upmix_abi", "rtx_hc_upmix_bf16"}:
+            raise RuntimeError("Unexpected HC native ABI exports")
+        produced["hc_upmix"] = destination
     if "csf" in chosen:
         target = output / "csf"
         torch = package_path("torch")
@@ -229,7 +246,7 @@ def build(args):
             manifest["files"][name].pop("bytes", None)
             manifest["files"][name].update(file=path.name,
                                             origin="Built from this repository's src and third_party trees")
-        (target / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        (target / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(output / "build.json")
 
 
@@ -237,7 +254,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cuda-root", type=Path, default=Path(os.environ.get("CUDA_PATH", "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.4")))
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--components", default="ple,depth,csf,sampling,tiktoken,llguidance")
+    parser.add_argument("--components", default="ple,depth,csf,sampling,hc_upmix,tiktoken,llguidance")
     parser.add_argument("--jobs", type=int, default=2)
     parser.add_argument("--install", action="store_true", help="Copy new DLLs into package resources and update its manifest")
     build(parser.parse_args())

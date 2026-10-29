@@ -3,7 +3,7 @@ param(
     [string]$Python = 'python',
     [string]$OutputDirectory = '',
     [string]$CudaRoot = $env:CUDA_PATH,
-    [string]$Components = 'ple,depth,csf,sampling,tiktoken,llguidance',
+    [string]$Components = 'ple,depth,csf,sampling,hc_upmix,tiktoken,llguidance',
     [switch]$Install
 )
 $ErrorActionPreference = 'Stop'
