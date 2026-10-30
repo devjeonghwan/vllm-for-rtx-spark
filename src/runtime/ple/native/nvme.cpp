@@ -128,13 +128,20 @@ struct ReadBuffers {
     unsigned char* pages = nullptr;
     std::vector<OVERLAPPED> operations;
     std::vector<int64_t> indices;
+    std::vector<unsigned char> active;
+    size_t pending = 0;
     ~ReadBuffers() { if (pages) VirtualFree(pages, 0, MEM_RELEASE); }
 };
+
+static constexpr size_t READ_CACHE_MAX_SLOTS = 256;
+static constexpr ULONG COMPLETION_BATCH_MAX = 64;
+
 struct FlatFile {
     Handle file, port;
     uint64_t bytes;
     std::mutex mutex;
     std::vector<std::shared_ptr<ReadBuffers>> failed;
+    std::shared_ptr<ReadBuffers> cached;
     explicit FlatFile(const std::wstring& path) : file(CreateFileW(path.c_str(), GENERIC_READ,
         FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING, nullptr)), bytes(0) {
         if (file.value == INVALID_HANDLE_VALUE) throw std::runtime_error("flat file open");
@@ -142,7 +149,7 @@ struct FlatFile {
         if (!bytes || bytes % PAGE_BYTES) throw std::runtime_error("flat file page extent");
         port.value = CreateIoCompletionPort(file.value, nullptr, 0, 0);
         if (!port.value) throw std::runtime_error("IOCP create");
-        failed.reserve(1); // fail-closed single retained I/O owner needs no allocation
+        failed.reserve(1); // Retaining the first uncertain I/O owner cannot allocate.
     }
 };
 static std::mutex files_mutex;
@@ -151,6 +158,30 @@ static std::atomic<int> next_file{1};
 static thread_local unsigned queue_depth = 0;
 static std::mutex signature_mutex;
 static std::string last_signature;
+
+// The file mutex serializes all use of its cache. Cached pages never own a file
+// handle; closing the map releases its idle cache. Larger queue depths retain
+// their original behavior, but their buffers are not kept between calls.
+static std::shared_ptr<ReadBuffers> acquire_buffer(FlatFile& file, size_t slots) {
+    if (slots > READ_CACHE_MAX_SLOTS) {
+        file.cached.reset();
+    } else {
+        if (file.cached && (file.cached.use_count() != 1 || file.cached->pending))
+            file.cached.reset();
+        if (file.cached && file.cached->operations.size() >= slots)
+            return file.cached;
+        file.cached.reset(); // Drop idle storage before allocating a larger cache.
+    }
+    auto memory = std::make_shared<ReadBuffers>();
+    memory->operations.resize(slots);
+    memory->indices.resize(slots);
+    memory->active.resize(slots);
+    memory->pages = static_cast<unsigned char*>(VirtualAlloc(nullptr, slots * PAGE_BYTES,
+                                    MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+    if (!memory->pages) return nullptr;
+    if (slots <= READ_CACHE_MAX_SLOTS) file.cached = memory;
+    return memory;
+}
 
 API int mbx_t_last_prepare_signature(char* output, int capacity) noexcept {
     if (!output || capacity < 33) return -EINVAL;
@@ -185,7 +216,7 @@ API int mbx_t_open(int depth) noexcept {
 
 API int mbx_t_read(int descriptor, const int64_t* rows, int64_t count, void* packed_output,
                    void* scales_output, int cp, int cs, int threads) noexcept {
-    if (count <= 0) return 0; // original PC26d4,2924
+    if (count <= 0) return 0;
     std::shared_ptr<FlatFile> file;
     std::shared_ptr<ReadBuffers> memory;
     size_t pending = 0;
@@ -196,46 +227,90 @@ API int mbx_t_read(int descriptor, const int64_t* rows, int64_t count, void* pac
         std::lock_guard guard(file->mutex);
         if (!file->failed.empty()) return -EIO;
         for (int64_t i = 0; i < count; ++i)
-            if (rows[i] < 0 || static_cast<uint64_t>(rows[i]) / layout.rows_per_page >= file->bytes / 4096) return -EINVAL;
+            if (rows[i] < 0 || static_cast<uint64_t>(rows[i]) / layout.rows_per_page >= file->bytes / PAGE_BYTES) return -EINVAL;
         size_t slots = static_cast<size_t>(std::min<int64_t>(count, queue_depth ? queue_depth : std::max(threads, 1)));
-        memory = std::make_shared<ReadBuffers>();
-        memory->operations.resize(slots); memory->indices.resize(slots);
-        memory->pages = static_cast<unsigned char*>(VirtualAlloc(nullptr, slots * 4096, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
-        if (!memory->pages) return -ENOMEM;
+        memory = acquire_buffer(*file, slots);
+        if (!memory) return -ENOMEM;
+        std::fill(memory->active.begin(), memory->active.begin() + slots, 0);
+        memory->pending = 0;
         int64_t next = 0, finished = 0;
-        bool failed = false;
+        bool failed = false, cancelled = false;
+        auto retain = [&]() {
+            file->failed.push_back(memory);
+            file->cached.reset();
+            return -EIO;
+        };
         auto submit = [&](size_t slot) {
             auto& ov = memory->operations[slot]; ov = {};
-            uint64_t offset = static_cast<uint64_t>(rows[next]) / layout.rows_per_page * 4096;
+            uint64_t offset = static_cast<uint64_t>(rows[next]) / layout.rows_per_page * PAGE_BYTES;
             ov.Offset = static_cast<DWORD>(offset); ov.OffsetHigh = static_cast<DWORD>(offset >> 32);
             memory->indices[slot] = next++;
             DWORD ignored = 0;
-            BOOL ok = ReadFile(file->file.value, memory->pages + slot * 4096, 4096, &ignored, &ov);
+            BOOL ok = ReadFile(file->file.value, memory->pages + slot * PAGE_BYTES, PAGE_BYTES, &ignored, &ov);
             if (!ok && GetLastError() != ERROR_IO_PENDING) return false;
-            ++pending; return true;
+            memory->active[slot] = 1;
+            memory->pending = ++pending;
+            return true;
         };
         for (size_t i = 0; i < slots; ++i) if (!submit(i)) { failed = true; break; }
+        if (failed && pending) { CancelIoEx(file->file.value, nullptr); cancelled = true; }
         while (pending) {
-            DWORD bytes = 0; ULONG_PTR key = 0; OVERLAPPED* ov = nullptr;
-            BOOL ok = GetQueuedCompletionStatus(file->port.value, &bytes, &key, &ov, INFINITE);
-            if (!ov) { file->failed.push_back(memory); return -EIO; } // no unsafe buffer release
-            --pending;
-            if (!ok || bytes != 4096) failed = true;
-            size_t slot = static_cast<size_t>(ov - memory->operations.data());
-            if (slot >= slots) { file->failed.push_back(memory); return -EIO; }
-            if (!failed) {
-                int64_t index = memory->indices[slot];
-                auto* row = memory->pages + slot * 4096 + (static_cast<uint64_t>(rows[index]) % layout.rows_per_page) * layout.stride;
-                std::memcpy(static_cast<unsigned char*>(packed_output) + static_cast<size_t>(index) * cp, row, cp);
-                if (cs) std::memcpy(static_cast<unsigned char*>(scales_output) + static_cast<size_t>(index) * cs, row + cp, cs);
-                ++finished;
-                if (next < count && !submit(slot)) failed = true;
+            OVERLAPPED_ENTRY entries[COMPLETION_BATCH_MAX]{};
+            ULONG removed = 0;
+            BOOL ok = GetQueuedCompletionStatusEx(file->port.value, entries,
+                static_cast<ULONG>(std::min<size_t>(pending, COMPLETION_BATCH_MAX)), &removed, INFINITE, FALSE);
+            if (!ok || !removed || removed > COMPLETION_BATCH_MAX) return retain();
+            size_t completed[COMPLETION_BATCH_MAX]{};
+            for (ULONG i = 0; i < removed; ++i) {
+                auto* ov = entries[i].lpOverlapped;
+                uintptr_t base = reinterpret_cast<uintptr_t>(memory->operations.data());
+                uintptr_t address = reinterpret_cast<uintptr_t>(ov);
+                if (address < base || address - base >= slots * sizeof(OVERLAPPED) ||
+                    (address - base) % sizeof(OVERLAPPED) || entries[i].lpCompletionKey != 0)
+                    return retain();
+                size_t slot = (address - base) / sizeof(OVERLAPPED);
+                if (!memory->active[slot]) return retain();
+
+                // GQCSEx success only describes dequeuing. Check each request
+                // using its original OVERLAPPED; OVERLAPPED_ENTRY.Internal is reserved.
+                // https://learn.microsoft.com/windows/win32/api/ioapiset/nf-ioapiset-getoverlappedresult
+                DWORD actual_bytes = 0;
+                if (!GetOverlappedResult(file->file.value, ov, &actual_bytes, FALSE)) {
+                    // A queued packet with a still-pending OVERLAPPED is not
+                    // terminal proof. Preserve its active slot and DMA owner.
+                    if (GetLastError() == ERROR_IO_INCOMPLETE) return retain();
+                    failed = true;
+                }
+                memory->active[slot] = 0;
+                memory->pending = --pending;
+                completed[i] = slot;
+                if (actual_bytes != PAGE_BYTES || entries[i].dwNumberOfBytesTransferred != PAGE_BYTES)
+                    failed = true;
             }
-            if (failed) CancelIoEx(file->file.value, nullptr);
+            // Validate the complete dequeued batch before any refill can reuse
+            // an OVERLAPPED. Duplicate or foreign packets cannot claim new work.
+            if (!failed) {
+                for (ULONG i = 0; i < removed; ++i) {
+                    size_t slot = completed[i];
+                    int64_t index = memory->indices[slot];
+                    auto* row = memory->pages + slot * PAGE_BYTES +
+                        (static_cast<uint64_t>(rows[index]) % layout.rows_per_page) * layout.stride;
+                    std::memcpy(static_cast<unsigned char*>(packed_output) + static_cast<size_t>(index) * cp, row, cp);
+                    if (cs) std::memcpy(static_cast<unsigned char*>(scales_output) + static_cast<size_t>(index) * cs, row + cp, cs);
+                    ++finished;
+                }
+                for (ULONG i = 0; i < removed; ++i)
+                    if (next < count && !submit(completed[i])) { failed = true; break; }
+            }
+            if (failed && !cancelled) { CancelIoEx(file->file.value, nullptr); cancelled = true; }
         }
         return !failed && finished == count ? 0 : -EIO;
     } catch (...) {
-        if (pending && file && memory) { std::lock_guard guard(file->mutex); file->failed.push_back(memory); }
+        if (pending && file && memory) {
+            std::lock_guard guard(file->mutex);
+            file->failed.push_back(memory);
+            file->cached.reset();
+        }
         return -EIO;
     }
 }
@@ -247,6 +322,7 @@ API int mbx_t_close(int descriptor) noexcept {
         auto owner = it->second;
         std::lock_guard io_guard(owner->mutex);
         if (!owner->failed.empty()) return -EBUSY;
+        owner->cached.reset();
         files.erase(it); return 0;
     } catch (...) { return -EIO; }
 }

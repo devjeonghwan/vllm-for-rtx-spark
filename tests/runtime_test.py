@@ -207,7 +207,7 @@ print(json.dumps({"initialize_callable": callable(bootstrap.initialize),
                 self.assertEqual(json.loads(Path(os.environ["MBX_DEPTH_CFG"]).read_bytes())["min"], 3)
                 for key, value in {"MBX_PLE_MMAP_MODE": "nvme", "MBX_PLE_ASYNC": "1",
                                    "MBX_PLE_ASYNC_MAX": "32768", "MBX_PLE_NVME_THREADS": "4",
-                                   "MBX_PLE_QD": "16", "MBX_PLE_PREFILL_CKPT": "1", "MBX_DEPTH_SYNCFREE": "1",
+                                   "MBX_PLE_QD": "256", "MBX_PLE_PREFILL_CKPT": "1", "MBX_DEPTH_SYNCFREE": "1",
                                    "VLLM_GDN_DECODE_KERNEL": "cuda", "MBX_LOADER_PREPARE": "0"}.items():
                     self.assertEqual(os.environ[key], value)
                 self.assertEqual(os.environ["VLLM_DISABLED_KERNELS"], "FlashInferCutedslMxfp8LinearKernel,FlashInferTrtllmMxfp8LinearKernel,DeepGemmMxfp8BmmLinearKernel,HummingMxfp8LinearKernel")
