@@ -10,10 +10,10 @@ Currently supported: [Qwen3.8-Flash-Next-FP4-Local](https://huggingface.co/nvidi
 
 | Workload | RTX Spark, 1 request | DGX Spark, 1 request | RTX Spark, 16 requests | DGX Spark, 16 requests |
 |---|---:|---:|---:|---:|
-| Mixed | 52.23 | 57.58 | 195.68 | 187.78 |
-| Code | 50.35 | 57.23 | 249.65 | 268.15 |
-| JSON schema | 42.18 | 44.90 | 215.83 | 222.28 |
-| Prose | 38.15 | 44.53 | 190.28 | 212.20 |
+| Mixed | 63.70 | 57.58 | 224.98 | 187.78 |
+| Code | 60.48 | 57.23 | 285.85 | 268.15 |
+| JSON schema | 46.50 | 44.90 | 238.20 | 222.28 |
+| Prose | 41.43 | 44.53 | 213.08 | 212.20 |
 
 ### 2. RTX Spark: NVIDIA recipe (llama.cpp) vs This project
 
@@ -21,8 +21,8 @@ NVIDIA figures are from its [published Windows recipe](https://nvidia.github.io/
 
 | Benchmark | NVIDIA llama.cpp, IQ4_XS | This project, NVFP4 |
 |---|---:|---:|
-| AA-AgentPerf-local completion, full replay | 1,118.16 s | **838.19 s** |
-| SPEED-Bench coding decode, all 80 conversations | 35.37 tok/s | **58.61 tok/s** |
+| AA-AgentPerf-local completion, full replay | 1,118.16 s | **734.51 s** |
+| SPEED-Bench coding decode, all 80 conversations | 35.37 tok/s | **70.44 tok/s** |
 
 ## Install
 
