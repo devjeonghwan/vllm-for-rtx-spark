@@ -2,11 +2,15 @@
 
 vLLM builds and model recipes for NVIDIA RTX Spark on Windows ARM64.
 
-Currently supported: [Qwen3.8-Flash-Next-FP4-Local](https://huggingface.co/nvidia/Qwen3.8-Flash-Next-FP4-Local) on RTX Spark N1X, with 96 GB GPU / 32 GB CPU memory and NVMe PLE. Based on vLLM 0.32.0 and [myllmbox's v5.3.1 recipe](https://github.com/myllmbox/qwen38-flash-next-recipe).
+## Supported Matrix
+
+| Hardware | [Qwen3.8-Flash-Next-FP4-Local](https://huggingface.co/nvidia/Qwen3.8-Flash-Next-FP4-Local) |
+|---|---|
+| RTX Spark N1X 128 GB | Supported |
 
 ## Benchmarks
 
-### 1. DGX Spark (MyLLMBox v5.3 Recipe) vs RTX Spark (This project)
+### 1. DGX Spark vs RTX Spark (This project)
 
 | Workload | RTX Spark, 1 request | DGX Spark, 1 request | RTX Spark, 16 requests | DGX Spark, 16 requests |
 |---|---:|---:|---:|---:|
