@@ -10,7 +10,7 @@ vLLM builds and model recipes for NVIDIA RTX Spark on Windows ARM64.
 
 ## Benchmarks
 
-### 1. DGX Spark vs RTX Spark (This project)
+### 1. DGX Spark ([MyLLMBox v5.3.1](https://github.com/myllmbox/qwen38-flash-next-recipe/tree/v5.3.1)) vs RTX Spark (This project)
 
 | Workload | RTX Spark, 1 request | DGX Spark, 1 request | RTX Spark, 16 requests | DGX Spark, 16 requests |
 |---|---:|---:|---:|---:|
@@ -73,7 +73,7 @@ Memory figures are estimates. The 108 GB profiles may use WDDM shared memory and
 
 ## Build
 
-Use a Git checkout or the `source.zip` asset in a short directory path. Install Git, native ARM64 Python 3.13, Visual Studio ARM64 C++ tools, and CUDA Toolkit 13.4.
+Use a Git checkout in a short directory path. Install Git, native ARM64 Python 3.13, Visual Studio ARM64 C++ tools, and CUDA Toolkit 13.4.
 
 ```powershell
 python -m pip install --only-binary=:all: -r requirements\runtime.txt -r requirements\vendor.txt -r requirements\build.txt

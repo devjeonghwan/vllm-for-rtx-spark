@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 
-PROJECT_VERSION = "0.1.2"
+PROJECT_VERSION = "0.1.3"
 
 
 def manifest_path():
