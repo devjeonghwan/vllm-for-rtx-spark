@@ -7308,3 +7308,22 @@ new file mode 100644
 +            num_warps=2 if rotary_dim <= 64 else 4,
 +        )
 +    return output
+diff --git a/vllm/v1/worker/gpu/spec_decode/rejection_sampler.py b/vllm/v1/worker/gpu/spec_decode/rejection_sampler.py
+--- a/vllm/v1/worker/gpu/spec_decode/rejection_sampler.py
++++ b/vllm/v1/worker/gpu/spec_decode/rejection_sampler.py
+@@ -255,6 +255,15 @@
+         seq_lens_upper_bound_np: np.ndarray,
+         verify_draft_sampled: torch.Tensor,
+     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
++        from vllm._rtx_spark.runtime.sampling import try_verify
++
++        fused_result = try_verify(
++            self, logits, draft_logits, draft_sampled, pos, cu_num_logits,
++            idx_mapping, idx_mapping_np, expanded_idx_mapping, expanded_local_pos,
++            seq_lens_upper_bound_np, verify_draft_sampled,
++        )
++        if fused_result is not None:
++            return fused_result
+         processed_logits = self.sampler.apply_sampling_params(
+             logits,
+             expanded_idx_mapping,

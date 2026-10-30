@@ -10,3 +10,4 @@
 - Bundled Python libraries and native helpers retain their original license files. Model weights are obtained separately under the model's license.
 - oss-harmony 0.0.11 (Apache-2.0) and llguidance 1.7.6 (MIT) include native ARM64 bindings and their original source under `third_party/`.
 - HC up-projection and gate/mix fusion adapts Strata (Niko1221/Strata), MIT, commit `46c152a1310f77cd2f0ce2c7cd213962df14fe83`, `src/prefill/kernels.cu:2367-2496`. The maintained CUDA source and original license are under `src/kernels/hc_upmix/`.
+- The sampling kernels under `src/kernels/sampling/` adapt the pinned vLLM Qrita top-k/top-p and rejection kernels, Apache-2.0. Their original copyright and Qrita paper attribution are retained in the sources.
