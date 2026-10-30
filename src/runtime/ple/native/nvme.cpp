@@ -3,6 +3,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
+#include <process.h>
 #include <bcrypt.h>
 #include <algorithm>
 #include <array>
@@ -124,20 +125,34 @@ struct Md5 {
     }
 };
 
+struct PagePool {
+    unsigned char* pages=nullptr;
+    PagePool(){pages=static_cast<unsigned char*>(VirtualAlloc(nullptr,256*PAGE_BYTES,MEM_COMMIT|MEM_RESERVE,PAGE_READWRITE));
+        if(!pages)throw std::bad_alloc();}
+    ~PagePool(){if(pages)VirtualFree(pages,0,MEM_RELEASE);}
+};
 struct ReadBuffers {
     unsigned char* pages = nullptr;
+    std::shared_ptr<PagePool> pool;
     std::vector<OVERLAPPED> operations;
     std::vector<int64_t> indices;
     std::vector<unsigned char> active;
     size_t pending = 0;
-    ~ReadBuffers() { if (pages) VirtualFree(pages, 0, MEM_RELEASE); }
+    ~ReadBuffers() { if (pages && !pool) VirtualFree(pages, 0, MEM_RELEASE); }
 };
 
 static constexpr size_t READ_CACHE_MAX_SLOTS = 256;
 static constexpr ULONG COMPLETION_BATCH_MAX = 64;
 
+struct ParallelLane;
+
 struct FlatFile {
     Handle file, port;
+    std::wstring path_name;
+    std::mutex dispatch_mutex;
+    std::shared_ptr<ParallelLane> lane;
+    std::shared_ptr<PagePool> page_pool;
+    std::shared_ptr<ReadBuffers> pooled_view,helper_view;
     uint64_t bytes;
     std::mutex mutex;
     std::vector<std::shared_ptr<ReadBuffers>> failed;
@@ -145,6 +160,7 @@ struct FlatFile {
     explicit FlatFile(const std::wstring& path) : file(CreateFileW(path.c_str(), GENERIC_READ,
         FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED | FILE_FLAG_NO_BUFFERING, nullptr)), bytes(0) {
         if (file.value == INVALID_HANDLE_VALUE) throw std::runtime_error("flat file open");
+        path_name = path;
         bytes = length(file.value);
         if (!bytes || bytes % PAGE_BYTES) throw std::runtime_error("flat file page extent");
         port.value = CreateIoCompletionPort(file.value, nullptr, 0, 0);
@@ -163,6 +179,10 @@ static std::string last_signature;
 // handle; closing the map releases its idle cache. Larger queue depths retain
 // their original behavior, but their buffers are not kept between calls.
 static std::shared_ptr<ReadBuffers> acquire_buffer(FlatFile& file, size_t slots) {
+    if(file.pooled_view && slots<=file.pooled_view->operations.size()){
+        if(file.pooled_view->pending)return nullptr;
+        file.cached=file.pooled_view;return file.cached;
+    }
     if (slots > READ_CACHE_MAX_SLOTS) {
         file.cached.reset();
     } else {
@@ -181,6 +201,12 @@ static std::shared_ptr<ReadBuffers> acquire_buffer(FlatFile& file, size_t slots)
     if (!memory->pages) return nullptr;
     if (slots <= READ_CACHE_MAX_SLOTS) file.cached = memory;
     return memory;
+}
+
+static bool pin_reader_module() noexcept {
+    HMODULE module = nullptr;
+    return GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+        reinterpret_cast<LPCWSTR>(&pin_reader_module), &module) != FALSE;
 }
 
 API int mbx_t_last_prepare_signature(char* output, int capacity) noexcept {
@@ -214,21 +240,19 @@ API int mbx_t_open(int depth) noexcept {
     queue_depth = static_cast<unsigned>(depth); return 0;
 }
 
-API int mbx_t_read(int descriptor, const int64_t* rows, int64_t count, void* packed_output,
-                   void* scales_output, int cp, int cs, int threads) noexcept {
+static int read_core(std::shared_ptr<FlatFile> file, const int64_t* rows, int64_t count, void* packed_output,
+                   void* scales_output, int cp, int cs, unsigned requested_queue) noexcept {
     if (count <= 0) return 0;
-    std::shared_ptr<FlatFile> file;
     std::shared_ptr<ReadBuffers> memory;
     size_t pending = 0;
     try {
         Layout layout(cp, cs);
         if (!rows || !packed_output || (cs && !scales_output) || count > INT_MAX) return -EINVAL;
-        { std::lock_guard guard(files_mutex); auto it = files.find(descriptor); if (it == files.end()) return -EBADF; file = it->second; }
         std::lock_guard guard(file->mutex);
         if (!file->failed.empty()) return -EIO;
         for (int64_t i = 0; i < count; ++i)
             if (rows[i] < 0 || static_cast<uint64_t>(rows[i]) / layout.rows_per_page >= file->bytes / PAGE_BYTES) return -EINVAL;
-        size_t slots = static_cast<size_t>(std::min<int64_t>(count, queue_depth ? queue_depth : std::max(threads, 1)));
+        size_t slots = static_cast<size_t>(std::min<int64_t>(count, requested_queue));
         memory = acquire_buffer(*file, slots);
         if (!memory) return -ENOMEM;
         std::fill(memory->active.begin(), memory->active.begin() + slots, 0);
@@ -236,6 +260,7 @@ API int mbx_t_read(int descriptor, const int64_t* rows, int64_t count, void* pac
         int64_t next = 0, finished = 0;
         bool failed = false, cancelled = false;
         auto retain = [&]() {
+            pin_reader_module(); // Keep code/static owner alive if terminal proof is unknown.
             file->failed.push_back(memory);
             file->cached.reset();
             return -EIO;
@@ -307,6 +332,7 @@ API int mbx_t_read(int descriptor, const int64_t* rows, int64_t count, void* pac
         return !failed && finished == count ? 0 : -EIO;
     } catch (...) {
         if (pending && file && memory) {
+            pin_reader_module(); // Preserve exception-retained code/static owners too.
             std::lock_guard guard(file->mutex);
             file->failed.push_back(memory);
             file->cached.reset();
@@ -315,13 +341,153 @@ API int mbx_t_read(int descriptor, const int64_t* rows, int64_t count, void* pac
     }
 }
 
+struct ParallelLane {
+    std::shared_ptr<FlatFile> child;
+    Handle request, done, thread;
+    std::atomic<bool> stop{false}, complete{true}, running{false}, poisoned{false};
+    const int64_t* rows = nullptr;
+    int64_t count = 0;
+    void *packed = nullptr, *scales = nullptr;
+    int cp = 0, cs = 0, result = -EIO;
+    unsigned qd = 0;
+
+    explicit ParallelLane(const std::wstring& path) : child(std::make_shared<FlatFile>(path)) {
+        request.value = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+        done.value = CreateEventW(nullptr, FALSE, FALSE, nullptr);
+        if (!request.value || !done.value) throw std::runtime_error("lane events");
+        if (!pin_reader_module()) throw std::runtime_error("lane module lifetime");
+        uintptr_t worker = _beginthreadex(nullptr, 0, &ParallelLane::entry, this, 0, nullptr);
+        if (!worker) throw std::runtime_error("lane thread");
+        thread.value = reinterpret_cast<HANDLE>(worker);
+    }
+    ~ParallelLane() {
+        // No destructor runs while a call is active: parent dispatch owns this lane.
+        // A poisoned lane is retained in files, so uncertain DMA is not destroyed.
+        stop.store(true, std::memory_order_release);
+        if (thread.value) {
+            SetEvent(request.value);
+            for (;;) {
+                DWORD code = STILL_ACTIVE;
+                if (GetExitCodeThread(thread.value, &code) && code != STILL_ACTIVE) break;
+                WaitForSingleObject(thread.value, 10);
+            }
+        }
+    }
+    static unsigned __stdcall entry(void* raw) noexcept {
+        auto& lane = *static_cast<ParallelLane*>(raw);
+        for (;;) {
+            DWORD rc = WaitForSingleObject(lane.request.value, INFINITE);
+            if (rc != WAIT_OBJECT_0) { lane.poisoned.store(true); break; }
+            if (lane.stop.load(std::memory_order_acquire)) break;
+            lane.running.store(true, std::memory_order_release);
+            lane.result = read_core(lane.child, lane.rows, lane.count, lane.packed, lane.scales,
+                                    lane.cp, lane.cs, lane.qd);
+            lane.running.store(false, std::memory_order_release);
+            lane.complete.store(true, std::memory_order_release);
+            SetEvent(lane.done.value);
+        }
+        return 0;
+    }
+    bool unsafe() const noexcept {
+        return poisoned.load() || !complete.load() || !child->failed.empty() ||
+            (child->cached && child->cached->pending) || (child->pooled_view && child->pooled_view->pending);
+    }
+    bool start(const int64_t* r, int64_t n, void* p, void* s, int packed_cols, int scale_cols, unsigned queue) noexcept {
+        if (unsafe()) return false;
+        rows = r; count = n; packed = p; scales = s; cp = packed_cols; cs = scale_cols; qd = queue;
+        result = -EIO;
+        complete.store(false, std::memory_order_release);
+        if (!SetEvent(request.value)) {
+            poisoned.store(true);
+            complete.store(true, std::memory_order_release); // No request published.
+            return false;
+        }
+        return true;
+    }
+    int join() noexcept {
+        while (!complete.load(std::memory_order_acquire)) {
+            // Even a failed wait is not proof of completion. Keep caller buffers alive.
+            WaitForSingleObject(done.value, 10);
+        }
+        return result;
+    }
+};
+
+// Private stable shared scratch pool. Actual read_core queue limits remain unchanged.
+static void clear_pool(const std::shared_ptr<FlatFile>& file) noexcept {
+    file->cached.reset();
+    if (file->lane) {
+        auto& child=file->lane->child;
+        child->cached.reset();child->pooled_view.reset();child->page_pool.reset();child->helper_view.reset();
+    }
+    file->pooled_view.reset();file->helper_view.reset();file->page_pool.reset();
+}
+static std::shared_ptr<ReadBuffers> pool_view(const std::shared_ptr<PagePool>& pool,size_t offset,size_t slots) {
+    auto view=std::make_shared<ReadBuffers>();
+    view->operations.resize(slots);view->indices.resize(slots);view->active.resize(slots);
+    view->pool=pool;view->pages=pool->pages+offset*PAGE_BYTES;
+    return view;
+}
+static bool ensure_pool(const std::shared_ptr<FlatFile>& file) {
+    if (file->page_pool) return true;
+    if (!pin_reader_module()) return false;
+    // Release legacy idle allocation before creating the one physical pool.
+    clear_pool(file);
+    auto pool=std::make_shared<PagePool>();
+    auto primary=pool_view(pool,0,256),helper=pool_view(pool,128,128);
+    file->page_pool=pool;file->pooled_view=primary;file->helper_view=helper;file->cached=primary;
+    if(file->lane){file->lane->child->page_pool=pool;file->lane->child->pooled_view=helper;file->lane->child->cached=helper;}
+    return true;
+}
+static bool partition_idle_cache(const std::shared_ptr<FlatFile>& file,bool) {
+    if ((file->cached&&file->cached->pending)||(file->pooled_view&&file->pooled_view->pending)||
+        (file->lane&&file->lane->unsafe())) return false;
+    return ensure_pool(file);
+}
+API int mbx_t_read(int descriptor, const int64_t* rows, int64_t count, void* packed_output,
+                   void* scales_output, int cp, int cs, int threads) noexcept {
+    if (count <= 0) return 0;
+    try {
+        Layout layout(cp, cs);
+        if (!rows || !packed_output || (cs && !scales_output) || count > INT_MAX) return -EINVAL;
+        std::shared_ptr<FlatFile> file;
+        { std::lock_guard list(files_mutex); auto it = files.find(descriptor); if (it == files.end()) return -EBADF; file = it->second; }
+        std::lock_guard dispatch(file->dispatch_mutex);
+        unsigned qd = queue_depth ? queue_depth : unsigned(std::max(threads,1));
+        if (!file->failed.empty() || (file->lane && file->lane->unsafe())) return -EIO;
+        if (qd != 256 || count < 512) {
+            if (!partition_idle_cache(file,false)) return -EIO;
+            return read_core(file,rows,count,packed_output,scales_output,cp,cs,qd);
+        }
+        // Preserve original all-input validation before any lane can write output.
+        for (int64_t i = 0; i < count; ++i)
+            if (rows[i] < 0 || static_cast<uint64_t>(rows[i]) / layout.rows_per_page >= file->bytes / PAGE_BYTES) return -EINVAL;
+        if (!partition_idle_cache(file,true)) return -EIO;
+        if (!file->lane) file->lane = std::make_shared<ParallelLane>(file->path_name);
+        auto& lane = *file->lane;
+        lane.child->page_pool=file->page_pool;lane.child->pooled_view=file->helper_view;lane.child->cached=file->helper_view;
+        int64_t first = (count + 1) / 2, second = count - first;
+        unsigned primary_qd = (qd + 1) / 2, helper_qd = qd / 2;
+        if (!lane.start(rows+first,second,static_cast<unsigned char*>(packed_output)+size_t(first)*cp,
+              cs ? static_cast<unsigned char*>(scales_output)+size_t(first)*cs : nullptr,cp,cs,helper_qd)) return -EIO;
+        int primary = read_core(file,rows,first,packed_output,scales_output,cp,cs,primary_qd);
+        int helper = lane.join(); // Always join even when the first lane failed.
+        return primary ? primary : helper;
+    } catch (...) { return -EIO; }
+}
+
+
 API int mbx_t_close(int descriptor) noexcept {
     try {
         std::lock_guard guard(files_mutex);
         auto it = files.find(descriptor); if (it == files.end()) return 0;
         auto owner = it->second;
+        std::lock_guard dispatch(owner->dispatch_mutex);
         std::lock_guard io_guard(owner->mutex);
-        if (!owner->failed.empty()) return -EBUSY;
+        if (!owner->failed.empty() || (owner->cached && owner->cached->pending) ||
+            (owner->pooled_view && owner->pooled_view->pending) ||
+            (owner->lane && owner->lane->unsafe())) return -EBUSY;
+        owner->lane.reset();
         owner->cached.reset();
         files.erase(it); return 0;
     } catch (...) { return -EIO; }
