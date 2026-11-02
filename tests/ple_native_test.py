@@ -1,14 +1,19 @@
 """CPU byte and lifetime regression tests for the bundled Windows PLE reader."""
 
 from concurrent.futures import ThreadPoolExecutor
+import builtins
 import ctypes
 import errno
+import importlib.util
 import os
 from pathlib import Path
 import struct
 import sys
 import tempfile
+import textwrap
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -157,6 +162,123 @@ class PleNativeTests(unittest.TestCase):
         self.close(first)
         self.read(second, [2052, 42, 0])
         self.close(second)
+
+
+class PleCompletionBoundaryTests(unittest.TestCase):
+    """No Torch, native DLL, CUDA, or OS I/O execution is required here."""
+
+    def setUp(self):
+        source = ROOT / "src/runtime/ple/__init__.py"
+        spec = importlib.util.spec_from_file_location("_ple_completion_fixture", source)
+        self.boundary = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.boundary)
+
+    def completion_prefixes(self):
+        """Execute the four post-event guards and legacy post-copy guard.
+
+        Extract only the completion prefix from the public patch, so importing
+        vLLM/Torch is unnecessary. The appended publish sentinel represents the
+        output assignment that follows each guard in the patched method.
+        """
+        patch_text = (ROOT / "patches/vllm/0003-recipe-runtime.patch").read_text(encoding="utf-8")
+        fragments = []
+        for relative, event in (("vllm/v1/worker/gpu/async_utils.py", "copy_event"),
+                                ("vllm/v1/worker/gpu_model_runner.py", "async_copy_ready_event")):
+            block = patch_text.split(f"diff --git a/{relative} ", 1)[1].split("\ndiff --git ", 1)[0]
+            postimage = [line[1:] for line in block.splitlines()
+                         if line.startswith((" ", "+")) and not line.startswith("+++")]
+            starts = [i for i, line in enumerate(postimage) if line.strip() == f"self.{event}.synchronize()"]
+            self.assertEqual(len(starts), 2)  # Generation and pooling output.
+            fragments.extend(postimage[index:index + 5] for index in starts)
+            if event == "async_copy_ready_event":
+                guards = [i for i, line in enumerate(postimage) if line.strip() == 'if os.name == "nt":']
+                self.assertEqual(len(guards), 3)
+                index = guards[-1]
+                # Its source hunk is after the existing blocking sampled-token
+                # transfer/parsing and still inside the synchronous branch.
+                self.assertEqual(postimage[index - 1].strip(), ")")
+                self.assertEqual(postimage[index + 4].strip(), "else:")
+                fragments.append(["        self.blocking_transfer()"] + [line[4:] for line in postimage[index:index + 4]])
+        self.assertEqual(len(fragments), 5)
+        functions = []
+        for fragment in fragments:
+            self.assertEqual(fragment[1].strip(), 'if os.name == "nt":')
+            self.assertEqual(fragment[2].strip(), 'from vllm._rtx_spark.runtime.ple import raise_if_async_failed')
+            self.assertEqual(fragment[4].strip(), 'raise_if_async_failed()')
+            function_source = "def complete(self):\n" + textwrap.indent(textwrap.dedent("\n".join(fragment)), "    ") + "\n    self.publish()\n"
+            imports = dict(vars(builtins))
+            original_import = imports["__import__"]
+            def import_boundary(name, *args, **kwargs):
+                if name == "vllm._rtx_spark.runtime.ple":
+                    return self.boundary
+                return original_import(name, *args, **kwargs)
+            imports["__import__"] = import_boundary
+            namespace = {"__builtins__": imports, "os": SimpleNamespace(name="nt")}
+            exec(compile(function_source, "<actual-public-PLE-completion-prefix>", "exec"), namespace)
+            functions.append(namespace["complete"])
+        return functions
+
+    def fixture(self, fail_at_completion=False, status=1):
+        events = []
+        owner = SimpleNamespace(failed=0)
+        def failed():
+            events.append("failed_query")
+            return owner.failed
+        owner.mbx_pa_failed = failed
+        self.boundary._LIBRARIES["MBX_PLE_ASYNC_LIB"] = ("already-loaded-fixture.dll", owner)
+        def synchronize():
+            events.append("existing_copy_event_complete")
+            if fail_at_completion:
+                owner.failed = status
+                events.append("native_failure_is_now_completed")
+        output = SimpleNamespace(copy_event=SimpleNamespace(synchronize=synchronize),
+                                 async_copy_ready_event=SimpleNamespace(synchronize=synchronize),
+                                 blocking_transfer=synchronize,
+                                 publish=lambda: events.append("publish"))
+        return owner, output, events
+
+    def test_delayed_read_failure_is_rejected_after_existing_event_before_publish(self):
+        for complete in self.completion_prefixes():
+            for status in (1, 2):
+                with self.subTest(status=status):
+                    owner, output, events = self.fixture(fail_at_completion=True, status=status)
+                    self.assertEqual(owner.mbx_pa_failed(), 0)  # The old early guard missed it.
+                    with patch.object(ctypes, "CDLL", side_effect=AssertionError("must not load a DLL")):
+                        with self.assertRaisesRegex(RuntimeError, "stop and restart this worker"):
+                            complete(output)
+                    self.assertNotIn("publish", events)
+                    self.assertEqual(events.count("existing_copy_event_complete"), 1)
+                    self.assertGreater(events.index("native_failure_is_now_completed"), events.index("existing_copy_event_complete"))
+                    self.assertEqual(events[-1], "failed_query")
+                    self.assertEqual(owner.failed, status)  # Fault is never acknowledged/reset.
+
+    def test_normal_completion_queries_only_the_already_loaded_owner(self):
+        for complete in self.completion_prefixes():
+            _, output, events = self.fixture()
+            with patch.object(ctypes, "CDLL", side_effect=AssertionError("must not load a DLL")):
+                complete(output)
+            self.assertEqual(events, ["existing_copy_event_complete", "failed_query", "publish"])
+
+    def test_uninitialized_boundary_is_noop_and_never_loads_a_library(self):
+        self.boundary._LIBRARIES.clear()
+        with patch.object(ctypes, "CDLL", side_effect=AssertionError("must not load a DLL")):
+            self.boundary.raise_if_async_failed()
+            for complete in self.completion_prefixes():
+                events = []
+                output = SimpleNamespace(copy_event=SimpleNamespace(synchronize=lambda: events.append("complete")),
+                                         async_copy_ready_event=SimpleNamespace(synchronize=lambda: events.append("complete")),
+                                         blocking_transfer=lambda: events.append("complete"),
+                                         publish=lambda: events.append("publish"))
+                complete(output)
+                self.assertEqual(events, ["complete", "publish"])
+
+    def test_sticky_failure_blocks_later_outputs_without_dropping_native_owner(self):
+        owner, _, _ = self.fixture(fail_at_completion=False)
+        owner.failed = 1
+        for _ in range(2):
+            with self.assertRaisesRegex(RuntimeError, "native status 1"):
+                self.boundary.raise_if_async_failed()
+        self.assertIs(self.boundary._LIBRARIES["MBX_PLE_ASYNC_LIB"][1], owner)
 
 
 if __name__ == "__main__":

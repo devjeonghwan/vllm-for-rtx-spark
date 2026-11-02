@@ -48,8 +48,31 @@ def library(variable):
         fixture.argtypes, fixture.restype = [], ctypes.c_int
         if fixture() != 0:
             raise RuntimeError("The CPU-only flag fixture DLL is forbidden for actual inference")
+        failed = result.mbx_pa_failed
+        failed.argtypes, failed.restype = [], ctypes.c_int
     _LIBRARIES[variable] = (resolved, result)
     return result
+
+
+def raise_if_async_failed():
+    """Reject an output after its existing GPU-to-CPU completion event.
+
+    The caller must already have waited for the output copy event, which follows
+    the PLE stream wait/copy/model/sampling work. An earlier host query can race
+    native I/O, and a query inside captured Python is not replayed by FULL Graphs.
+    This function adds no synchronization and never loads a DLL or clears a fault.
+    The native failure is sticky: the worker must be stopped before reuse because
+    intermediate model/state tensors may already have consumed zero-filled rows.
+    """
+    asynchronous = _LIBRARIES.get("MBX_PLE_ASYNC_LIB")
+    if asynchronous is None:
+        return
+    status = asynchronous[1].mbx_pa_failed()
+    if status:
+        raise RuntimeError(
+            "PLE asynchronous table read failed before publishing model output "
+            f"(native status {status}); stop and restart this worker"
+        )
 
 
 def attach_nvme_table(layer, tab, table_class, hooks, keep):

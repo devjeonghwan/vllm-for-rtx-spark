@@ -7327,3 +7327,80 @@ diff --git a/vllm/v1/worker/gpu/spec_decode/rejection_sampler.py b/vllm/v1/worke
          processed_logits = self.sampler.apply_sampling_params(
              logits,
              expanded_idx_mapping,
+diff --git a/vllm/v1/worker/gpu/async_utils.py b/vllm/v1/worker/gpu/async_utils.py
+--- a/vllm/v1/worker/gpu/async_utils.py
++++ b/vllm/v1/worker/gpu/async_utils.py
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+ import contextlib
++import os
+ from collections.abc import Iterator
+ from dataclasses import dataclass, field
+ from typing import TYPE_CHECKING
+@@ -172,6 +173,10 @@
+
+     def get_output(self) -> ModelRunnerOutput:
+         self.copy_event.synchronize()
++        if os.name == "nt":
++            from vllm._rtx_spark.runtime.ple import raise_if_async_failed
++
++            raise_if_async_failed()
+
+         # NOTE(woosuk): The following code is to ensure compatibility with
+         # the existing model runner.
+@@ -257,6 +262,10 @@
+         else:
+             pooler_output = self.pooler_output_cpu
+         self.copy_event.synchronize()
++        if os.name == "nt":
++            from vllm._rtx_spark.runtime.ple import raise_if_async_failed
++
++            raise_if_async_failed()
+         self.model_runner_output.pooler_output = pooler_output
+         return self.model_runner_output
+
+diff --git a/vllm/v1/worker/gpu_model_runner.py b/vllm/v1/worker/gpu_model_runner.py
+--- a/vllm/v1/worker/gpu_model_runner.py
++++ b/vllm/v1/worker/gpu_model_runner.py
+@@ -4,6 +4,7 @@
+ import functools
+ import gc
+ import itertools
++import os
+ import threading
+ import time
+ from collections import defaultdict
+@@ -322,6 +323,10 @@
+         """
+         max_gen_len = self.sampled_token_ids_cpu.shape[-1]
+         self.async_copy_ready_event.synchronize()
++        if os.name == "nt":
++            from vllm._rtx_spark.runtime.ple import raise_if_async_failed
++
++            raise_if_async_failed()
+
+         # Release the device tensors once the copy has completed.
+         del self._logprobs_tensors
+@@ -442,6 +447,10 @@
+         This function blocks until the copy is finished.
+         """
+         self.async_copy_ready_event.synchronize()
++        if os.name == "nt":
++            from vllm._rtx_spark.runtime.ple import raise_if_async_failed
++
++            raise_if_async_failed()
+
+         # Release the device tensors once the copy has completed.
+         del self._raw_pooler_output
+@@ -3534,6 +3543,10 @@
+                             logprobs_tensors=logprobs_tensors,
+                         )
+                     )
++            if os.name == "nt":
++                from vllm._rtx_spark.runtime.ple import raise_if_async_failed
++
++                raise_if_async_failed()
+         else:
+             valid_sampled_token_ids = []
+             invalid_req_indices = discard_sampled_tokens_req_indices.tolist()
