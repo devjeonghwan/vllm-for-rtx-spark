@@ -7404,3 +7404,27 @@ diff --git a/vllm/v1/worker/gpu_model_runner.py b/vllm/v1/worker/gpu_model_runne
          else:
              valid_sampled_token_ids = []
              invalid_req_indices = discard_sampled_tokens_req_indices.tolist()
+diff --git a/vllm/model_executor/layers/rotary_embedding/mrope.py b/vllm/model_executor/layers/rotary_embedding/mrope.py
+--- a/vllm/model_executor/layers/rotary_embedding/mrope.py
++++ b/vllm/model_executor/layers/rotary_embedding/mrope.py
+@@ -326,6 +326,8 @@
+         attention_factor: float | None = None,
+         truncate: bool = True,
+     ) -> None:
++        # Cache extent may exceed the training context; YaRN frequencies must not.
++        self.original_max_position_embeddings = max_position_embeddings
+         self.scaling_factor = scaling_factor
+         self.beta_fast = beta_fast
+         self.beta_slow = beta_slow
+diff --git a/vllm/model_executor/layers/rotary_embedding/yarn_scaling_rope.py b/vllm/model_executor/layers/rotary_embedding/yarn_scaling_rope.py
+--- a/vllm/model_executor/layers/rotary_embedding/yarn_scaling_rope.py
++++ b/vllm/model_executor/layers/rotary_embedding/yarn_scaling_rope.py
+@@ -60,7 +60,7 @@
+             self.beta_slow,
+             self.rotary_dim,
+             self.base,
+-            self.max_position_embeddings,
++            getattr(self, "original_max_position_embeddings", self.max_position_embeddings),
+             self.truncate,
+         )
+         # Get n-d rotational scaling corrected for extrapolation
