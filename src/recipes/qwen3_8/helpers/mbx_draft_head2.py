@@ -92,6 +92,8 @@ def _cand_logits_nvfp4_kernel(h_ptr, cand_ptr, pk_ptr, sc_ptr, lut_ptr, out_ptr,
 
 class DraftHead2:
     def __init__(self, lm_head, vocab: int, basis_path: str, k: int, model_dir: str | None):
+        if int(vocab) < 1 or int(k) < 1:
+            raise ValueError("draft head2: vocabulary and candidate count must be positive")
         w = getattr(lm_head, "weight", None)
         self.V = int(vocab)
         if isinstance(w, torch.Tensor) and w.dim() == 2 and w.dtype in (torch.bfloat16, torch.float16) \

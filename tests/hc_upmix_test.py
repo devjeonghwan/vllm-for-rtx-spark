@@ -3,11 +3,14 @@
 import importlib
 import json
 import multiprocessing
+import os
+from contextlib import contextmanager
 from pathlib import Path
 import struct
 import sys
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -71,6 +74,11 @@ class Replicated:
     def __init__(self, weight):
         self.weight, self.quant_method = weight, Unquantized()
         self.bias, self.return_bias = None, False
+        self.calls = 0
+
+    def __call__(self, value):
+        self.calls += 1
+        return "original-gate"
 
 
 class HcUpmix(unittest.TestCase):
@@ -87,6 +95,99 @@ class HcUpmix(unittest.TestCase):
 
     def eligible(self, xn, lora, linear):
         return self.package._eligible(xn, lora, linear, 4, Replicated, Unquantized, Skinny)
+
+    @contextmanager
+    def entry_fixture(self, *, replicated=Replicated, batch_invariant=False):
+        """Exercise the real wrapper with CPU metadata and a trapped native op."""
+        names = ("vllm", "vllm.envs", "vllm.model_executor", "vllm.model_executor.layers",
+                 "vllm.model_executor.layers.linear", "vllm.models", "vllm.models.qwen4_exp",
+                 "vllm.models.qwen4_exp.nvidia", "vllm.models.qwen4_exp.nvidia.low_latency_gemm")
+        modules = {name: ModuleType(name) for name in names}
+        for name, module in modules.items():
+            module.__path__ = []
+            if "." in name:
+                parent, child = name.rsplit(".", 1)
+                setattr(modules[parent], child, module)
+        modules["vllm.envs"].VLLM_BATCH_INVARIANT = batch_invariant
+        linear_module = modules["vllm.model_executor.layers.linear"]
+        linear_module.ReplicatedLinear = replicated
+        linear_module.UnquantizedLinearMethod = Unquantized
+        modules[names[-1]].Qwen4ExpLowLatencyLinearMethod = Skinny
+        with (patch.dict(sys.modules, modules),
+              patch.object(self.package, "sys", SimpleNamespace(platform="win32")),
+              patch.object(self.package, "platform", SimpleNamespace(machine=lambda: "ARM64")),
+              patch.object(self.package, "hc_upmix", return_value="native-result") as native):
+            yield native
+
+    def test_global_forward_and_pre_hooks_decline_and_removal_restores_admission(self):
+        hooks = self.torch.nn.modules.module
+        for register in (hooks.register_module_forward_hook, hooks.register_module_forward_pre_hook):
+            args = self.tensors()
+            handle = register(lambda *args: None)
+            try:
+                self.assertFalse(self.eligible(*args))
+            finally:
+                handle.remove()
+            self.assertTrue(self.eligible(*args))
+
+    def test_global_backward_hook_does_not_disable_inference_fusion(self):
+        handle = self.torch.nn.modules.module.register_module_full_backward_hook(lambda *args: None)
+        try:
+            self.assertTrue(self.eligible(*self.tensors()))
+        finally:
+            handle.remove()
+
+    def test_global_hooks_keep_original_linear_argument_and_output_changes(self):
+        torch = self.torch
+
+        class HookedLinear(torch.nn.Module):
+            def __init__(self, weight):
+                super().__init__()
+                self.weight, self.quant_method = weight, Unquantized()
+                self.bias, self.return_bias = None, False
+                self.forward_inputs = []
+
+            def forward(self, value):
+                self.forward_inputs.append(value)
+                return 1.0
+
+        xn, lora, metadata = self.tensors()
+        linear = HookedLinear(metadata.weight)
+        hooks = torch.nn.modules.module
+        pre = hooks.register_module_forward_pre_hook(
+            lambda module, args: ("hook-input",) if module is linear else None)
+        post = hooks.register_module_forward_hook(
+            lambda module, args, output: output * 2 if module is linear else None)
+        try:
+            with self.entry_fixture(replicated=HookedLinear) as native:
+                result = self.package.hc_upmix_or_original(
+                    xn, lora, linear, 4, lambda x, gate, count: (gate, count))
+                self.assertEqual(result, (2.0, 4))
+                self.assertEqual(linear.forward_inputs, ["hook-input"])
+                native.assert_not_called()
+        finally:
+            post.remove()
+            pre.remove()
+
+    def test_batch_invariant_uses_original_linear_and_cached_vllm_flag(self):
+        xn, lora, linear = self.tensors()
+        with (self.entry_fixture(batch_invariant=True) as native,
+              patch.dict(os.environ, {"VLLM_BATCH_INVARIANT": "0"})):
+            result = self.package.hc_upmix_or_original(
+                xn, lora, linear, 4, lambda x, gate, count: (gate, count))
+            self.assertEqual(result, ("original-gate", 4))
+            self.assertEqual(linear.calls, 1)
+            native.assert_not_called()
+
+    def test_normal_entry_still_fuses_and_uses_cached_vllm_flag(self):
+        xn, lora, linear = self.tensors()
+        with (self.entry_fixture() as native,
+              patch.dict(os.environ, {"VLLM_BATCH_INVARIANT": "1"})):
+            result = self.package.hc_upmix_or_original(
+                xn, lora, linear, 4, lambda *args: self.fail("Unexpected original fallback"))
+            self.assertEqual(result, "native-result")
+            self.assertEqual(linear.calls, 0)
+            native.assert_called_once_with(xn, lora, linear.weight, False)
 
     def test_exact_known_linear_methods_and_supported_metadata(self):
         for stride in (320, 336):

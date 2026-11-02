@@ -3,6 +3,7 @@
 import sys
 import platform
 import torch
+from torch.nn.modules import module as _module_hooks
 from ._ops import hc_upmix
 
 MIN_ROWS = 1024
@@ -16,7 +17,9 @@ def _eligible(xn, lora, linear, hc_count, replicated_type, unquantized_type, low
     method = getattr(linear, "quant_method", None)
     if type(method) not in (unquantized_type, low_latency_type):
         return False
-    if getattr(linear, "_forward_hooks", {}) or getattr(linear, "_forward_pre_hooks", {}):
+    # Global hooks can replace the Linear's input/output just like local hooks.
+    if (getattr(linear, "_forward_hooks", {}) or getattr(linear, "_forward_pre_hooks", {})
+            or _module_hooks._global_forward_hooks or _module_hooks._global_forward_pre_hooks):
         return False
     if any(getattr(linear, name, None) is not None
            for name in ("weight_scale", "weight_scale_inv", "qweight", "weight_packed", "lora_a", "lora_b")):
@@ -41,6 +44,10 @@ def hc_upmix_or_original(xn, lora, linear, hc_count, original_mix):
     if xn.ndim != 2 or xn.shape[0] < MIN_ROWS:
         return original_mix(xn, linear(lora), hc_count)
     if sys.platform != "win32" or platform.machine().lower() not in ("arm64", "aarch64"):
+        return original_mix(xn, linear(lora), hc_count)
+    from vllm import envs
+
+    if envs.VLLM_BATCH_INVARIANT:
         return original_mix(xn, linear(lora), hc_count)
     from vllm.model_executor.layers.linear import ReplicatedLinear, UnquantizedLinearMethod
     from vllm.models.qwen4_exp.nvidia.low_latency_gemm import Qwen4ExpLowLatencyLinearMethod

@@ -140,12 +140,19 @@ def _unfuse_hc_down(model, name):
 def convert(model: nn.Module, include=None, exclude=_EXCLUDE, exclude_suffix=_EXCLUDE_SUFFIX, min_bytes=1 << 20, tag="",
             fmt="fp8", group=-1, codes=None) -> int:
     """Convert every qualifying bf16 LinearBase of `model`; returns the bytes saved. fmt "fp8" (e4m3 per row) or "int8" (per
-    `group` input values, `codes` = {module name: int8 codes [N, K]} from GPTQ instead of round-to-nearest)."""
+    `group` input values, `codes` = {module name: int8 codes [N, K]} from GPTQ instead of round-to-nearest).
+    FP8 conversion leaves biased modules on their original path, including skip_bias_add modules."""
     if fmt == "int8":
         return _convert_int8(model, include, exclude, exclude_suffix, min_bytes, tag, group, codes or {})
     from vllm.model_executor.layers.quantization.utils.marlin_utils_fp8 import prepare_fp8_layer_for_marlin
     saved, done, errs = 0, 0, []
     for name, mod in _selected(model, include, exclude, exclude_suffix, min_bytes):
+        # The temporary holder prepares only weights/scales, not Marlin's bias
+        # layout. Keep both fused and separately returned bias contracts intact;
+        # inspect metadata only, without reading/synchronizing tensor values.
+        if getattr(mod, "bias", None) is not None:
+            log.debug("mbx fp8%s: %s has bias — kept original linear", tag, name)
+            continue
         w = mod.weight.data
         N, K = w.shape
         amax = w.float().abs().amax(dim=1)
