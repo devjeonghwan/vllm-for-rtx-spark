@@ -41,7 +41,7 @@ def _rtx_topk_topp_mask_kernel(LOGITS, LOGITS_STRIDE_0, BUFFER, PERCENTILE_TO_ST
         max_logit = -float('inf')
         min_logit = float('inf')
         if TOPK_ENABLED:
-            k = tl.load(K + row_id)
+            k = tl.load(K + _rtx_req)
             if k < VOCAB_SIZE:
                 offs = tl.arange(0, BLOCK_SIZE)
                 mask_n = offs < VOCAB_SIZE
@@ -185,7 +185,7 @@ def _rtx_topk_topp_mask_kernel(LOGITS, LOGITS_STRIDE_0, BUFFER, PERCENTILE_TO_ST
                 num_kept = tl.zeros((), dtype=tl.uint32)
                 final_pivot = k_pivot if num_finite_total > k else -float('inf')
                 if TOPP_ENABLED and num_finite_total > k:
-                    p = tl.load(P + row_id)
+                    p = tl.load(P + _rtx_req)
                     if p < 1.0:
                         min_logit = k_pivot
                         sum_exp_logits = 0.0
@@ -290,8 +290,8 @@ def _rtx_topk_topp_mask_kernel(LOGITS, LOGITS_STRIDE_0, BUFFER, PERCENTILE_TO_ST
         if TOPP_ENABLED and final_pivot == -float('inf'):
             run_standalone = True
             if SPLIT_COVERS_PONLY and TOPK_ENABLED:
-                run_standalone = tl.load(K + row_id) < VOCAB_SIZE
-            p = tl.load(P + row_id)
+                run_standalone = tl.load(K + _rtx_req) < VOCAB_SIZE
+            p = tl.load(P + _rtx_req)
             if run_standalone and p < 1.0:
                 offs = tl.arange(0, BLOCK_SIZE)
                 mask_n = offs < VOCAB_SIZE

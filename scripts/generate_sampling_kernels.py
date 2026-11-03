@@ -105,9 +105,23 @@ def extra_args(fn):
 
 class QritaLoads(ast.NodeTransformer):
     count = 0
+    parameter_count = 0
 
     def visit_Call(self, node):
         self.generic_visit(node)
+        if dotted(node.func) == "tl.load" and node.args:
+            pointer = node.args[0]
+            if (
+                isinstance(pointer, ast.BinOp)
+                and isinstance(pointer.op, ast.Add)
+                and isinstance(pointer.left, ast.Name)
+                and pointer.left.id in ("K", "P")
+                and isinstance(pointer.right, ast.Name)
+                and pointer.right.id == "row_id"
+            ):
+                # K/P share the request-slot layout already used by temperature.
+                pointer.right = ast.Name(id="_rtx_req", ctx=ast.Load())
+                self.parameter_count += 1
         if (
             dotted(node.func) == "tl.load"
             and node.args
@@ -139,6 +153,7 @@ def qrita(source):
     )
     visitor = QritaLoads()
     kernel = visitor.visit(kernel)
+    assert visitor.parameter_count == 4, "Pinned Qrita K/P load sites changed"
     loop = next(n for n in kernel.body if isinstance(n, ast.For))
     loop.body[0:0] = ast.parse(
         "_rtx_req = tl.load(_rtx_mapping + row_id)\n_rtx_temp = tl.load(_rtx_temperature + _rtx_req).to(tl.float32)"
@@ -154,7 +169,8 @@ from vllm.triton_utils import tl, triton
 from vllm.v1.sample.ops.topk_topp_triton import _update_min_larger_stats
 '''
     return header("topk") + imports + SCALE + "\n" + ast.unparse(kernel) + "\n", {
-        "original_raw_loads_scaled": visitor.count
+        "original_raw_loads_scaled": visitor.count,
+        "request_parameter_loads_mapped": visitor.parameter_count,
     }
 
 

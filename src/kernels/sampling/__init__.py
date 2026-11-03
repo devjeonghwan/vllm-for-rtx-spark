@@ -9,6 +9,7 @@ _REJECTION = None
 
 
 def make_filter(logits, mapping, temperatures, k, p):
+    """Build row masks from request-slot-indexed temperature, k and optional p."""
     import torch
     from vllm.v1.sample.ops import topk_topp_triton as original
     from vllm.utils.gpu_sync_debug import gpu_sync_allowed

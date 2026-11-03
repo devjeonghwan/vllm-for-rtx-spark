@@ -82,7 +82,8 @@ def try_verify(
     from ..kernels.sampling import make_filter, masked_rejection
 
     states = owner.sampler.sampling_states
-    k, p = states.get_top_k_top_p(expanded_idx_mapping, idx_mapping_np)
+    k = states.top_k.gpu
+    p = states.top_p.gpu if np.any(states.top_p.np[idx_mapping_np] != 1.0) else None
     bits = make_filter(logits, expanded_idx_mapping, states.temperature.gpu, k, p)
     sampled, num_sampled = masked_rejection(
         logits,

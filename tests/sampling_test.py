@@ -230,9 +230,9 @@ class SamplingTests(unittest.TestCase):
         draft_logits, draft, pos, cu, mapping, expanded, local, lengths, invalid = [
             object() for _ in range(9)
         ]
-        k, p, bits, sampled, count = [object() for _ in range(5)]
+        bits, sampled, count = [object() for _ in range(3)]
         states = owner.sampler.sampling_states
-        states.get_top_k_top_p = lambda *args: (k, p)
+        states.get_top_k_top_p = lambda *args: self.fail("Fused path expanded K/P metadata")
         with (
             patch.object(kernels, "make_filter", return_value=bits) as make_filter,
             patch.object(kernels, "masked_rejection", return_value=(sampled, count)) as reject,
@@ -241,7 +241,9 @@ class SamplingTests(unittest.TestCase):
                 owner, logits, draft_logits, draft, pos, cu, mapping, idx, expanded, local, lengths, invalid
             )
         self.assertEqual(actual, (logits, sampled, count))
-        make_filter.assert_called_once_with(logits, expanded, states.temperature.gpu, k, p)
+        make_filter.assert_called_once_with(
+            logits, expanded, states.temperature.gpu, states.top_k.gpu, states.top_p.gpu
+        )
         reject.assert_called_once_with(
             logits,
             draft_logits,
@@ -258,6 +260,28 @@ class SamplingTests(unittest.TestCase):
             use_fp64=True,
             use_block_verification=True,
         )
+
+    def test_top_p_branch_uses_only_selected_request_slots(self):
+        owner, logits, idx = fixture()
+        states = owner.sampler.sampling_states
+        states.top_p.np[:] = [1.0, 0.6, 1.0, 0.8]
+        states.get_top_k_top_p = lambda *args: self.fail("Fused path expanded K/P metadata")
+        tail = [object() for _ in range(9)]
+        args = (owner, logits, *tail[:5], idx, *tail[5:])
+        with (
+            patch.object(kernels, "make_filter", return_value=object()) as make_filter,
+            patch.object(kernels, "masked_rejection", return_value=(object(), object())),
+        ):
+            sampling.try_verify(*args)
+            make_filter.assert_called_once_with(
+                logits, tail[5], states.temperature.gpu, states.top_k.gpu, None
+            )
+            states.top_p.np[2] = 0.95
+            make_filter.reset_mock()
+            sampling.try_verify(*args)
+            make_filter.assert_called_once_with(
+                logits, tail[5], states.temperature.gpu, states.top_k.gpu, states.top_p.gpu
+            )
 
     def test_spawn_import_is_cpu_only_and_lazy(self):
         context = multiprocessing.get_context("spawn")
@@ -317,11 +341,27 @@ class SamplingTests(unittest.TestCase):
         outer.body.append(deepcopy(original_loop.body[-1]))
 
         class Inverse(ast.NodeTransformer):
+            parameter_counts = {"K": 0, "P": 0}
+
             def visit_Call(self, node):
                 self.generic_visit(node)
+                if ast.unparse(node.func) == "tl.load" and node.args:
+                    pointer = node.args[0]
+                    if (
+                        isinstance(pointer, ast.BinOp)
+                        and isinstance(pointer.op, ast.Add)
+                        and isinstance(pointer.left, ast.Name)
+                        and pointer.left.id in self.parameter_counts
+                        and isinstance(pointer.right, ast.Name)
+                        and pointer.right.id == "_rtx_req"
+                    ):
+                        self.parameter_counts[pointer.left.id] += 1
+                        pointer.right = ast.Name(id="row_id", ctx=ast.Load())
                 return node.args[0] if ast.unparse(node.func) == "_rtx_scale_logits" else node
 
-        actual = Inverse().visit(actual)
+        inverse = Inverse()
+        actual = inverse.visit(actual)
+        self.assertEqual(inverse.parameter_counts, {"K": 2, "P": 2})
         self.assertEqual(
             ast.dump(expected, include_attributes=False), ast.dump(actual, include_attributes=False)
         )
