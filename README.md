@@ -75,8 +75,6 @@ Memory figures are estimates. The 108 GB profiles may use WDDM shared memory and
 
 Fast MTP remains the default. The [DFlash2 profile](configs/qwen3.8-flash-next/gpu-96gb-dflash2.yaml) uses the [Inco AI draft model](https://huggingface.co/incoai/Qwen3.8-Flash-Next-DFlash2) with a separate NVFP4 draft head. It improved SPEED-Bench coding decode in our tests, but did not give a consistent speedup across the full suite. Further optimization and pull requests are welcome.
 
-This requires a [source build](#build); the v0.1.2 release wheel does not include DFlash2.
-
 ```powershell
 .\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-96gb-dflash2.yaml
 ```
