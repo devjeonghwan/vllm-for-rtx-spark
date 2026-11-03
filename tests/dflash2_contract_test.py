@@ -309,12 +309,32 @@ class Contracts(unittest.TestCase):
     @unittest.skipUnless(SITE and BASE, "Pass --site and --baseline for unchanged-math contracts")
     def test_candidate_sampler_q_rng_and_other_recipe_options_unchanged(self):
         rel = "vllm/v1/worker/gpu/spec_decode/dflash2/speculator.py"
-        # A minimal patch fixture need not copy this unchanged file. A real
-        # composition must contain it and is checked byte for byte here.
+        # The optional projection fork changes only constructor/generate call
+        # sites, checked by dflash2_head_overlap_contract_test.py. Preserve the
+        # complete sampler, realized q cache and RNG walk independently here.
         if (SITE / rel).exists():
-            self.assertEqual((SITE / rel).read_bytes(), (BASE / rel).read_bytes())
+            old, new = tree(BASE / rel), tree(SITE / rel)
+            self.assertEqual(dump(owner(old, "CandidateSampler")), dump(owner(new, "CandidateSampler")))
+            for name in ("_selector_walk_kernel", "_cache_draft_logits_kernel"):
+                self.assertEqual(dump(fn(old, name)), dump(fn(new, name)))
         before = tree(BASE / "vllm/_rtx_spark/recipes/qwen3_8/__init__.py")
         after = tree(PROJECT / "src/recipes/qwen3_8/__init__.py")
+        # Reverse exactly the declared opt-in and its final-config validation;
+        # every pre-existing option and recipe callback must still match.
+        declarations = next(n for n in after.body if isinstance(n, ast.Assign)
+                            and ast.unparse(n.targets[0]) == "OPTIONS")
+        added = [n for n in declarations.value.elts
+                 if ast.unparse(n) == "Option('dflash2_head_overlap', bool, False)"]
+        self.assertEqual(len(added), 1)
+        declarations.value.elts.remove(added[0])
+        validator = fn(after, "validate")
+        self.assertEqual(ast.unparse(validator.body[0]), "resolved = _validate_options(options)")
+        validator.body[0] = ast.parse("_validate_options(options)").body[0]
+        additions = [n for n in validator.body if ast.unparse(n) in (
+            "from .dflash_head_overlap import validate_config",
+            "validate_config(config, resolved['dflash2_head_overlap'])")]
+        self.assertEqual(len(additions), 2)
+        validator.body = [n for n in validator.body if n not in additions]
         self.assertEqual(dump([n for n in before.body if not (isinstance(n, ast.ClassDef) and n.name == "TargetAndDraftOverrides")]),
                          dump([n for n in after.body if not (isinstance(n, ast.ClassDef) and n.name == "TargetAndDraftOverrides")]))
 

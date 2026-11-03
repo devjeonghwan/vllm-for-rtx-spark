@@ -123,6 +123,7 @@ class CopyRuleTests(unittest.TestCase):
             "0008-mamba-resolved-state-unit.patch",
             "0009-dflash2-retained-tail.patch",
             "0010-dflash2-nvfp4-head.patch",
+            "0011-dflash2-head-overlap.patch",
         ])
         self.assertEqual(len(manifest["copy"]), 6)
         self.assertFalse((ROOT / "targets").exists())

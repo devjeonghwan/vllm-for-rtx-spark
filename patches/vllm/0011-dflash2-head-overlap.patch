@@ -1,0 +1,35 @@
+--- a/vllm/v1/worker/gpu/spec_decode/dflash2/speculator.py
++++ b/vllm/v1/worker/gpu/spec_decode/dflash2/speculator.py
+@@ -209,6 +209,9 @@
+         self.candidate_sampler = CandidateSampler(
+             self.max_num_reqs, self.num_speculative_steps, self.top_k, device
+         )
++        from vllm._rtx_spark.recipes.qwen3_8.dflash_head_overlap import create_overlap
++
++        self._selector_projection_overlap = create_overlap(vllm_config, device)
+ 
+     def _draft_tail_active_steps(self, num_reqs):
+         if getattr(self, "_draft_tail_force_full", False):
+@@ -299,6 +302,10 @@
+         indices = self.sample_indices[:num_reqs * self.num_speculative_steps].view(
+             num_reqs, self.num_speculative_steps)[:, :active_steps].reshape(-1)
+         hidden_states = last_hidden_states[indices].view(num_reqs, active_steps, -1)
++        overlap = self._selector_projection_overlap
++        overlap_started = False
++        if overlap is not None:
++            overlap_started = overlap.start(hidden_states, self.model.model.candidate_selector)
+         candidate_ids, unary_logits = self.model.compute_candidates(
+             hidden_states.flatten(0, 1)
+         )
+@@ -306,7 +313,10 @@
+             num_reqs, active_steps, self.top_k
+         )
+         unary_logits = unary_logits.view_as(candidate_ids)
+-        scores = self._score_candidates(candidate_ids, unary_logits, hidden_states)
++        if not overlap_started:
++            scores = self._score_candidates(candidate_ids, unary_logits, hidden_states)
++        else:
++            scores = overlap.score(self, candidate_ids, unary_logits)
+         self.candidate_sampler.sample(
+             candidate_ids,
+             scores,

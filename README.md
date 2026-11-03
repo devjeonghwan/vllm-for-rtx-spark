@@ -75,6 +75,8 @@ Memory figures are estimates. The 108 GB profiles may use WDDM shared memory and
 
 Fast MTP remains the default. The [DFlash2 profile](configs/qwen3.8-flash-next/gpu-96gb-dflash2.yaml) uses the [Inco AI draft model](https://huggingface.co/incoai/Qwen3.8-Flash-Next-DFlash2) with a separate NVFP4 draft head. It improved SPEED-Bench coding decode in our tests, but did not give a consistent speedup across the full suite. Further optimization and pull requests are welcome.
 
+For experimental head/selector projection overlap, set `dflash2_head_overlap: true` under `additional-config.rtx_spark` in the DFlash2 profile. It is off by default and can be slower for some workloads.
+
 ```powershell
 .\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-96gb-dflash2.yaml
 ```
