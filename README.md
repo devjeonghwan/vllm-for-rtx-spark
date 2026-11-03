@@ -59,7 +59,7 @@ This creates `.venv` and installs the bundled vLLM wheel and its dependencies. P
 
 The API is available at `http://127.0.0.1:8000/v1`, with model name `Qwen/Qwen3.8-Flash-Next`. The first start prepares the PLE cache and can take several minutes.
 
-All six profiles use the same GPU 96 GB / CPU 32 GB allocation, FP8 drafter projections, HEAD2, dynamic draft depth 3–7, NVMe PLE, decode graphs, a 409,600-token context and up to 16 requests.
+The six MTP profiles use the same GPU 96 GB / CPU 32 GB allocation, FP8 drafter projections, HEAD2, dynamic draft depth 3–7, NVMe PLE, decode graphs, a 409,600-token context and up to 16 requests.
 
 The suffix selects **MTP draft KV** precision; target KV stays FP8. BF16 was faster in our tests when KV capacity was available. FP8 holds about 7% more cached tokens at the same budget and can be faster near the KV limit.
 
@@ -70,6 +70,18 @@ The suffix selects **MTP draft KV** precision; target KV stays FP8. BF16 was fas
 | 108 GB | 27 GB | [Config](configs/qwen3.8-flash-next/gpu-108gb-draft-kv-bf16.yaml) | [Config](configs/qwen3.8-flash-next/gpu-108gb-draft-kv-fp8.yaml) |
 
 Memory figures are estimates. The 108 GB profiles may use WDDM shared memory and are experimental with the current draft KV setup. The profiles accept vLLM command-line overrides; `draft_min_depth` under `additional-config.rtx_spark` overrides the default minimum of 3.
+
+### Experimental DFlash2
+
+Fast MTP remains the default. The [DFlash2 profile](configs/qwen3.8-flash-next/gpu-96gb-dflash2.yaml) uses the [Inco AI draft model](https://huggingface.co/incoai/Qwen3.8-Flash-Next-DFlash2) with a separate NVFP4 draft head. It improved SPEED-Bench coding decode in our tests, but did not give a consistent speedup across the full suite. Further optimization and pull requests are welcome.
+
+This requires a [source build](#build); the v0.1.2 release wheel does not include DFlash2.
+
+```powershell
+.\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-96gb-dflash2.yaml
+```
+
+The draft keeps its trained RoPE and 262,144-token context limit.
 
 ## Build
 
