@@ -1,0 +1,696 @@
+diff --git a/vllm/model_executor/models/config.py b/vllm/model_executor/models/config.py
+--- a/vllm/model_executor/models/config.py
++++ b/vllm/model_executor/models/config.py
+@@ -907,6 +907,32 @@
+             rope_parameters.pop("mrope_interleaved", None)
+
+
++def _flash_next_dflash2_admitted(vllm_config) -> bool:
++    # Admit only the completed-HC-mean adapter's precise source domain.
++    spec = vllm_config.speculative_config
++    if spec is None or spec.method != "dflash":
++        return False
++    draft = getattr(spec, "draft_model_config", None)
++    if draft is None or tuple(draft.architectures or ()) != ("DFlash2DraftModel",):
++        return False
++    draft_hf = draft.hf_config
++    target = vllm_config.model_config.hf_text_config
++    parallel = vllm_config.parallel_config
++    return (
++        all(getattr(parallel, field, None) == 1 for field in (
++            "tensor_parallel_size", "pipeline_parallel_size",
++            "prefill_context_parallel_size", "decode_context_parallel_size"))
++        and target.hc_count == 4
++        and target.num_hidden_layers == 48
++        and target.hidden_size == 2560
++        and draft_hf.num_hidden_layers == 5
++        and draft_hf.hidden_size == 2560
++        and getattr(draft_hf, "num_target_layers", None) == 48
++        and tuple((getattr(draft_hf, "dflash_config", None) or {}).get("target_layer_ids", ()))
++            == (5, 15, 25, 35, 45)
++    )
++
++
+ class Qwen4ExpForConditionalGenerationConfig(Qwen3_5ForConditionalGenerationConfig):
+     """Apply the Qwen3.5 hybrid-cache contract to Qwen4Exp."""
+
+@@ -952,7 +978,7 @@
+             "mtp",
+             "ngram",
+             "ngram_gpu",
+-        }:
++        } and not _flash_next_dflash2_admitted(vllm_config):
+             raise NotImplementedError(
+                 "Qwen4Exp speculative decoding supports only its native MTP "
+                 "checkpoint and linear n-gram proposers"
+diff --git a/vllm/models/qwen4_exp/nvidia/model.py b/vllm/models/qwen4_exp/nvidia/model.py
+--- a/vllm/models/qwen4_exp/nvidia/model.py
++++ b/vllm/models/qwen4_exp/nvidia/model.py
+@@ -34,6 +34,7 @@
+     VocabParallelEmbedding,
+ )
+ from vllm.model_executor.models.interfaces import (
++    EagleModelMixin,
+     HasInnerState,
+     IsHybrid,
+     MambaStateShapes,
+@@ -415,13 +416,22 @@
+             moe.experts.update_expert_map()
+
+
+-class Qwen4ExpModel(nn.Module):
++class Qwen4ExpModel(nn.Module, EagleModelMixin):
+     hf_to_vllm_mapper = Qwen3_5Model.hf_to_vllm_mapper | _EXTRA_WEIGHTS_MAPPER
+
+     def __init__(self, *, vllm_config: VllmConfig, prefix: str = "") -> None:
+         super().__init__()
+         config: Qwen4ExpTextConfig = vllm_config.model_config.hf_text_config
+         self.config = config
++        self._dflash2_aux_supported = (
++            vllm_config.parallel_config.tensor_parallel_size == 1
++            and vllm_config.parallel_config.pipeline_parallel_size == 1
++            and vllm_config.parallel_config.prefill_context_parallel_size == 1
++            and vllm_config.parallel_config.decode_context_parallel_size == 1
++            and config.hc_count == 4 and config.hidden_size == 2560
++            and config.num_hidden_layers == 48
++            and not is_hc_sequence_parallel_enabled(vllm_config)
++        )
+         self.num_redundant_experts = (
+             vllm_config.parallel_config.eplb_config.num_redundant_experts
+         )
+@@ -498,6 +508,28 @@
+             )
+         else:
+             self._mtp_hidden_buffer = None
++
++    def _set_aux_hidden_state_layers(self, layers: tuple[int, ...]) -> None:
++        # DFLASH2_HC_AUX_ADAPTER: author uses completed, zero-based layers.
++        if tuple(layers) != (6, 16, 26, 36, 46):
++            raise ValueError("Flash-Next DFlash2 requires completed layers5/15/25/35/45")
++        if not self._dflash2_aux_supported:
++            raise NotImplementedError("Flash-Next DFlash2 capture requires TP1/PP1/CP1 and unsharded HC4")
++        super()._set_aux_hidden_state_layers(layers)
++
++    def _dflash2_append_completed_aux(
++        self, aux_hidden_states, layer, hidden_states, block_output, injection
++    ) -> None:
++        # The local target delays its final MLP combine until the next layer.
++        # Materialize a separate value for the author's completed-layer feature;
++        # do not replace or mutate the target's existing pending tuple.
++        value = (layer.mlp_hyper_connection.combine(hidden_states, block_output, injection)
++                 if block_output is not None else hidden_states)
++        if value.shape[-1] != self.config.hc_count * self.config.hidden_size:
++            raise RuntimeError("Unexpected Flash-Next multi-stream feature width")
++        aux_hidden_states.append(
++            value.unflatten(-1, (self.config.hc_count, self.config.hidden_size)).mean(dim=-2)
++        )
+
+     def embed_input_ids(self, input_ids: torch.Tensor) -> torch.Tensor:
+         return self.embed_tokens(input_ids)
+@@ -526,7 +558,7 @@
+         query_start_loc: torch.Tensor | None = None,
+         ngram_context: torch.Tensor | None = None,
+         deepstack_input_embeds: IntermediateTensors | None = None,
+-    ) -> torch.Tensor | IntermediateTensors:
++    ) -> torch.Tensor | IntermediateTensors | tuple[torch.Tensor, list[torch.Tensor]]:
+         if get_pp_group().is_first_rank:
+             if inputs_embeds is not None:
+                 hidden_states = inputs_embeds
+@@ -553,6 +585,7 @@
+             hidden_states = intermediate_tensors["hidden_states"]
+
+         full_num_tokens = positions.shape[-1]
++        aux_hidden_states: list[torch.Tensor] = []
+         block_output = None
+         injection = None
+         last_layer = None
+@@ -609,6 +642,11 @@
+                 injection = None
+                 hidden_states = hidden_states + deepstack_embed
+
++            if layer_idx + 1 in self.aux_hidden_state_layers:
++                self._dflash2_append_completed_aux(
++                    aux_hidden_states, layer, hidden_states, block_output, injection
++                )
++
+         if not get_pp_group().is_last_rank:
+             # PP transports one tensor, not the delayed HC tuple. Materialize
+             # with the HC module that produced the pending injection.
+@@ -649,6 +687,8 @@
+             # this tensor is needed by the final mixer regardless).
+             num_tokens = multi_hidden.shape[0]
+             self._mtp_hidden_buffer[:num_tokens].copy_(multi_hidden)
++        if aux_hidden_states:
++            return sample_hidden_states, aux_hidden_states
+         return sample_hidden_states
+
+     def load_weights(self, weights: Iterable[tuple[str, torch.Tensor]]) -> set[str]:
+diff --git a/vllm/model_executor/layers/logits_processor.py b/vllm/model_executor/layers/logits_processor.py
+--- a/vllm/model_executor/layers/logits_processor.py
++++ b/vllm/model_executor/layers/logits_processor.py
+@@ -4,6 +4,7 @@
+
+ from collections.abc import Callable
+ from functools import cache
++import sys
+
+ import torch
+ import torch.nn.functional as F
+@@ -33,6 +34,9 @@
+     The top-k spans the vocabulary, where the radix kernel is about twice
+     torch.topk.
+     """
++    # Windows DFlash2: FI radix top-k requires unsupported JIT.
++    if sys.platform == "win32":
++        return None
+     if not current_platform.is_cuda():
+         return None
+     if not has_flashinfer():
+diff --git a/vllm/v1/worker/gpu/spec_decode/speculator.py b/vllm/v1/worker/gpu/spec_decode/speculator.py
+--- a/vllm/v1/worker/gpu/spec_decode/speculator.py
++++ b/vllm/v1/worker/gpu/spec_decode/speculator.py
+@@ -234,7 +234,7 @@
+
+         self.model = self.load_draft_model(target_model, target_attn_layer_names)
+         self._validate_local_argmax_reduction()
+-        if _mbx_depth is not None:  # MBX depth
++        if _mbx_depth is not None and self.method != "dflash":  # Fixed-block DFlash
+             _mbx_depth.init(self)
+
+         all_attn_layers = get_layers_from_vllm_config(
+diff --git a/vllm/v1/worker/gpu/cudagraph_utils.py b/vllm/v1/worker/gpu/cudagraph_utils.py
+--- a/vllm/v1/worker/gpu/cudagraph_utils.py
++++ b/vllm/v1/worker/gpu/cudagraph_utils.py
+@@ -298,7 +298,11 @@
+             )
+         else:
+             decode_query_lens = [self.decode_query_len]
+-            if _mbx_depth is not None and self.decode_query_len > 1:  # MBX 23: verify graphs at every draft depth
++            if (
++                _mbx_depth is not None
++                and self.decode_query_len > 1
++                and not (speculative_config and speculative_config.method == "dflash")
++            ):  # Fixed-block DFlash: capture its actual query width only.
+                 decode_query_lens = _mbx_depth.full_widths(self.decode_query_len)
+
+         capture_varlen_decode = (
+diff --git a/vllm/config/speculative.py b/vllm/config/speculative.py
+--- a/vllm/config/speculative.py
++++ b/vllm/config/speculative.py
+@@ -1947,9 +1947,18 @@
+         # TODO(ben): Refactor this so the naming is clearer
+         return self.method in ("eagle", "eagle3", "mtp", "dflash", "dspark")
+
++    def needs_eagle_block_drop(self) -> bool:
++        """Whether draft KV at a position depends on the next token.
++
++        EAGLE-style drafters build a position's draft KV from its hidden state
++        and the next token. DFlash/DSpark build it from the target hidden state
++        alone, so only EAGLE/EAGLE3/MTP require the trailing-block drop.
++        """
++        return self.use_eagle() and not (self.use_dflash() or self.use_dspark())
++
+     def use_eagle_block_drop(self) -> bool:
+-        """Whether volatile trailing cache blocks should be discarded."""
+-        return self.use_eagle() and not self.disable_eagle_block_drop
++        """Whether the volatile trailing prefix-cache block should be dropped."""
++        return self.needs_eagle_block_drop() and not self.disable_eagle_block_drop
+
+     def use_dflash(self) -> bool:
+         return self.method == "dflash"
+diff --git a/vllm/v1/core/sched/scheduler.py b/vllm/v1/core/sched/scheduler.py
+--- a/vllm/v1/core/sched/scheduler.py
++++ b/vllm/v1/core/sched/scheduler.py
+@@ -314,7 +314,10 @@
+                 )
+             self.use_eagle = speculative_config.use_eagle()
+             self.use_eagle_block_drop = speculative_config.use_eagle_block_drop()
+-            if self.use_eagle and not self.use_eagle_block_drop:
++            if (
++                speculative_config.needs_eagle_block_drop()
++                and speculative_config.disable_eagle_block_drop
++            ):
+                 logger.warning(
+                     "EAGLE trailing prefix-cache block dropping is disabled. "
+                     "This is experimental and may affect speculative-token "
+@@ -466,7 +469,8 @@
+         if start >= prefill_end:
+             return num_new_tokens
+
+-        block_size = self.cache_config.block_size
++        block_size = self.cache_config.mamba_block_size
++        assert block_size is not None
+         # The last block-aligned position whose state can be cached. With
+         # Eagle, FullAttn prunes the last matching block, so back off one
+         # block to avoid a Mamba cache miss.
+diff --git a/vllm/v1/core/single_type_kv_cache_manager.py b/vllm/v1/core/single_type_kv_cache_manager.py
+--- a/vllm/v1/core/single_type_kv_cache_manager.py
++++ b/vllm/v1/core/single_type_kv_cache_manager.py
+@@ -726,6 +726,20 @@
+         return None
+
+
++    @classmethod
++    def eagle_drop_tokens(cls, block_size: int, alignment_tokens: int) -> int:
++        """Tokens the eagle peek drops from a matched endpoint.
++
++        The coordinator widens its lookup bound by this amount so the peek can
++        still land on the candidate length. Managers may override this when
++        their usable proof endpoints have a coarser replay quantum than their
++        hash lookup alignment.
++        """
++        if cls.supports_fine_grained_hash_lookup and alignment_tokens < block_size:
++            return alignment_tokens
++        return block_size
++
++
+ class FullAttentionManager(SingleTypeKVCacheManager):
+     supports_fine_grained_hash_lookup: ClassVar[bool] = True
+
+@@ -931,6 +945,8 @@
+
+
+ class SlidingWindowManager(SingleTypeKVCacheManager):
++    supports_fine_grained_hash_lookup: ClassVar[bool] = True
++
+     def __init__(self, kv_cache_spec: SlidingWindowSpec, **kwargs) -> None:
+         super().__init__(kv_cache_spec, **kwargs)
+         self.sliding_window = kv_cache_spec.sliding_window
+@@ -970,9 +986,21 @@
+         )
+         assert dcp_world_size == 1, "DCP not support sliding window attn now."
+         assert pcp_world_size == 1, "PCP not support sliding window attn now."
+-        # Sliding-window cache hits must stay at the group's physical block
+-        # granularity. resolve_block_hashes() converts finer-grained hashes to
+-        # that view when the hybrid-cache alignment is smaller than block_size.
++        block_size = kv_cache_spec.block_size
++        if alignment_tokens < block_size:
++            assert block_size % alignment_tokens == 0
++            assert alignment_tokens == block_pool.hash_block_size
++            return cls._find_fine_grained_cache_hit(
++                block_hashes=block_hashes,
++                max_length=max_length,
++                kv_cache_group_ids=kv_cache_group_ids,
++                block_pool=block_pool,
++                kv_cache_spec=kv_cache_spec,
++                drop_eagle_block=drop_eagle_block,
++                alignment_tokens=alignment_tokens,
++            )
++
++        assert alignment_tokens % block_size == 0
+         block_hashes = resolve_block_hashes(
+             block_hashes,
+             block_pool.hash_block_size,
+@@ -996,7 +1024,6 @@
+             [block_pool.null_block] * max_num_blocks
+             for _ in range(len(kv_cache_group_ids))
+         )
+-        block_size = kv_cache_spec.block_size
+         num_contiguous_blocks = 0
+         match_found = False
+         # Search from right to left and early stop when a match is found.
+@@ -1068,7 +1095,10 @@
+             # Fast path: when the coordinator imposes no alignment constraint.
+             return None
+         block_size = kv_cache_spec.block_size * dcp_world_size
+-        if alignment_tokens % block_size != 0:
++        fine_grained = (
++            dcp_world_size == 1 and alignment_tokens < kv_cache_spec.block_size
++        )
++        if not fine_grained and alignment_tokens % block_size != 0:
+             # The mask is block-granular, so a sub-block alignment cannot be
+             # represented exactly. This happens for hybrid offloading, where
+             # ``alignment_tokens`` is the full-attention chunk size and need not
+@@ -1076,6 +1106,8 @@
+             # Gemma). Fall back to dense: every block is reachable, which never
+             # drops a block that could serve a hit.
+             return None
++        if fine_grained:
++            assert kv_cache_spec.block_size % alignment_tokens == 0
+
+         # Contiguous blocks a hit needs at a boundary (incl. the EAGLE peek).
+         need = cls._contiguous_blocks_for_hit(
+@@ -1100,6 +1132,8 @@
+             else (None if retention_interval == 0 else retention_interval)
+         )
+         if segment_tokens is not None:
++            if segment_tokens < block_size:
++                return None
+             per_segment = segment_tokens // block_size
+             if need >= per_segment:
+                 # Every block is reachable; cache them all.
+@@ -1125,10 +1159,25 @@
+         # the ``need``-block tail ending on each boundary explicitly.
+         if retention_interval is not None:
+             for boundary_tokens in reachable_boundaries:
+-                aligned = boundary_tokens // alignment_tokens * alignment_tokens
+-                end = aligned // block_size + shift
+-                for j in range(max(start_block, end - need), min(end_block, end)):
+-                    mask[j - start_block] = True
++                if fine_grained:
++                    hit = boundary_tokens // alignment_tokens * alignment_tokens
++                    endpoint = hit + block_size if use_eagle else hit
++                    first = (
++                        max(0, hit - (kv_cache_spec.sliding_window - 1)) // block_size
++                    )
++                    end = cdiv(hit, block_size)
++                    for j in range(max(start_block, first), min(end_block, end)):
++                        mask[j - start_block] = True
++                    if use_eagle and endpoint > 0:
++                        endpoint_page = (endpoint - 1) // block_size
++                        if start_block <= endpoint_page < end_block:
++                            mask[endpoint_page - start_block] = True
++                else:
++                    aligned = boundary_tokens // alignment_tokens * alignment_tokens
++                    end = aligned // block_size + shift
++                    for j in range(max(start_block, end - need), min(end_block, end)):
++                        mask[j - start_block] = True
++
+
+         return mask
+
+@@ -1168,6 +1217,179 @@
+             0,
+             num_computed_tokens - self.sliding_window + 1 - self.extra_retained_tokens,
+         )
++
++
++    @classmethod
++    def eagle_drop_tokens(cls, block_size: int, alignment_tokens: int) -> int:
++        # Sparse prompt-tail aliases do not exist at every hash boundary. A
++        # physical-page peek always reaches a page endpoint that can prove the
++        # post-drop SWA window, including after fixed-point reconciliation.
++        return block_size
++
++
++    def _reachable_hit_boundaries(self, request: Request) -> list[int]:
++        boundaries = [request.num_prompt_tokens - 1]
++        if request.shared_prefix_boundary:
++            boundaries.append(request.shared_prefix_boundary)
++        hash_block_size = self.block_pool.hash_block_size
++        if hash_block_size >= self.block_size:
++            return boundaries
++
++        # The lookup is capped at ``num_prompt_tokens - 1``. Convert that cap to
++        # the actual reusable hit before handing it to retention; shared prefix
++        # boundaries are already post-reconciliation hit positions.
++        endpoint = boundaries[0] // hash_block_size * hash_block_size
++        replay_hit = endpoint - self.block_size if self.use_eagle else endpoint
++        boundaries[0] = max(0, replay_hit)
++
++        # A different hybrid group can still rewind reconciliation to the
++        # scheduler-aligned hit that was reachable before fine lookup was
++        # enabled. Keep its SWA page span as a compatibility floor; otherwise
++        # sparse retention can turn an existing coarse hit into a miss.
++        coarse_hit = (
++            (request.num_prompt_tokens - 1)
++            // self.scheduler_block_size
++            * self.scheduler_block_size
++        )
++        if coarse_hit not in boundaries:
++            boundaries.append(coarse_hit)
++        return boundaries
++
++
++    @classmethod
++    def _find_fine_grained_cache_hit(
++        cls,
++        block_hashes: BlockHashList,
++        max_length: int,
++        kv_cache_group_ids: list[int],
++        block_pool: BlockPool,
++        kv_cache_spec: SlidingWindowSpec,
++        drop_eagle_block: bool,
++        alignment_tokens: int,
++    ) -> tuple[tuple[list[KVCacheBlock], ...], int]:
++        """Find a hash-granularity SWA hit backed by physical cache pages.
++
++        Candidate endpoints are the physical pages and the sparse partial-block
++        entries published by producers. An endpoint is usable only when every
++        physical page intersecting the post-eagle sliding window is still
++        cached. Returned lists stay in physical-page units, with nulls
++        preserving global block table indices before the live window.
++        """
++        assert isinstance(block_hashes, Sequence)
++        block_size = kv_cache_spec.block_size
++        max_endpoint = (
++            min(
++                max_length // alignment_tokens,
++                len(block_hashes),
++            )
++            * alignment_tokens
++        )
++        eagle_drop = (
++            cls.eagle_drop_tokens(block_size, alignment_tokens)
++            if drop_eagle_block
++            else 0
++        )
++
++        for endpoint in range(max_endpoint, eagle_drop, -alignment_tokens):
++            endpoint_hash = block_hashes[endpoint // alignment_tokens - 1]
++            endpoint_blocks = block_pool.get_cached_block(
++                endpoint_hash, kv_cache_group_ids
++            )
++            if endpoint_blocks is None:
++                continue
++
++            hit_length = endpoint - eagle_drop
++            window_start = max(0, hit_length - (kv_cache_spec.sliding_window - 1))
++            first_page = window_start // block_size
++            end_page = cdiv(hit_length, block_size)
++            endpoint_page = (endpoint - 1) // block_size
++            computed_blocks: tuple[list[KVCacheBlock], ...] = tuple(
++                [block_pool.null_block] * end_page
++                for _ in range(len(kv_cache_group_ids))
++            )
++
++            complete = True
++            for page_idx in range(first_page, end_page):
++                cached: list[KVCacheBlock] | None
++                if page_idx == endpoint_page:
++                    cached = endpoint_blocks
++                else:
++                    page_end = (page_idx + 1) * block_size
++                    page_hash = block_hashes[page_end // alignment_tokens - 1]
++                    cached = block_pool.get_cached_block(page_hash, kv_cache_group_ids)
++                if cached is None:
++                    complete = False
++                    break
++                for group_blocks, block in zip(computed_blocks, cached):
++                    group_blocks[page_idx] = block
++
++            if complete:
++                return computed_blocks, hit_length
++
++        return tuple([] for _ in kv_cache_group_ids), 0
++
++
++    def _publish_partial_tail(self, request: Request, num_tokens: int) -> None:
++        """Make prompt-tail prefixes that end inside a cache block reachable.
++
++        Callers opt in from their own ``cache_blocks``; the base never calls
++        this. Whether a mid-block prefix is replayable is type-specific, so the
++        decision stays with each manager.
++        """
++        if self.block_size == self.block_pool.hash_block_size:
++            return
++        boundaries = self._partial_tail_boundaries(request)
++        if not boundaries:
++            return
++
++        blocks = self.req_to_blocks[request.request_id]
++        # Deepest prefix first: it stays the block's primary hash and the
++        # shallower ones attach as aliases rather than evicting it.
++        for boundary_tokens in sorted(set(boundaries), reverse=True):
++            if (
++                boundary_tokens <= 0
++                or boundary_tokens > num_tokens
++                or boundary_tokens % self.block_size == 0
++            ):
++                continue
++            block_idx = boundary_tokens // self.block_size
++            # RSWA nulls out blocks that fall behind its window; never alias one.
++            if block_idx >= len(blocks) or blocks[block_idx].is_null:
++                continue
++            self.block_pool.cache_partial_block(
++                request=request,
++                block=blocks[block_idx],
++                num_tokens=boundary_tokens,
++                kv_cache_group_id=self.kv_cache_group_id,
++                block_size=self.block_size,
++            )
++
++
++    def _partial_tail_boundaries(self, request: Request) -> tuple[int, ...]:
++        # floor(N / H) serves a longer consumer; floor((N - 1) / H) is the
++        # latest endpoint an immediate replay can query, since lookup is capped
++        # at N - 1.
++        hash_block_size = self.block_pool.hash_block_size
++        prompt_tokens = request.num_prompt_tokens
++        return (
++            prompt_tokens // hash_block_size * hash_block_size,
++            (prompt_tokens - 1) // hash_block_size * hash_block_size,
++        )
++
++
++    def cache_blocks(
++        self,
++        request: Request,
++        num_tokens: int,
++        retention_interval: int | None = None,
++        *,
++        replay_boundaries: Sequence[int],
++    ) -> None:
++        super().cache_blocks(
++            request, num_tokens, retention_interval=retention_interval,
++            replay_boundaries=(*replay_boundaries, *self._reachable_hit_boundaries(request)),
++        )
++        self._publish_partial_tail(request, num_tokens)
+
+
+ class CircularBufferManager(FullAttentionManager):
+diff --git a/vllm/v1/core/kv_cache_coordinator.py b/vllm/v1/core/kv_cache_coordinator.py
+--- a/vllm/v1/core/kv_cache_coordinator.py
++++ b/vllm/v1/core/kv_cache_coordinator.py
+@@ -863,11 +863,8 @@
+                 # mamba: its finder never drops (draft models have no mamba
+                 # layers), so the hit would grow past the candidate.
+                 if drop_eagle_block and not isinstance(spec, MambaSpec):
+-                    eagle_margin = eagle_proof_margin(
+-                        group_block_size,
+-                        self.hash_block_size,
+-                        self.enable_partial_hash_hits
+-                        and manager_cls.supports_fine_grained_hash_lookup,
++                    eagle_margin = manager_cls.eagle_drop_tokens(
++                        group_block_size, self._cache_hit_alignment_tokens
+                     )
+                     _max_length = min(
+                         curr_hit_length + eagle_margin,
+@@ -949,11 +946,8 @@
+             manager = self.single_type_managers[group_ids[0]]
+             lookup_length = max_cache_hit_length
+             if use_eagle and not isinstance(spec, MambaSpec):
+-                eagle_margin = eagle_proof_margin(
+-                    manager.block_size,
+-                    self.hash_block_size,
+-                    self.enable_partial_hash_hits
+-                    and manager_cls.supports_fine_grained_hash_lookup,
++                eagle_margin = manager_cls.eagle_drop_tokens(
++                    manager.block_size, self._cache_hit_alignment_tokens
+                 )
+                 lookup_length = min(
+                     max_cache_hit_length + eagle_margin,
+diff --git a/vllm/model_executor/models/qwen3_dflash2.py b/vllm/model_executor/models/qwen3_dflash2.py
+--- a/vllm/model_executor/models/qwen3_dflash2.py
++++ b/vllm/model_executor/models/qwen3_dflash2.py
+@@ -296,6 +296,27 @@
+     anchor_token_ids: torch.Tensor,
+     top_k: int,
+ ) -> torch.Tensor:
++    if (
++        predecessor_table.dtype == successor_table.dtype == hidden.dtype == torch.bfloat16
++        and unary_logits.dtype in (torch.float32, torch.bfloat16)
++        and candidate_ids.dtype == torch.int64
++        and anchor_token_ids.dtype in (torch.int32, torch.int64)
++        and candidate_ids.ndim == 3 and hidden.ndim == 3 and (unary_logits.ndim == 3)
++        and candidate_ids.shape[2] == top_k == 16 and hidden.shape == (candidate_ids.shape[0], candidate_ids.shape[1], 256)
++        and unary_logits.shape == candidate_ids.shape
++        and predecessor_table.ndim == successor_table.ndim == 2
++        and predecessor_table.shape == successor_table.shape
++        and predecessor_table.shape[1] == 256
++        and anchor_token_ids.shape == (candidate_ids.shape[0],) and anchor_token_ids.stride(0) > 0
++        and candidate_ids.shape[1] > 0
++        and anchor_token_ids.is_cuda and anchor_token_ids.device == hidden.device
++        and all(tensor.is_cuda and tensor.is_contiguous() for tensor in (predecessor_table, successor_table, candidate_ids, unary_logits, hidden))
++        and all(tensor.device == hidden.device for tensor in (predecessor_table, successor_table, candidate_ids, unary_logits, hidden))
++    ):
++        from vllm._rtx_spark.kernels.dflash2.candidate_edges import candidate_edges
++
++        return candidate_edges(predecessor_table, successor_table, candidate_ids, unary_logits, hidden, anchor_token_ids, top_k)
++
+     successors = successor_table[candidate_ids]
+     predecessor_ids = torch.cat(
+         (
+diff --git a/vllm/model_executor/models/qwen3_dflash.py b/vllm/model_executor/models/qwen3_dflash.py
+--- a/vllm/model_executor/models/qwen3_dflash.py
++++ b/vllm/model_executor/models/qwen3_dflash.py
+@@ -443,6 +443,7 @@
+         assert speculative_config is not None
+         self.config = speculative_config.draft_model_config.hf_config
+         self.vocab_size = self.config.vocab_size
++        self._dflash2_kv_capacity = int(vllm_config.scheduler_config.max_num_batched_tokens)
+         self.quant_config = get_draft_quant_config(vllm_config)
+         _add_global_draft_layer_exclusions(
+             self.quant_config, start_layer_id, self.config.num_hidden_layers
+@@ -595,6 +596,8 @@
+
+         # References to inner Attention layers for direct cache writes
+         self._attn_layers = [layer.self_attn.attn for layer in self.layers]
++        from vllm._rtx_spark.kernels.dflash2.kv_fusion import prepare_if_supported
++        prepare_if_supported(self, self._dflash2_kv_capacity)
+
+     def _project_context_kv(
+         self,
+@@ -654,6 +657,12 @@
+         context_positions: torch.Tensor,
+         context_slot_mapping: torch.Tensor | list[torch.Tensor | None] | None = None,
+     ) -> None:
++        from vllm._rtx_spark.kernels.dflash2.kv_fusion import can_materialize, precompute_and_store
++
++        if can_materialize(self, context_states, context_positions):
++            precompute_and_store(self, context_states, context_positions, context_slot_mapping)
++            return
++
+         """Precompute K/V for context states write them into each layer's KV cache.
+
+         Input context states are projected to K/V, normed, and have RoPE applied.
+diff --git a/vllm/v1/engine/input_processor.py b/vllm/v1/engine/input_processor.py
+--- a/vllm/v1/engine/input_processor.py
++++ b/vllm/v1/engine/input_processor.py
+@@ -494,6 +494,7 @@
+                 sampling_params.update_from_tokenizer(self.tokenizer)
+             if sampling_params.trace_decode_token_ids:
+                 self._normalize_trace_replay_params(sampling_params, prompt_len)
++            self._validate_dflash2_context_budget(sampling_params, prompt_len)
+         else:
+             pooling_params = params.clone()
+
+@@ -554,6 +555,38 @@
+             kv_hints=kv_hints,
+         )
+
++    def _validate_dflash2_context_budget(self, sampling_params, prompt_len: int) -> None:
++        """Reject unsupported requests before the fixed external draft can read RoPE OOB.
++
++        The new GPU runner does not implement the legacy runner's drafter-max
++        opt-out. Keep target max_model_len unchanged and preserve the external
++        draft's trained RoPE. Reserve its fixed bonus-plus-K query lookahead.
++        This is request admission, not a target-only speculation fallback.
++        """
++        spec = self.speculative_config
++        if spec is None or spec.method != "dflash":
++            return
++        if tuple(self.model_config.architectures or ()) != ("Qwen4ExpForConditionalGeneration",):
++            return
++        draft = spec.draft_model_config
++        if draft is None or tuple(draft.architectures or ()) != ("DFlash2DraftModel",):
++            return
++        rotary_limit = int(draft.hf_config.max_position_embeddings)
++        context_limit = min(int(draft.max_model_len), rotary_limit)
++        query_lookahead = int(spec.num_speculative_tokens) + 1
++        assert sampling_params.max_tokens is not None
++        required = prompt_len + sampling_params.max_tokens + query_lookahead
++        if required > context_limit:
++            raise VLLMValidationError(
++                f"Flash-Next DFlash2 request needs {required} positions "
++                f"(prompt={prompt_len}, max_tokens={sampling_params.max_tokens}, "
++                f"reserved draft query tokens={query_lookahead}), exceeding the "
++                f"external draft context limit {context_limit}. Reduce max_tokens "
++                f"or use a server without external DFlash2. The target's "
++                f"max_model_len={self.model_config.max_model_len} is unchanged.",
++                parameter="max_tokens", value=sampling_params.max_tokens,
++            )
++
+     def _validate_prompt_len(
+         self,
+         prompt_len: int,

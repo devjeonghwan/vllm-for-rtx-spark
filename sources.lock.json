@@ -16,5 +16,34 @@
   "flash_attention": {
     "version": "2.8.4+cu13torch2.14",
     "url": "https://github.com/NVIDIA/pytorch-windows-ci/releases/download/Flash-Attention-for-WoA/flash_attn-2.8.4%2Bcu13torch2.14-cp313-cp313-win_arm64.whl"
+  },
+  "dflash2": {
+    "target_feature_contract": {
+      "repository": "https://github.com/z-lab/dflash",
+      "commit": "07ebd93db9f472af339b644bb70221ad8428328a"
+    },
+    "context_kv_kernel": {
+      "repository": "https://github.com/sgl-project/sglang",
+      "commit": "3c560089e1818a5217a73f2168273485a5350341",
+      "path": "python/sglang/kernels/ops/speculative/fused_kv_materialize.py"
+    },
+    "candidate_edges": {
+      "repository": "https://github.com/vllm-project/vllm",
+      "commit": "1b95bc6c6b93953e02f04ee3ee80189c8a761900",
+      "path": "vllm/models/beam/nvidia/dflash2_ops.py"
+    },
+    "prefix_drop": {
+      "repository": "https://github.com/vllm-project/vllm",
+      "commit": "0bfeb8d0e367c21d4406c87d0807729cc8787322",
+      "pull_request": 54163,
+      "upstream_status": "merged"
+    },
+    "sliding_window_prefix": {
+      "repository": "https://github.com/RichApple123/vllm",
+      "commit": "725f5e577d219d604e0d4cc4b3dce3eb49619d6a",
+      "pull_request": 54397,
+      "upstream_status": "closed-unmerged",
+      "scope": "SWA-only adaptation preserving pinned Mamba/FullAttention/base-CoW"
+    }
   }
 }

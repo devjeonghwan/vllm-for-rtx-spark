@@ -1,0 +1,34 @@
+diff --git a/vllm/v1/core/sched/scheduler.py b/vllm/v1/core/sched/scheduler.py
+--- a/vllm/v1/core/sched/scheduler.py
++++ b/vllm/v1/core/sched/scheduler.py
+@@ -377,6 +377,21 @@
+ 
+         self.has_mamba_layers = kv_cache_config.has_mamba_layers
+         self.needs_kv_cache_zeroing = kv_cache_config.needs_kv_cache_zeroing
++        # The resolved managers can use a larger physical state block than
++        # cache_config retained from the pre-planning model specification.
++        mamba_state_block_sizes = {
++            manager.block_size
++            for manager in self.kv_cache_manager.coordinator.single_type_managers
++            if isinstance(manager.kv_cache_spec, MambaSpec)
++        }
++        if self.has_mamba_layers and self.cache_config.mamba_cache_mode == "align":
++            assert len(mamba_state_block_sizes) == 1, (
++                "Align checkpoint scheduling requires one resolved Mamba state unit"
++            )
++        self.mamba_state_block_size = (
++            next(iter(mamba_state_block_sizes))
++            if len(mamba_state_block_sizes) == 1 else None
++        )
+         self.need_mamba_block_aligned_split = (
+             self.has_mamba_layers and self.cache_config.mamba_cache_mode == "align"
+         )
+@@ -469,7 +484,7 @@
+         if start >= prefill_end:
+             return num_new_tokens
+ 
+-        block_size = self.cache_config.mamba_block_size
++        block_size = self.mamba_state_block_size
+         assert block_size is not None
+         # The last block-aligned position whose state can be cached. With
+         # Eagle, FullAttn prunes the last matching block, so back off one

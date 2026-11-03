@@ -114,7 +114,16 @@ class CopyRuleTests(unittest.TestCase):
         path = VERSION["manifest_path"]()
         self.assertEqual(path, ROOT / "patches/vllm/manifest.json")
         manifest = VERSION["load_manifest"]()
-        self.assertEqual(len(manifest["patches"]), 4)
+        self.assertEqual(manifest["patches"], [
+            "0001-native-build.patch", "0002-windows-runtime.patch",
+            "0003-recipe-runtime.patch", "0004-rtx-spark-hooks.patch",
+            "0005-dflash2-integration.patch",
+            "0006-cow-direct-copy.patch",
+            "0007-dflash2-aux-and-target-budget.patch",
+            "0008-mamba-resolved-state-unit.patch",
+            "0009-dflash2-retained-tail.patch",
+            "0010-dflash2-nvfp4-head.patch",
+        ])
         self.assertEqual(len(manifest["copy"]), 6)
         self.assertFalse((ROOT / "targets").exists())
         inputs = BUILD["copy_inputs"]()

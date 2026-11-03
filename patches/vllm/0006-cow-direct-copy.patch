@@ -1,0 +1,79 @@
+--- a/vllm/v1/worker/utils.py
++++ b/vllm/v1/worker/utils.py
+@@ -915,21 +915,33 @@
+         return
+
+     indices_np = np.array(kv_cache_block_copies, dtype=np.int64)
++    pairs = indices_np.tolist()
++    source_ids = {source for source, _ in pairs}
++    destination_ids = [destination for _, destination in pairs]
++    # Native asynchronous copies have the same RHS-snapshot semantics only
++    # when destinations are unique and never overwrite another source row.
++    direct_plan = (
++        len(destination_ids) == len(set(destination_ids))
++        and not source_ids.intersection(destination_ids)
++        and all(0 <= source < num_blocks and 0 <= destination < num_blocks
++                for source, destination in pairs)
++    )
++    copy_blocks = getattr(torch.ops._C_cache_ops, "swap_blocks", None)
++    direct_plan = direct_plan and callable(copy_blocks)
++    indices_cpu = torch.from_numpy(indices_np) if direct_plan else None
+     indices: torch.Tensor | None = None
++    first_device = None
+     seen: set[tuple[torch.device, int]] = set()
+     copied_storages: set[tuple[torch.device, int]] = set()
+     for cache in kv_caches:
+-        # Layers sharing KV (cross-layer sharing) alias the same view; copy it
+-        # once. data_ptr distinguishes per-layer views of a shared allocation.
++        # Keep per-view deduplication distinct from whole-storage deduplication.
+         key = (cache.device, cache.data_ptr())
+         if key in seen:
+             continue
+         seen.add(key)
+-
+-        if indices is None:
+-            indices = async_tensor_h2d(indices_np, device=cache.device)
+-        assert cache.device == indices.device
+-        src, dst = indices.unbind(dim=1)
++        if first_device is None:
++            first_device = cache.device
++        assert cache.device == first_device
+
+         kernel_blocks_per_block, remainder = divmod(cache.shape[0], num_blocks)
+         assert remainder == 0, (
+@@ -941,7 +953,8 @@
+         scheduler_block_stride = (
+             cache.stride(0) * cache.element_size() * kernel_blocks_per_block
+         )
+-        if storage.nbytes() == num_blocks * scheduler_block_stride:
++        raw_storage = storage.nbytes() == num_blocks * scheduler_block_stride
++        if raw_storage:
+             if storage_key in copied_storages:
+                 continue
+             copied_storages.add(storage_key)
+@@ -949,10 +962,22 @@
+             blocks.set_(storage)
+             blocks = blocks.view(num_blocks, -1)
+         else:
+-            # Fold virtual block splitting into the shape so that dim 0 counts
+-            # scheduler blocks; unflatten of dim 0 is always a view.
+             blocks = cache.unflatten(0, (num_blocks, kernel_blocks_per_block))
+-        blocks[dst] = blocks[src]
++
++        if (direct_plan and raw_storage and cache.device.type == "cuda"
++                and blocks.is_contiguous()):
++            # The existing host binding reads the CPU mapping before returning
++            # and submits D2D copies on the current CUDA stream. The model keeps
++            # both source and destination storage alive, including Graph users.
++            copy_blocks(blocks, blocks, scheduler_block_stride, indices_cpu)
++        else:
++            # Preserve the original gather snapshot for all other cases,
++            # including absent native operators and non-contiguous views.
++            if indices is None:
++                indices = async_tensor_h2d(indices_np, device=cache.device)
++            assert cache.device == indices.device
++            src, dst = indices.unbind(dim=1)
++            blocks[dst] = blocks[src]
+
+
+ def is_uniform_query_len(num_reqs: int, num_tokens: int, max_query_len: int) -> bool:

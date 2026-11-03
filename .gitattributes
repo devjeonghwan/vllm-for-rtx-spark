@@ -3,6 +3,7 @@ src/** -text
 third_party/** -text
 assets/** -text
 patches/** -text
+*.patch whitespace=-blank-at-eol
 *.dll binary
 *.pyd binary
 *.cubin binary

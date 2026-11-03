@@ -1,0 +1,203 @@
+--- a/vllm/v1/worker/gpu/spec_decode/dflash2/speculator.py
++++ b/vllm/v1/worker/gpu/spec_decode/dflash2/speculator.py
+@@ -21,6 +21,7 @@
+     temperature_ptr,
+     seeds_ptr,
+     tokens_ptr,
++    tokens_stride: tl.constexpr,
+     realized_scores_ptr,
+     num_steps: tl.constexpr,
+     top_k: tl.constexpr,
+@@ -71,14 +72,18 @@
+             mask=mask & valid,
+         )
+         token = tl.load(candidate_ptr + candidate_base + index, mask=valid, other=0)
+-        tl.store(tokens_ptr + flat, token, mask=valid)
++        tl.store(tokens_ptr + row * tokens_stride + step, token, mask=valid)
+         previous = index
++    for step in range(num_steps, tokens_stride):
++        tl.store(tokens_ptr + row * tokens_stride + step, -1, mask=valid)
+ 
+ 
+ @triton.jit
+ def _cache_draft_logits_kernel(
+     draft_logits_ptr,
+     cached_candidate_ptr,
++    cached_stride_0,
++    cached_stride_1,
+     candidate_ptr,
+     scores_ptr,
+     req_state_ptr,
+@@ -94,7 +99,7 @@
+     offsets = tl.arange(0, BLOCK_K)
+     mask = (req_state >= 0) & (offsets < top_k)
+     candidate_base = flat * top_k
+-    cache_base = (req_state * num_steps + step) * top_k
++    cache_base = req_state * cached_stride_0 + step * cached_stride_1
+     old_token_ids = tl.load(cached_candidate_ptr + cache_base + offsets, mask=mask)
+     logits_base = (
+         draft_logits_ptr
+@@ -135,7 +140,10 @@
+         draft_tokens: torch.Tensor,
+         draft_logits: torch.Tensor | None,
+         use_fp64: bool,
++        active_steps: int | None = None,
+     ) -> None:
++        steps = self.num_steps if active_steps is None else active_steps
++        assert 1 <= steps <= self.num_steps
+         candidate_ids = candidate_ids.contiguous()
+         sample_pos = sample_pos.contiguous()
+         idx_mapping = idx_mapping.contiguous()
+@@ -148,8 +156,9 @@
+             temperature,
+             seeds,
+             draft_tokens,
++            draft_tokens.stride(0),
+             self.scores,
+-            num_steps=self.num_steps,
++            num_steps=steps,
+             top_k=self.top_k,
+             BLOCK_K=block_k,
+             SAMPLE_PROBABILISTIC=draft_logits is not None,
+@@ -159,7 +168,7 @@
+ 
+         if draft_logits is not None:
+             self._cache_draft_logits(
+-                candidate_ids, num_reqs * self.num_steps, idx_mapping, draft_logits
++                candidate_ids, num_reqs * steps, idx_mapping, draft_logits, active_steps=steps
+             )
+ 
+     def _cache_draft_logits(
+@@ -168,17 +177,21 @@
+         num_sample: int,
+         idx_mapping: torch.Tensor,
+         draft_logits: torch.Tensor,
++        active_steps: int | None = None,
+     ) -> None:
++        steps = self.num_steps if active_steps is None else active_steps
+         block_k = triton.next_power_of_2(self.top_k)
+         _cache_draft_logits_kernel[(num_sample,)](
+             draft_logits,
+             self.cached_candidate_ids,
++            self.cached_candidate_ids.stride(0),
++            self.cached_candidate_ids.stride(1),
+             candidate_ids,
+             self.scores,
+             idx_mapping,
+             draft_logits.stride(0),
+             draft_logits.stride(1),
+-            num_steps=self.num_steps,
++            num_steps=steps,
+             top_k=self.top_k,
+             BLOCK_K=block_k,
+             num_warps=1,
+@@ -196,6 +209,68 @@
+         self.candidate_sampler = CandidateSampler(
+             self.max_num_reqs, self.num_speculative_steps, self.top_k, device
+         )
++
++    def _draft_tail_active_steps(self, num_reqs):
++        if getattr(self, "_draft_tail_force_full", False):
++            return self.num_speculative_steps
++        lookup = getattr(self, "_draft_tail_lookup", None)
++        if lookup is None:
++            config = self.vllm_config.speculative_config
++            parallel = self.vllm_config.parallel_config
++            supported = (
++                self._speculator_name == "DFlash2" and self.num_speculative_steps == 7
++                and self.max_num_reqs == 16 and not self.enable_adaptive_verification
++                and config is not None and config.uses_dynamic_speculative_decoding()
++                and tuple(tuple(entry) for entry in (config.num_speculative_tokens_per_batch_size or ()))
++                    == ((1, 7, 7), (8, 16, 4))
++                and parallel.tensor_parallel_size == parallel.pipeline_parallel_size == 1
++                and parallel.data_parallel_size == parallel.prefill_context_parallel_size == parallel.decode_context_parallel_size == 1
++            )
++            if supported:
++                from vllm.v1.spec_decode.dynamic.utils import build_dynamic_sd_schedule_lookup
++                lookup = tuple(build_dynamic_sd_schedule_lookup(
++                    config.num_speculative_tokens_per_batch_size,
++                    vllm_max_batch_size=self.max_num_reqs,
++                    vllm_num_speculative_tokens=self.num_speculative_steps,
++                ))
++            else:
++                lookup = ()
++            self._draft_tail_lookup = lookup
++        return lookup[num_reqs] if 0 < num_reqs < len(lookup) else self.num_speculative_steps
++
++    def propose(self, input_batch, attn_metadata, slot_mappings, last_hidden_states,
++                aux_hidden_states, num_sampled, num_rejected, last_sampled,
++                next_prefill_tokens, temperature, seeds, dp_sync_state=None,
++                dummy_run=False, skip_attn_for_dummy_run=False, mm_inputs=None,
++                is_profile=False, num_speculative_tokens=None):
++        # A captured B can use its scheduled prefix only when it is the exact
++        # live B and agrees with the runner's actual target budget. Otherwise
++        # the unchanged eager query8/full7 path remains the safe fallback.
++        requested = num_speculative_tokens
++        expected = self._draft_tail_active_steps(input_batch.num_reqs)
++        manager = self.query_cudagraph_manager
++        exact = False
++        if (not dummy_run and not is_profile and isinstance(requested, int)
++                and requested == expected and expected in (4, 7)
++                and manager is not None and manager._graphs_captured):
++            desc = manager.dispatch(input_batch.num_reqs,
++                input_batch.num_reqs * self.num_query_per_req,
++                uniform_token_count=self.num_query_per_req, num_active_loras=0)
++            exact = (desc.cg_mode == CUDAGraphMode.FULL
++                and desc.num_reqs == input_batch.num_reqs
++                and desc.num_tokens == input_batch.num_reqs * self.num_query_per_req
++                and desc.uniform_token_count == self.num_query_per_req)
++        self._draft_tail_force_full = not exact
++        try:
++            return super().propose(input_batch, attn_metadata, slot_mappings,
++                last_hidden_states, aux_hidden_states, num_sampled, num_rejected,
++                last_sampled, next_prefill_tokens, temperature, seeds,
++                dp_sync_state=dp_sync_state, dummy_run=dummy_run,
++                skip_attn_for_dummy_run=skip_attn_for_dummy_run,
++                mm_inputs=mm_inputs, is_profile=is_profile or not exact,
++                num_speculative_tokens=num_speculative_tokens)
++        finally:
++            self._draft_tail_force_full = False
+ 
+     def draft_logits_spec(self, vllm_config: VllmConfig) -> tuple[torch.dtype, float]:
+         # fp32 so the walk and the rejection that checks it read the same
+@@ -219,15 +294,16 @@
+             num_tokens_across_dp,
+             cudagraph_runtime_mode,
+         )
+-        num_sample = num_reqs * self.num_speculative_steps
+-        hidden_states = last_hidden_states[self.sample_indices[:num_sample]].view(
+-            num_reqs, self.num_speculative_steps, -1
+-        )
++        active_steps = self._draft_tail_active_steps(num_reqs)
++        num_sample = num_reqs * active_steps
++        indices = self.sample_indices[:num_reqs * self.num_speculative_steps].view(
++            num_reqs, self.num_speculative_steps)[:, :active_steps].reshape(-1)
++        hidden_states = last_hidden_states[indices].view(num_reqs, active_steps, -1)
+         candidate_ids, unary_logits = self.model.compute_candidates(
+             hidden_states.flatten(0, 1)
+         )
+         candidate_ids = candidate_ids.view(
+-            num_reqs, self.num_speculative_steps, self.top_k
++            num_reqs, active_steps, self.top_k
+         )
+         unary_logits = unary_logits.view_as(candidate_ids)
+         scores = self._score_candidates(candidate_ids, unary_logits, hidden_states)
+@@ -235,13 +311,16 @@
+             candidate_ids,
+             scores,
+             num_reqs,
+-            self.sample_pos,
+-            self.sample_idx_mapping,
++            self.sample_pos[:num_reqs * self.num_speculative_steps].view(
++                num_reqs, self.num_speculative_steps)[:, :active_steps].reshape(-1),
++            self.sample_idx_mapping[:num_reqs * self.num_speculative_steps].view(
++                num_reqs, self.num_speculative_steps)[:, :active_steps].reshape(-1),
+             self.temperature,
+             self.seeds,
+             self.draft_tokens,
+             self.draft_logits,
+             self.use_fp64_gumbel,
++            active_steps=active_steps,
+         )
+         if self.enable_adaptive_verification:
+             self._maybe_predict_acceptance(

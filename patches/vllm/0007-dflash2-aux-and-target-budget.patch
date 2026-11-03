@@ -1,0 +1,83 @@
+--- a/vllm/models/qwen4_exp/nvidia/model.py
++++ b/vllm/models/qwen4_exp/nvidia/model.py
+@@ -300,6 +300,7 @@
+         input_ids: torch.Tensor | None,
+         query_start_loc: torch.Tensor | None,
+         ngram_context: torch.Tensor | None,
++        completed_aux_output: list[torch.Tensor] | None = None,
+     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+         if prev_block_output is None:
+             assert prev_injection is None
+@@ -329,6 +330,13 @@
+             )
+         else:
+             hidden_states, block_input, injection = attn_hc.mix(hidden_states)
++
++        # Reuse the previous completed layer state already returned
++        # by the unchanged HC combine+norm.
++        if completed_aux_output is not None:
++            completed_aux_output.append(
++                hidden_states.unflatten(-1, (self.config.hc_count, self.config.hidden_size)).mean(dim=-2)
++            )
+
+         if self.use_hc_sequence_parallel:
+             # Positions retain the full token axis for both text and MRoPE inputs.
+@@ -586,6 +594,15 @@
+
+         full_num_tokens = positions.shape[-1]
+         aux_hidden_states: list[torch.Tensor] = []
++        # Exact current DFlash2 geometry only; PLE/deepstack boundaries
++        # must retain the existing producer-end materialization.
++        reuse_completed_aux = (
++            self._dflash2_aux_supported
++            and tuple(self.aux_hidden_state_layers) == (6, 16, 26, 36, 46)
++            and self.start_layer == 0 and self.end_layer == 48
++            and deepstack_input_embeds is None
++            and all(self.layers[index].ple is None for index in self.aux_hidden_state_layers)
++        )
+         block_output = None
+         injection = None
+         last_layer = None
+@@ -615,6 +632,10 @@
+                 input_ids=input_ids,
+                 query_start_loc=query_start_loc,
+                 ngram_context=ngram_context,
++                completed_aux_output=(
++                    aux_hidden_states if reuse_completed_aux
++                    and layer_idx in self.aux_hidden_state_layers else None
++                ),
+             )
+             if deepstack_input_embeds is not None and layer_idx < len(
+                 deepstack_input_embeds
+@@ -642,7 +663,7 @@
+                 injection = None
+                 hidden_states = hidden_states + deepstack_embed
+
+-            if layer_idx + 1 in self.aux_hidden_state_layers:
++            if not reuse_completed_aux and layer_idx + 1 in self.aux_hidden_state_layers:
+                 self._dflash2_append_completed_aux(
+                     aux_hidden_states, layer, hidden_states, block_output, injection
+                 )
+--- a/vllm/v1/worker/gpu/cudagraph_utils.py
++++ b/vllm/v1/worker/gpu/cudagraph_utils.py
+@@ -277,6 +277,7 @@
+         if (
+             speculative_config
+             and speculative_config.uses_dynamic_speculative_decoding()
++            and not getattr(self, "_fixed_draft_query_width", False)
+             and self.decode_query_len > self.vllm_config.num_speculative_tokens
+         ):
+             # decode_query_len = num_speculative_steps + num_new_sampled_tokens
+--- a/vllm/v1/worker/gpu/spec_decode/dflash/cudagraph.py
++++ b/vllm/v1/worker/gpu/spec_decode/dflash/cudagraph.py
+@@ -76,6 +76,10 @@
+     """DFlash CudaGraphManager for the parallel-drafting query forward,
+     building its own attention metadata from scratch."""
+
++    # Existing target batch-budget scheduling must not alter this
++    # fixed-block draft query/conv/sample-index geometry.
++    _fixed_draft_query_width = True
++
+     def capture(
+         self,
+         forward_fn: Callable,

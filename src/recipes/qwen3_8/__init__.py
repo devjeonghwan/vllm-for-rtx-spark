@@ -110,6 +110,7 @@ OPTIONS = (
     CSF_BACKEND,
     Option("draft_fp8", bool, True, apply=_apply_draft_fp8),
     Option("draft_head2", bool, True, apply=_apply_draft_head2),
+    Option("dflash2_nvfp4_head", bool, False),
 )
 
 
@@ -169,6 +170,9 @@ class TargetAndDraftOverrides:
         self.overrides = copy.deepcopy(overrides)
 
     def __call__(self, config):
+        # External BF16 DFlash2: retain its trained default RoPE.
+        if "DFlash2DraftModel" in (getattr(config, "architectures", None) or ()):
+            return config
         text = getattr(config, "text_config", None)
         if text is None:
             if not hasattr(config, "num_attention_heads"):
