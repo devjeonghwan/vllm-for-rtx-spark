@@ -18,7 +18,7 @@ MANIFEST = VERSIONS["load_manifest"]()
 PATCH_ROOT = VERSIONS["manifest_path"]().parent
 COMMIT = MANIFEST["vllm"]["commit"]
 SKIP_SUFFIXES = {".pyd", ".so", ".dll", ".lib", ".exp", ".pdb", ".pyc"}
-HELPER_PACKAGE = "vllm._rtx_spark.recipes.qwen3_8.helpers"
+HELPER_PACKAGE = "vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers"
 RECIPE_HELPERS = {
     "csf_codec", "loader_core", "mbx_depth", "mbx_draft_head2", "mbx_loader",
     "mbx_marlin_csf", "mbx_opt_quant", "mbx_ple_ckpt", "native_sampling",

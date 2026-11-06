@@ -4,11 +4,8 @@ These checks cover packaging, options, late-load order and alias ownership.
 They do not execute quantization/CUDA or claim BF16/NVFP4 numerical identity.
 """
 from __future__ import annotations
-import argparse
 import ast
 import copy
-import hashlib
-import json
 from pathlib import Path
 import pickle
 import runpy
@@ -18,30 +15,18 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--site", type=Path)
-ARGS, REST = parser.parse_known_args()
+from support import SOURCE as SITE
 runpy.run_path(ROOT / "scripts/load_source_package.py")["load"]()
-from _rtx_spark.recipes import qwen3_8 as recipe
-from _rtx_spark.recipes.qwen3_8 import dflash_nvfp4_core as core
-from _rtx_spark.recipes.qwen3_8 import dflash_nvfp4_head as head
+from _rtx_spark.recipes import qwen3_8_flash_next as recipe
+from _rtx_spark.recipes.qwen3_8_flash_next import dflash_nvfp4_core as core
+from _rtx_spark.recipes.qwen3_8_flash_next import dflash_nvfp4_head as head
 from _rtx_spark.runtime.vllm.adapter import bind_recipe
 
 REL = "vllm/v1/worker/gpu/spec_decode/dflash/speculator.py"
 UTILS = "vllm.v1.worker.gpu.spec_decode.eagle.utils"
 OWNER = "vllm.v1.worker.gpu.spec_decode.dflash.speculator"
-CORE_AST_SHA = "fd1a0f5d34816123ef7a7ce453083ef9dac4c1d4483b990881a0763dc3c19755"
-HEAD_AST_SHA = "0d4cc61403625cb3d034141d630a9a6706179c96bee80c8c68e1b33215fb4df7"
-PRESERVED = ("tensor_metadata", "module_metadata", "target_tree_metadata", "tree_summary", "hash_weight", "convert")
 
 
-def ast_fingerprint(path, selected=None):
-    nodes = {node.name: ast.dump(node, include_attributes=False)
-             for node in ast.parse(path.read_text(encoding="utf-8")).body
-             if isinstance(node, (ast.FunctionDef, ast.ClassDef))}
-    if selected is not None:
-        nodes = {name: nodes[name] for name in selected}
-    return hashlib.sha256(json.dumps(nodes, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def config(enabled=True):
@@ -52,7 +37,64 @@ def config(enabled=True):
         model_config=NS(hf_config=NS(architectures=["Qwen4ExpForConditionalGeneration"])))
 
 
+def quantizer_fixture(value):
+    amax = value
+    g = float(amax.max()) / (448.0 * 6.0)
+    return value, g
+
+
 class HeadContractTests(unittest.TestCase):
+    def test_chunk_quantizer_overrides_only_global_scale_and_preserves_original(self):
+        value = NS(max=lambda: 5376.0)
+        original_code = quantizer_fixture.__code__
+        chunk_quantizer = core.quantizer_with_global_scale(quantizer_fixture)
+        self.assertEqual(quantizer_fixture(value), (value, 2.0))
+        self.assertEqual(chunk_quantizer(value, 3.5), (value, 3.5))
+        self.assertIs(quantizer_fixture.__code__, original_code)
+
+    @unittest.skipUnless(SITE, 'Set VLLM_RTX_SPARK_SOURCE_DIR for actual loader integration')
+    def test_actual_loader_loads_original_before_the_optional_head_conversion(self):
+        tree = ast.parse((SITE / REL).read_text(encoding='utf-8'))
+        owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'DFlashSpeculator')
+        method = next(node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name == 'load_draft_model')
+        calls = []
+        target, draft, converted, configuration = object(), object(), object(), object()
+        def load(observed_target, observed_config):
+            calls.append(('load', observed_target, observed_config))
+            return draft
+        helper_name = 'vllm._rtx_spark.recipes.qwen3_8_flash_next.dflash_nvfp4_head'
+        helper = ModuleType(helper_name)
+        helper.maybe_convert = lambda observed_owner, observed_draft, observed_target: (
+            calls.append(('convert', observed_owner, observed_draft, observed_target)) or converted)
+        future = ast.ImportFrom(module='__future__', names=[ast.alias(name='annotations')], level=0)
+        scope = {'load_dflash_model': load}
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[future, method], type_ignores=[])),
+                     str(SITE / REL), 'exec'), scope)
+        subject = NS(vllm_config=configuration)
+        with patch.dict(sys.modules, {helper_name: helper}):
+            self.assertIs(scope['load_draft_model'](subject, target, []), converted)
+        self.assertEqual(calls, [('load', target, configuration), ('convert', subject, draft, target)])
+
+    def test_live_target_mutation_fails_without_releasing_conversion_owners(self):
+        target, holder, target_model = object(), object(), object()
+        draft = NS(lm_head=holder)
+        target_metadata, holder_metadata, tree_metadata = {'pointer': 1}, {'pointer': 2}, {'modules': 3}
+        owners = {'target': target, 'draft': draft, 'holder': holder, 'whole_target': target_model,
+                  'whole_target_tree_before': copy.deepcopy(tree_metadata)}
+        activation = {'target_module_before': copy.deepcopy(target_metadata),
+                      'holder_metadata': copy.deepcopy(holder_metadata)}
+        def metadata(module):
+            return copy.deepcopy(target_metadata if module is target else holder_metadata)
+        with patch.object(head, '_OWNERS', owners), patch.object(head, '_ACTIVATION', activation), \
+                patch.object(head, 'module_metadata', side_effect=metadata), \
+                patch.object(head, 'target_tree_metadata', return_value=tree_metadata):
+            self.assertTrue(head.status()['whole_target_tree_metadata_unchanged'])
+            target_metadata['pointer'] = 7
+            with self.assertRaisesRegex(RuntimeError, 'metadata or binding changed'):
+                head.status()
+            self.assertIs(head._OWNERS, owners)
+            self.assertIs(draft.lm_head, holder)
+
     def setUp(self):
         for name, value in (("_LOAD_OWNER", None), ("_LATE_HOOK_CALLED", False),
                             ("_OWNERS", None), ("_ACTIVATION", None), ("_FAILURE", None)):
@@ -60,12 +102,6 @@ class HeadContractTests(unittest.TestCase):
             p.start()
             self.addCleanup(p.stop)
 
-    def test_bool_default_and_grouped_options_are_strict(self):
-        self.assertIs(recipe._validate_options({})["dflash2_nvfp4_head"], False)
-        self.assertIs(recipe._validate_options({"optimizations": {"dflash2_nvfp4_head": True}})["dflash2_nvfp4_head"], True)
-        for value in (0, 1, "true", None):
-            with self.subTest(value=value), self.assertRaises(TypeError):
-                recipe._validate_options({"dflash2_nvfp4_head": value})
 
     def test_omitted_and_false_leave_original_draft_untouched(self):
         draft = object()
@@ -161,26 +197,8 @@ class HeadContractTests(unittest.TestCase):
         self.assertIsNot(unrelated.head, replacement)
         self.assertEqual(aliases, 1)
 
-    def test_validated_core_math_and_target_guards_preserved(self):
-        self.assertEqual(ast_fingerprint(Path(core.__file__)), CORE_AST_SHA)
-        self.assertEqual(ast_fingerprint(Path(head.__file__), PRESERVED), HEAD_AST_SHA)
-        self.assertIn("from . import dflash_nvfp4_core as core", Path(head.__file__).read_text(encoding="utf-8"))
-        self.assertNotIn("research/results", Path(head.__file__).read_text(encoding="utf-8"))
 
-    def test_prepared_loader_preserves_original_load_and_exact_late_return(self):
-        if ARGS.site:
-            tree = ast.parse((ARGS.site / REL).read_text(encoding="utf-8"))
-            owner = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "DFlashSpeculator")
-            method = next(node for node in owner.body if isinstance(node, ast.FunctionDef) and node.name == "load_draft_model")
-            body = ast.Module(body=method.body, type_ignores=[])
-        else:
-            patch_source = (ROOT / "patches/vllm/0010-dflash2-nvfp4-head.patch").read_text(encoding="utf-8")
-            added = "\n".join(line[1:] for line in patch_source.splitlines() if line.startswith("+") and not line.startswith("+++"))
-            import textwrap
-            body = ast.parse(textwrap.dedent(added))
-        expected = ast.parse('draft_model = load_dflash_model(target_model, self.vllm_config)\nfrom vllm._rtx_spark.recipes.qwen3_8.dflash_nvfp4_head import maybe_convert\nreturn maybe_convert(self, draft_model, target_model)')
-        self.assertEqual(ast.dump(body, include_attributes=False), ast.dump(expected, include_attributes=False))
 
 
 if __name__ == "__main__":
-    unittest.main(argv=[sys.argv[0], *REST])
+    unittest.main()

@@ -1,0 +1,13 @@
+RTX Spark fused channelwise FP8 provider
+
+Copyright 2026 Michael Valente.
+Original source licensed under Apache License, Version 2.0 (see LICENSE).
+Source: https://github.com/Monash-Neurology-AI-inference-lab/rtx-spark-fp8-kernel
+Revision: b2de7164a65d1a7cff4ae328236eaf13cc568c13
+Original file: rtx_fp8_fused.py (preserved verbatim as upstream.py).
+
+Project changes: source-composed opt-in vLLM kernel selection, guarded opaque
+operator, exact original fallback, first-JIT capture admission, and validation.
+device.py retains the original _fp8_scaled_mm and _tiles function bodies.
+The external installer is not included or executed. Existing installations and
+checkpoint weight bytes are not patched or requantized.

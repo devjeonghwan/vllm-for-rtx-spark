@@ -1,0 +1,56 @@
+diff --git a/vllm/utils/argparse_utils.py b/vllm/utils/argparse_utils.py
+--- a/vllm/utils/argparse_utils.py
++++ b/vllm/utils/argparse_utils.py
+@@ -521,7 +521,20 @@
+ 
+         file_path = args[index + 1]
+ 
+-        config_args = self.load_config_file(file_path)
++        # Config flattening runs on the main CLI parser, while BooleanOptionalAction
++        # flags such as --no-enable-prefix-caching belong to the selected command.
++        # Follow only the leading selected subcommand path; never borrow flags
++        # from an unrelated sibling parser or inspect global sys.argv here.
++        option_parser = self
++        for token in args[:index]:
++            subcommands = next(
++                (action for action in option_parser._actions
++                 if isinstance(action, argparse._SubParsersAction)), None
++            )
++            if subcommands is None or token not in subcommands.choices:
++                break
++            option_parser = subcommands.choices[token]
++        config_args = self.load_config_file(file_path, option_parser=option_parser)
+ 
+         # 0th index might be the sub command {serve,chat,complete,...}
+         # optionally followed by model_tag (serve or snapshot create)
+@@ -566,7 +579,9 @@
+ 
+         return args
+ 
+-    def load_config_file(self, file_path: str) -> list[str]:
++    def load_config_file(
++        self, file_path: str, *, option_parser: ArgumentParser | None = None
++    ) -> list[str]:
+         """Loads a yaml file and returns the key value pairs as a
+         flattened list with argparse like pattern.
+ 
+@@ -613,11 +628,18 @@
+             )
+             raise ex
+ 
++        option_actions = (option_parser or self)._option_string_actions
+         for key, value in config.items():
+             if isinstance(value, bool):
++                option_key = key.replace("_", "-")
+                 if value:
+                     processed_args.append("--" + key)
+-                elif (no_key := f"--no-{key}") in self._option_string_actions:
++                elif (no_key := f"--no-{option_key}") in option_actions:
++                    processed_args.append(no_key)
++                elif f"--{option_key}" not in option_actions:
++                    # Unknown false settings must reach argparse's normal error
++                    # path instead of disappearing. Known store_true False keeps
++                    # its existing omission behavior when no negative flag exists.
+                     processed_args.append(no_key)
+             elif isinstance(value, list):
+                 if value:

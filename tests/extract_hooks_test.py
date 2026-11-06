@@ -33,7 +33,7 @@ def direct_calls(raw, name):
 class ExtractHookTests(unittest.TestCase):
     def test_private_modules_and_vendor_copies_are_not_exported_as_dependency_patches(self):
         for name in ("vllm/_rtx_spark/runtime/vllm/adapter.py",
-                     "vllm/_rtx_spark/recipes/qwen3_8/helpers/mbx_loader.py",
+                     "vllm/_rtx_spark/recipes/qwen3_8_flash_next/helpers/mbx_loader.py",
                      "vllm/third_party/deep_gemm/__init__.py",
                      "vllm/third_party/flashmla/flash_mla_interface.py"):
             with self.subTest(name=name):
@@ -74,8 +74,8 @@ class ExtractHookTests(unittest.TestCase):
         expected = (
             b'# import mbx_depth remains a comment.\n'
             b'literal = "from loader_core import anything"\n'
-            b'from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_depth as depth\n'
-            b'from vllm._rtx_spark.recipes.qwen3_8.helpers.vllm_fp8_hybrid import apply as hybrid\n'
+            b'from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as depth\n'
+            b'from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers.vllm_fp8_hybrid import apply as hybrid\n'
         )
         result = HOOKS("vllm/example.py", original)
         self.assertEqual(result, expected)

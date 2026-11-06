@@ -31,7 +31,7 @@ def vendor_root():
     return checkout / "third_party" / "python" if checkout is not None else source_root() / "vendor"
 
 
-def recipe_helpers(recipe="qwen3_8"):
+def recipe_helpers(recipe="qwen3_8_flash_next"):
     return source_root() / "recipes" / recipe / "helpers"
 
 
@@ -88,10 +88,16 @@ def prepare_engine_args(args):
     adapter = get_adapter()
     options = _rtx_spark_options(args)
     name, integration = _model_integration(args, options)
+    if integration is None:
+        from ..optimizations.compilation import restore_compilation_environment
+
+        restore_compilation_environment()
     if integration is not None:
         from ..optimizations import resolve_options, validate_options, apply_options
+        from ..optimizations.compilation import resolve_compilation_options
 
-        resolved = resolve_options(dict(options, model=name), integration.options)
+        supplied = resolve_compilation_options(dict(options, model=name), integration.options)
+        resolved = resolve_options(supplied, integration.options)
         validate_options(args, resolved, integration.options)
         from ..plugin import register
 
@@ -115,8 +121,10 @@ def configure_engine(config, *, engine_args=None):
     name, integration = _model_integration(config, options, prepared=(True, name) if is_prepared else None)
     if integration is not None:
         from ..optimizations import resolve_options, validate_options
+        from ..optimizations.compilation import resolve_compilation_options
 
-        resolved = resolve_options(dict(options, model=name), integration.options)
+        supplied = resolve_compilation_options(dict(options, model=name), integration.options)
+        resolved = resolve_options(supplied, integration.options)
         validate_options(config, resolved, integration.options)
         integration.validate(config, resolved)
         adapter.bind_recipe(config, name)

@@ -1,19 +1,20 @@
 """CPU-only RoPE contract regressions against a prepared pinned vLLM source.
 
-Run: python -I tests/yarn_rope_contract_test.py --source <prepared-vllm-tree>
+VLLM_RTX_SPARK_SOURCE_DIR selects the actual prepared source; installed vLLM is never imported.
 Uses actual constructors/frequency/cache formula; full cache allocation is
 replaced with one placeholder row except for a tiny selected-position check.
 No checkpoint, native DLL, CUDA operation or model generation is needed.
 """
 from __future__ import annotations
-import argparse
+import ast
+from contextlib import contextmanager
 import copy
 import math
-from pathlib import Path
 import sys
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 import unittest
 from unittest.mock import patch
+from support import SOURCE, SOURCE_REQUIRED, source_path
 
 
 def reference(context, factor, dim=64, theta=10_000_000.):
@@ -23,18 +24,50 @@ def reference(context, factor, dim=64, theta=10_000_000.):
             for j in range(dim//2)]
 
 
+@unittest.skipUnless(SOURCE, SOURCE_REQUIRED)
 class YaRNRoPEContract(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import torch
-        from vllm.config import VllmConfig,set_current_vllm_config
-        from vllm.config.compilation import CompilationConfig,CompilationMode
-        from vllm.model_executor.layers import rotary_embedding as R
-        from vllm.model_executor.layers.rotary_embedding.mrope import MRotaryEmbedding
-        from vllm.model_executor.layers.rotary_embedding import yarn_scaling_rope as Y
-        cls.torch,cls.R,cls.M,cls.Y=torch,R,MRotaryEmbedding,Y
-        cls.VllmConfig,cls.set_config=VllmConfig,staticmethod(set_current_vllm_config)
-        cls.CompilationConfig,cls.NONE=CompilationConfig,CompilationMode.NONE
+        # Execute actual source constructors and frequency/cache formulas. Only
+        # the unused custom-op dispatch is inert; no installed vLLM can leak in.
+        class CpuCustomOp(torch.nn.Module):
+            def enabled(self):
+                return False
+        scope = {'torch': torch, 'math': math, '_ROPE_DICT': {}, 'CustomOp': CpuCustomOp,
+                 'ApplyRotaryEmb': lambda **kwargs: SimpleNamespace(**kwargs)}
+        nodes = []
+        relative = 'vllm/model_executor/layers/rotary_embedding/'
+        for filename, names in (
+                ('common.py', {'yarn_find_correction_dim', 'yarn_find_correction_range',
+                               'yarn_linear_ramp_mask', 'yarn_get_mscale'}),
+                ('base.py', {'RotaryEmbeddingBase', 'RotaryEmbedding'}),
+                ('yarn_scaling_rope.py', {'YaRNScalingRotaryEmbedding'}),
+                ('mrope.py', {'MRotaryEmbedding'}), ('__init__.py', {'get_rope'})):
+            tree = ast.parse(source_path(relative + filename).read_text(encoding='utf-8'))
+            for node in tree.body:
+                if isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name in names:
+                    if isinstance(node, ast.ClassDef):
+                        node.decorator_list = []
+                        node.body = [method for method in node.body if isinstance(method, ast.FunctionDef)
+                                     and method.name in ('__init__', '_compute_inv_freq', '_compute_cos_sin_cache')]
+                    nodes.append(node)
+        future = ast.ImportFrom(module='__future__', names=[ast.alias(name='annotations')], level=0)
+        exec(compile(ast.fix_missing_locations(ast.Module(body=[future, *nodes], type_ignores=[])),
+                     'prepared-source-CPU-rope', 'exec'), scope)
+        cls.torch = torch
+        cls.R = SimpleNamespace(_ROPE_DICT=scope['_ROPE_DICT'], get_rope=scope['get_rope'])
+        cls.M = scope['MRotaryEmbedding']
+        cls.Y = SimpleNamespace(torch=torch, YaRNScalingRotaryEmbedding=scope['YaRNScalingRotaryEmbedding'])
+        @contextmanager
+        def config_context(config):
+            module = ModuleType('vllm.config')
+            module.get_current_vllm_config = lambda: config
+            with patch.dict(sys.modules, {'vllm': ModuleType('vllm'), 'vllm.config': module}):
+                yield
+        cls.VllmConfig = staticmethod(lambda **kwargs: SimpleNamespace(speculative_config=None, **kwargs))
+        cls.set_config = staticmethod(config_context)
+        cls.CompilationConfig, cls.NONE = SimpleNamespace, 0
         if torch.cuda.is_initialized(): raise AssertionError('CPU contract process must not initialize CUDA')
 
     def setUp(self):
@@ -133,8 +166,4 @@ class YaRNRoPEContract(unittest.TestCase):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(add_help=False)
-    parser.add_argument('--source',type=Path,required=True)
-    args,remaining=parser.parse_known_args()
-    sys.path.insert(0,str(args.source.resolve()))
-    unittest.main(argv=[sys.argv[0],*remaining])
+    unittest.main()

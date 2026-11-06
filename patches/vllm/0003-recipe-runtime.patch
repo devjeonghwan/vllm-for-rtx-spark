@@ -2667,7 +2667,7 @@ diff --git a/vllm/model_executor/layers/quantization/auto_gptq.py b/vllm/model_e
 +
 +
 +# --- MBX 27: fp8 hybrid (VLLM_FP8_HYBRID=1) ---
-+from vllm._rtx_spark.recipes.qwen3_8.helpers.vllm_fp8_hybrid import apply as _mbx_fp8_hybrid_apply
++from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers.vllm_fp8_hybrid import apply as _mbx_fp8_hybrid_apply
 +_mbx_fp8_hybrid_apply()
 diff --git a/vllm/model_executor/layers/quantization/utils/marlin_utils_fp4.py b/vllm/model_executor/layers/quantization/utils/marlin_utils_fp4.py
 --- a/vllm/model_executor/layers/quantization/utils/marlin_utils_fp4.py
@@ -2683,7 +2683,7 @@ diff --git a/vllm/model_executor/layers/quantization/utils/marlin_utils_fp4.py b
 +import os as _mbx_os
 +
 +if not (_mbx_sys.platform == "win32" and _mbx_os.environ.get("MBX_MARLIN_CSF") == "0"):
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_marlin_csf as _mbx_csf
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_marlin_csf as _mbx_csf
 +    _mbx_csf.install(_mbx_sys.modules[__name__])
 diff --git a/vllm/model_executor/layers/rotary_embedding/mrope.py b/vllm/model_executor/layers/rotary_embedding/mrope.py
 --- a/vllm/model_executor/layers/rotary_embedding/mrope.py
@@ -2717,7 +2717,7 @@ diff --git a/vllm/model_executor/model_loader/__init__.py b/vllm/model_executor/
 +
 +
 +try:  # MBX loader hook
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_loader as _mbx_loader  # noqa: F401
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_loader as _mbx_loader  # noqa: F401
 +except ImportError:
 +    pass
 diff --git a/vllm/model_executor/models/interfaces.py b/vllm/model_executor/models/interfaces.py
@@ -4162,7 +4162,7 @@ diff --git a/vllm/models/qwen4_exp/nvidia/mtp.py b/vllm/models/qwen4_exp/nvidia/
  
 +import os as _mbx_os  # MBX 42
 +if _mbx_os.environ.get("MBX_DRAFT_HEAD2") or _mbx_os.environ.get("MBX_DRAFT_HEAD2_DUMP"):
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_draft_head2 as _mbx_dh2
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_draft_head2 as _mbx_dh2
 +else:
 +    _mbx_dh2 = None
 +
@@ -4350,7 +4350,7 @@ diff --git a/vllm/models/qwen4_exp/nvidia/ple_layer.py b/vllm/models/qwen4_exp/n
          self.kv_cache = (torch.tensor([]),)
 +        # MBX 58: prefill checkpoints (mbx_ple_ckpt), align mode + env only.
 +        try:
-+            from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_ple_ckpt as _mbx_ple_ckpt
++            from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_ple_ckpt as _mbx_ple_ckpt
 +        except ImportError:
 +            _mbx_ple_ckpt = None
 +        self._mbx_ple_ckpt = _mbx_ple_ckpt
@@ -5442,7 +5442,7 @@ diff --git a/vllm/v1/attention/backends/short_conv_attn.py b/vllm/v1/attention/b
 +        )
 +        if self._mbx_ckpt_builder is None:
 +            return meta
-+        from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_ple_ckpt
++        from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_ple_ckpt
 +
 +        return mbx_ple_ckpt.attach(self, meta, common_attn_metadata, num_decode_draft_tokens_cpu)
 +
@@ -6228,7 +6228,7 @@ diff --git a/vllm/v1/worker/gpu/cudagraph_utils.py b/vllm/v1/worker/gpu/cudagrap
  
  
 +try:  # MBX 23
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_depth as _mbx_depth
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
 +except ImportError:
 +    _mbx_depth = None
 +
@@ -6281,7 +6281,7 @@ diff --git a/vllm/v1/worker/gpu/model_runner.py b/vllm/v1/worker/gpu/model_runne
  
  
 +try:  # MBX depth
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_depth as _mbx_depth
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
 +except ImportError:
 +    _mbx_depth = None
 +
@@ -6373,10 +6373,10 @@ diff --git a/vllm/v1/worker/gpu/spec_decode/mtp/speculator.py b/vllm/v1/worker/g
          draft_model = load_eagle_model(target_model, self.vllm_config)
 +        import os as _os  # MBX 42: opt-in drafter FP8 projections / two-stage draft head
 +        if _os.environ.get("MBX_DRAFT_FP8", "0") == "1":
-+            from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_opt_quant as _mbx_oq
++            from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_opt_quant as _mbx_oq
 +            _mbx_oq.draft_loaded(draft_model)
 +        if _os.environ.get("MBX_DRAFT_HEAD2"):
-+            from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_draft_head2 as _mbx_dh2
++            from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_draft_head2 as _mbx_dh2
 +            _mbx_dh2.install(draft_model, self.vllm_config)
          spec_config = self.vllm_config.speculative_config
          draft_hf_config = (
@@ -6390,7 +6390,7 @@ diff --git a/vllm/v1/worker/gpu/spec_decode/speculator.py b/vllm/v1/worker/gpu/s
  
 +
 +try:  # MBX depth
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_depth as _mbx_depth
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
 +except ImportError:
 +    _mbx_depth = None
 +
@@ -6425,7 +6425,7 @@ diff --git a/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/cudagraph_utils.
  
 +
 +try:  # MBX 23
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_depth as _mbx_depth
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
 +except ImportError:
 +    _mbx_depth = None
  
@@ -6459,7 +6459,7 @@ diff --git a/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/speculator.py b/
  
  
 +try:  # MBX 23
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_depth as _mbx_depth
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
 +except ImportError:
 +    _mbx_depth = None
 +
@@ -6485,7 +6485,7 @@ diff --git a/vllm/v1/worker/gpu/structured_outputs.py b/vllm/v1/worker/gpu/struc
  
 +
 +try:  # MBX depth
-+    from vllm._rtx_spark.recipes.qwen3_8.helpers import mbx_depth as _mbx_depth
++    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
 +except ImportError:
 +    _mbx_depth = None
  

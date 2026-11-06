@@ -14,8 +14,8 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 runpy.run_path(ROOT / "scripts/load_source_package.py")["load"]()
-HELPERS = ROOT / "src/recipes/qwen3_8/helpers"
-PACKAGE = "_rtx_spark.recipes.qwen3_8.helpers"
+HELPERS = ROOT / "src/recipes/qwen3_8_flash_next/helpers"
+PACKAGE = "_rtx_spark.recipes.qwen3_8_flash_next.helpers"
 
 
 class HelperImportsTests(unittest.TestCase):
@@ -109,7 +109,7 @@ class HelperImportsTests(unittest.TestCase):
                         if isinstance(node, ast.FunctionDef) and node.name == "gen_sampling_module")
         namespace = {"JitSpec": object}
         exec(compile(ast.Module(body=[function], type_ignores=[]), str(source), "exec"), namespace)
-        packaged = ModuleType("vllm._rtx_spark.recipes.qwen3_8.helpers.native_sampling")
+        packaged = ModuleType("vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers.native_sampling")
         result = object()
         packaged.gen_native_sampling_spec = lambda: result
         flat = ModuleType("native_sampling")

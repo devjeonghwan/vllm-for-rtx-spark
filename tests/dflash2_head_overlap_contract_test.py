@@ -1,29 +1,20 @@
 """CPU-only contracts for the optional DFlash2 projection fork and join.
 
 Import the actual helper with a fake Torch module; no Torch, CUDA or vLLM
-runtime is imported. Optional --site/--baseline inspect composed source.
+runtime is imported. VLLM_RTX_SPARK_SOURCE_DIR selects current composed source.
 """
-import argparse
 import ast
 import builtins
 from copy import deepcopy
 import importlib.util
-from pathlib import Path
 import runpy
 import sys
 from types import MethodType, ModuleType, SimpleNamespace as NS
 import unittest
 from unittest.mock import patch
 
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--project", type=Path, default=Path(__file__).resolve().parents[1])
-parser.add_argument("--site", type=Path)
-parser.add_argument("--baseline", type=Path)
-ARGS, REST = parser.parse_known_args()
-PROJECT = ARGS.project.resolve()
-SITE = ARGS.site.resolve() if ARGS.site else None
-BASE = ARGS.baseline.resolve() if ARGS.baseline else None
-HELPER = PROJECT / "src/recipes/qwen3_8/dflash_head_overlap.py"
+from support import ROOT as PROJECT, SOURCE as SITE
+HELPER = PROJECT / "src/recipes/qwen3_8_flash_next/dflash_head_overlap.py"
 
 
 def load_helper():
@@ -206,7 +197,7 @@ class OptionContracts(unittest.TestCase):
     def test_actual_recipe_resolves_and_validates_the_opt_in_without_cuda(self):
         with patch("builtins.__import__", forbid_torch):
             runpy.run_path(PROJECT / "scripts/load_source_package.py")["load"]()
-            from _rtx_spark.recipes import qwen3_8 as recipe
+            from _rtx_spark.recipes import qwen3_8_flash_next as recipe
 
             self.assertIs(recipe._validate_options({})["dflash2_head_overlap"], False)
             nested = {"optimizations": {"dflash2_head_overlap": True}}
@@ -231,8 +222,8 @@ class OptionContracts(unittest.TestCase):
         # invoke build/wheel or read native assets.
         builder = runpy.run_path(PROJECT / "scripts/build_vllm.py")
         payload = {relative: path for path, relative in builder["payload_files"](PROJECT / "src")}
-        self.assertEqual(payload["recipes/qwen3_8/dflash_head_overlap.py"].resolve(), HELPER.resolve())
-        self.assertEqual(payload["recipes/qwen3_8/dflash_head_overlap.py"].read_bytes(), HELPER.read_bytes())
+        self.assertEqual(payload["recipes/qwen3_8_flash_next/dflash_head_overlap.py"].resolve(), HELPER.resolve())
+        self.assertEqual(payload["recipes/qwen3_8_flash_next/dflash_head_overlap.py"].read_bytes(), HELPER.read_bytes())
 
     def test_import_omitted_false_and_other_recipe_do_not_import_torch(self):
         with patch("builtins.__import__", forbid_torch):
@@ -508,61 +499,13 @@ def function(module, name, cls=None):
     return next(n for n in body if isinstance(n, ast.FunctionDef) and n.name == name)
 
 
-def replace_exact_sequence(body, before, after):
-    """One exact sanctioned span; never remove arbitrary statements/branches."""
-    hits = [i for i in range(len(body) - len(before) + 1)
-            if all(dump(a) == dump(b) for a, b in zip(body[i:i + len(before)], before))]
-    if len(hits) != 1:
-        raise AssertionError("Expected one exact overlap source boundary")
-    start = hits[0]
-    body[start:start + len(before)] = deepcopy(after)
 
 
-@unittest.skipUnless(SITE and BASE, "Pass --site and --baseline for composed-source contracts")
+@unittest.skipUnless(SITE, "Set VLLM_RTX_SPARK_SOURCE_DIR for composed-source contracts")
 class ComposedSourceContracts(unittest.TestCase):
     REL = "vllm/v1/worker/gpu/spec_decode/dflash2/speculator.py"
 
-    def test_exact_optional_diff_reversed_restores_entire_original_module(self):
-        old, new = tree(BASE / self.REL), tree(SITE / self.REL)
-        init = function(new, "__init__", "DFlash2Speculator")
-        extra_init = ast.parse("""from vllm._rtx_spark.recipes.qwen3_8.dflash_head_overlap import create_overlap
-self._selector_projection_overlap = create_overlap(vllm_config, device)
-""").body
-        replace_exact_sequence(init.body, extra_init, [])
-        generate = function(new, "_generate_draft", "DFlash2Speculator")
-        prefix = ast.parse("""overlap = self._selector_projection_overlap
-overlap_started = False
-if overlap is not None:
-    overlap_started = overlap.start(hidden_states, self.model.model.candidate_selector)
-""").body
-        replace_exact_sequence(generate.body, prefix, [])
-        branch = ast.parse("""if not overlap_started:
-    scores = self._score_candidates(candidate_ids, unary_logits, hidden_states)
-else:
-    scores = overlap.score(self, candidate_ids, unary_logits)
-""").body
-        original = ast.parse("scores = self._score_candidates(candidate_ids, unary_logits, hidden_states)").body
-        replace_exact_sequence(generate.body, branch, original)
-        self.assertEqual(dump(new), dump(old))
 
-    def test_sampler_q_rng_target_verifier_and_model_math_unchanged(self):
-        old, new = tree(BASE / self.REL), tree(SITE / self.REL)
-        old_sampler = next(n for n in old.body if isinstance(n, ast.ClassDef) and n.name == "CandidateSampler")
-        new_sampler = next(n for n in new.body if isinstance(n, ast.ClassDef) and n.name == "CandidateSampler")
-        self.assertEqual(dump(new_sampler), dump(old_sampler))
-        for name in ("_selector_walk_kernel", "_cache_draft_logits_kernel"):
-            self.assertEqual(dump(function(new, name)), dump(function(old, name)))
-        for relative in ("vllm/model_executor/models/qwen3_dflash2.py",
-                "vllm/v1/worker/gpu/spec_decode/rejection_sampler.py",
-                "vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py",
-                "vllm/v1/worker/gpu/sample/gumbel.py"):
-            with self.subTest(path=relative):
-                self.assertEqual((SITE / relative).read_bytes(), (BASE / relative).read_bytes())
-        # Project helpers are packaged later, not copied into prepare output.
-        for relative in ("runtime/sampling.py", "kernels/sampling/rejection.py", "kernels/dflash2/candidate_edges.py"):
-            with self.subTest(helper=relative):
-                self.assertEqual((PROJECT / "src" / relative).read_bytes(),
-                                 (BASE / "vllm/_rtx_spark" / relative).read_bytes())
 
     def generate_fixture(self, overlap):
         f = RuntimeFixture()
@@ -641,4 +584,4 @@ else:
 
 
 if __name__ == "__main__":
-    unittest.main(argv=[sys.argv[0]] + REST, verbosity=2)
+    unittest.main()

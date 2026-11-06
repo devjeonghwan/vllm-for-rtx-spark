@@ -1,0 +1,301 @@
+diff --git a/vllm/v1/worker/gpu/model_runner.py b/vllm/v1/worker/gpu/model_runner.py
+--- a/vllm/v1/worker/gpu/model_runner.py
++++ b/vllm/v1/worker/gpu/model_runner.py
+@@ -191,14 +191,12 @@
+ logger = init_logger(__name__)
+ 
+ 
+-try:  # MBX depth
+-    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
+-except ImportError:
+-    _mbx_depth = None
++from vllm._rtx_spark.runtime.depth import get_depth_helper
+ 
+ class GPUModelRunner(LoRAModelRunnerMixin):
+     def __init__(self, vllm_config: VllmConfig, device: torch.device):
+         self.vllm_config = vllm_config
++        self._mbx_depth = get_depth_helper(vllm_config)
+         self.model_config = vllm_config.model_config
+         self.cache_config = vllm_config.cache_config
+         self.compilation_config = vllm_config.compilation_config
+@@ -527,6 +525,7 @@
+                 device=self.device,
+                 mask_stride=self.decode_query_len,
+                 num_bonus_tokens=self.model_state.num_new_sampled_tokens_per_step,
++                depth_helper=self._mbx_depth,
+             )
+ 
+         if self.is_pooling_model and self.is_last_pp_rank:
+@@ -1741,8 +1740,8 @@
+             self.add_requests(scheduler_output)
+             self.update_requests(scheduler_output)
+             self.block_tables.apply_staged_writes()
+-            if _mbx_depth is not None and _mbx_depth.D.on:  # MBX depth
+-                _mbx_depth.trim(scheduler_output, self)
++            if self._mbx_depth is not None and self._mbx_depth.D.on:  # MBX depth
++                self._mbx_depth.trim(scheduler_output, self)
+             if self.aux_output_connector is not None:
+                 # Register this step before the GPU forward.
+                 self.aux_output_connector.begin_step(
+@@ -2110,8 +2109,8 @@
+         ec_connector_output = self.execute_model_state.ec_connector_output
+         cudagraph_stats = self.execute_model_state.cudagraph_stats
+         num_spec_tokens = self.execute_model_state.num_spec_tokens_to_schedule
+-        if _mbx_depth is not None and _mbx_depth.D.on:  # MBX depth: the policy's draft depth for this step
+-            num_spec_tokens = _mbx_depth.depth(num_spec_tokens)
++        if self._mbx_depth is not None and self._mbx_depth.D.on:  # MBX depth: the policy's draft depth for this step
++            num_spec_tokens = self._mbx_depth.depth(num_spec_tokens)
+         self.execute_model_state = None
+ 
+         if not self.is_last_pp_rank:
+diff --git a/vllm/v1/worker/gpu/cudagraph_utils.py b/vllm/v1/worker/gpu/cudagraph_utils.py
+--- a/vllm/v1/worker/gpu/cudagraph_utils.py
++++ b/vllm/v1/worker/gpu/cudagraph_utils.py
+@@ -62,10 +62,7 @@
+     slot_mappings: dict[str, torch.Tensor]
+ 
+ 
+-try:  # MBX 23
+-    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
+-except ImportError:
+-    _mbx_depth = None
++from vllm._rtx_spark.runtime.depth import get_depth_helper
+ 
+ @dataclass(frozen=True)
+ class BatchExecutionDescriptor:
+@@ -159,6 +156,7 @@
+         ubatch_runner: "UBatchRunner | None" = None,
+     ):
+         self.vllm_config = vllm_config
++        self._mbx_depth = get_depth_helper(vllm_config)
+         self.device = device
+         self.max_num_reqs = vllm_config.scheduler_config.max_num_seqs
+         self.compilation_config = vllm_config.compilation_config
+@@ -300,11 +298,11 @@
+         else:
+             decode_query_lens = [self.decode_query_len]
+             if (
+-                _mbx_depth is not None
++                self._mbx_depth is not None
+                 and self.decode_query_len > 1
+                 and not (speculative_config and speculative_config.method == "dflash")
+             ):  # Fixed-block DFlash: capture its actual query width only.
+-                decode_query_lens = _mbx_depth.full_widths(self.decode_query_len)
++                decode_query_lens = self._mbx_depth.full_widths(self.decode_query_len)
+ 
+         capture_varlen_decode = (
+             separate_decode_routine and bool(decode_mode) and self.varlen_decode
+diff --git a/vllm/v1/worker/gpu/structured_outputs.py b/vllm/v1/worker/gpu/structured_outputs.py
+--- a/vllm/v1/worker/gpu/structured_outputs.py
++++ b/vllm/v1/worker/gpu/structured_outputs.py
+@@ -9,10 +9,7 @@
+ from vllm.v1.worker.gpu.input_batch import InputBatch
+ 
+ 
+-try:  # MBX depth
+-    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
+-except ImportError:
+-    _mbx_depth = None
++
+ 
+ def _build_grammar_mapping(
+     req_ids: list[str],
+@@ -85,7 +82,9 @@
+         device: torch.device,
+         mask_stride: int,
+         num_bonus_tokens: int,
++        depth_helper=None,
+     ):
++        self._mbx_depth = depth_helper
+         self.logits_indices = torch.zeros(
+             max_num_logits, dtype=torch.int32, device=device
+         )
+@@ -106,8 +105,8 @@
+     ) -> None:
+         if not grammar_req_ids:
+             return
+-        if _mbx_depth is not None and _mbx_depth.D.on:  # MBX depth: rows of the drafts the trim removed
+-            grammar_bitmask = _mbx_depth.trim_bitmask(grammar_req_ids, grammar_bitmask)
++        if self._mbx_depth is not None and self._mbx_depth.D.on:  # MBX depth: rows of the drafts the trim removed
++            grammar_bitmask = self._mbx_depth.trim_bitmask(grammar_req_ids, grammar_bitmask)
+ 
+         # Asynchronously copy the bitmask to GPU.
+         with torch.cuda.stream(self.copy_stream):
+diff --git a/vllm/v1/worker/gpu/spec_decode/speculator.py b/vllm/v1/worker/gpu/spec_decode/speculator.py
+--- a/vllm/v1/worker/gpu/spec_decode/speculator.py
++++ b/vllm/v1/worker/gpu/spec_decode/speculator.py
+@@ -58,10 +58,7 @@
+ 
+ 
+ 
+-try:  # MBX depth
+-    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
+-except ImportError:
+-    _mbx_depth = None
++from vllm._rtx_spark.runtime.depth import get_depth_helper
+ 
+ 
+ class BaseSpeculator(ABC):
+@@ -112,6 +109,7 @@
+ class DraftModelSpeculator(BaseSpeculator):
+     def __init__(self, vllm_config: VllmConfig, device: torch.device):
+         self.vllm_config = vllm_config
++        self._mbx_depth = get_depth_helper(vllm_config)
+         self.device = device
+ 
+         assert vllm_config.speculative_config is not None
+@@ -234,8 +232,8 @@
+ 
+         self.model = self.load_draft_model(target_model, target_attn_layer_names)
+         self._validate_local_argmax_reduction()
+-        if _mbx_depth is not None and self.method != "dflash":  # Fixed-block DFlash
+-            _mbx_depth.init(self)
++        if self._mbx_depth is not None and self.method != "dflash":  # Fixed-block DFlash
++            self._mbx_depth.init(self)
+ 
+         all_attn_layers = get_layers_from_vllm_config(
+             self.vllm_config,
+@@ -506,8 +504,8 @@
+         Must run before the next `propose`, which overwrites the per-slot
+         features the verdict grades.
+         """
+-        if _mbx_depth is not None and _mbx_depth.D.on:  # MBX depth
+-            _mbx_depth.observe(idx_mapping, num_sampled, num_rejected)
++        if self._mbx_depth is not None and self._mbx_depth.D.on:  # MBX depth
++            self._mbx_depth.observe(idx_mapping, num_sampled, num_rejected)
+         if self.acceptance_estimator is not None:
+             self.acceptance_estimator.step(idx_mapping, num_sampled, num_rejected)
+ 
+diff --git a/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/speculator.py b/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/speculator.py
+--- a/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/speculator.py
++++ b/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/speculator.py
+@@ -23,10 +23,7 @@
+ logger = init_logger(__name__)
+ 
+ 
+-try:  # MBX 23
+-    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
+-except ImportError:
+-    _mbx_depth = None
++
+ 
+ class TargetDependentARSpeculator(DraftModelSpeculator):
+     """Autoregressive (AR) drafting that depends on target model state.
+@@ -163,7 +160,7 @@
+             progress_bar_desc="Capturing decode CUDA graphs",
+             specialize_spec_tokens=self.supports_decode_metadata_update
+             and (self.speculative_config.uses_dynamic_speculative_decoding()
+-                 or (_mbx_depth is not None and _mbx_depth.D.on)),  # MBX 23
++                 or (self._mbx_depth is not None and self._mbx_depth.D.on)),  # MBX 23
+         )
+         self.on_multi_step_decode_end(self.max_num_reqs)
+ 
+diff --git a/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/cudagraph_utils.py b/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/cudagraph_utils.py
+--- a/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/cudagraph_utils.py
++++ b/vllm/v1/worker/gpu/spec_decode/target_dependent_ar/cudagraph_utils.py
+@@ -19,10 +19,7 @@
+ from vllm.v1.worker.utils import AttentionGroup
+ 
+ 
+-try:  # MBX 23
+-    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers import mbx_depth as _mbx_depth
+-except ImportError:
+-    _mbx_depth = None
++
+ 
+ @dataclass(frozen=True)
+ class SpeculatorBatchDescriptor(BatchExecutionDescriptor):
+@@ -62,8 +59,8 @@
+         progress_bar_desc: str = "Capturing CUDA graphs",
+         specialize_spec_tokens: bool = False,
+     ) -> None:
+-        _mbx_ks = (_mbx_depth.full_depths(self.vllm_config.num_speculative_tokens)  # MBX 23
+-                   if _mbx_depth is not None and specialize_spec_tokens else None)
++        _mbx_ks = (self._mbx_depth.full_depths(self.vllm_config.num_speculative_tokens)  # MBX 23
++                   if self._mbx_depth is not None and specialize_spec_tokens else None)
+         if _mbx_ks and len(_mbx_ks) > 1:
+             self._capture_descs = {
+                 mode: [
+diff --git a/vllm/utils/b12x.py b/vllm/utils/b12x.py
+--- a/vllm/utils/b12x.py
++++ b/vllm/utils/b12x.py
+@@ -51,6 +51,27 @@
+ def has_b12x() -> bool:
+     """Return whether the B12X package is installed."""
+     return _HAS_B12X
++
++
++def check_b12x_backend_support(backend: ModuleType | None, *, name: str) -> tuple[bool, str | None]:
++    """Safely resolve optional lazy support APIs during capability selection.
++
++    b12x exports lazy attributes: importing the package can succeed while reading
++    is_supported imports CuTe/CUTLASS. Guard that availability boundary as well.
++    Runtime execution and non-import failures still propagate normally.
++    """
++    if backend is None:
++        return False, f"B12X {name} backend is not installed"
++    try:
++        supported = getattr(backend, "is_supported", None)
++        if not callable(supported):
++            return False, f"B12X {name} has no support capability API"
++        if not supported():
++            return False, f"B12X {name} reports unsupported device/dependencies"
++    except ImportError as error:
++        dependency = getattr(error, "name", None) or str(error)
++        return False, f"B12X {name} optional dependency unavailable: {dependency}"
++    return True, None
+ 
+ 
+ def _get_submodule(module_name: str) -> ModuleType | None:
+diff --git a/vllm/model_executor/kernels/linear/scaled_mm/b12x.py b/vllm/model_executor/kernels/linear/scaled_mm/b12x.py
+--- a/vllm/model_executor/kernels/linear/scaled_mm/b12x.py
++++ b/vllm/model_executor/kernels/linear/scaled_mm/b12x.py
+@@ -11,7 +11,11 @@
+ from vllm.model_executor.layers.quantization.utils.quant_utils import GroupShape
+ from vllm.model_executor.utils import replace_parameter
+ from vllm.platforms import current_platform
+-from vllm.utils.b12x import B12xWarmupUnit, reuse_packed_weight_storage
++from vllm.utils.b12x import (
++    B12xWarmupUnit,
++    check_b12x_backend_support,
++    reuse_packed_weight_storage,
++)
+ from vllm.utils.b12x import (
+     get_b12x_blockscaled as _import_b12x_blockscaled,
+ )
+@@ -62,9 +66,7 @@
+         blockscaled = _import_b12x_blockscaled()
+         if blockscaled is None:
+             return False, "Install the B12X backend with `pip install vllm[b12x]`"
+-        if not blockscaled.is_supported():
+-            return False, "B12X regular block-FP8 GEMM is not supported"
+-        return True, None
++        return check_b12x_backend_support(blockscaled, name="regular block-FP8 GEMM")
+ 
+     @classmethod
+     def can_implement(
+@@ -212,9 +214,7 @@
+         tensor_fp8 = _import_b12x_tensor_fp8()
+         if tensor_fp8 is None:
+             return False, "Install the B12X backend with `pip install vllm[b12x]`"
+-        if not tensor_fp8.is_supported():
+-            return False, "b12x.gemm.tensor_fp8_linear is not supported"
+-        return True, None
++        return check_b12x_backend_support(tensor_fp8, name="tensor-FP8 linear")
+ 
+     @classmethod
+     def can_implement(
+diff --git a/vllm/logger.py b/vllm/logger.py
+--- a/vllm/logger.py
++++ b/vllm/logger.py
+@@ -274,7 +274,9 @@
+             formatter["class"] = "vllm.logging_utils.NewLineFormatter"
+ 
+     if logging_config:
+-        dictConfig(logging_config)
++        from vllm._rtx_spark.runtime.logging import with_file_handler_encoding
++
++        dictConfig(with_file_handler_encoding(logging_config))
+ 
+     # Transformers uses httpx to access the Hugging Face Hub. httpx is quite verbose,
+     # so we set its logging level to WARNING when vLLM's logging level is INFO.

@@ -73,6 +73,18 @@ class OptimizationTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "optimizations must be an object"):
             resolve_options({"optimizations": []}, declarations)
 
+    def test_mutable_defaults_are_independent_between_resolutions(self):
+        default = {"layers": [1, 2]}
+        option = Option("settings", dict, default)
+        first = resolve_options({}, (option,))
+        first["settings"]["layers"].append(3)
+        first["settings"]["new"] = True
+        self.assertEqual(resolve_options({}, (option,))["settings"], {"layers": [1, 2]})
+        self.assertEqual(default, {"layers": [1, 2]})
+        supplied = {"layers": [4]}
+        self.assertIs(resolve_options({"settings": supplied}, (option,))["settings"], supplied)
+
+
 
 if __name__ == "__main__":
     unittest.main()

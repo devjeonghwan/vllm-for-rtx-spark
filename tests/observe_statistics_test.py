@@ -79,7 +79,7 @@ def check_statistics(source):
 class ObserveStatisticsTest(unittest.TestCase):
     @unittest.skipUnless(importlib.util.find_spec("torch"), "Torch is not installed")
     def test_integer_statistics_in_isolated_cpu_process(self):
-        source = Path(__file__).resolve().parents[1] / "src/recipes/qwen3_8/helpers/mbx_depth.py"
+        source = Path(__file__).resolve().parents[1] / "src/recipes/qwen3_8_flash_next/helpers/mbx_depth.py"
         environment = dict(os.environ, CUDA_VISIBLE_DEVICES="")
         result = subprocess.run([sys.executable, "-I", str(Path(__file__).resolve()),
                                  "--worker", str(source)], env=environment,

@@ -1,19 +1,13 @@
 """Source-extracted resolved Mamba checkpoint-unit regressions, stdlib only.
 
-Run against a freshly prepared source with --site. No Torch/model/GPU import.
+Uses the explicitly prepared source in VLLM_RTX_SPARK_SOURCE_DIR. No Torch/model/GPU import.
 """
-import argparse
 import ast
 import copy
-from pathlib import Path
-import sys
 from types import SimpleNamespace as NS
 import unittest
 
-parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument("--site", type=Path)
-ARGS, REST = parser.parse_known_args()
-SITE = ARGS.site.resolve() if ARGS.site else None
+from support import SOURCE as SITE
 REL = "vllm/v1/core/sched/scheduler.py"
 
 
@@ -56,7 +50,18 @@ def chunks(fn, value, prompt, start=0):
     raise AssertionError("Source splitter did not terminate")
 
 
-@unittest.skipUnless(SITE, "Pass --site for actual source-extracted regression")
+def prefill_state(mamba=6912,minimum=1728,unit=32):
+    return NS(cache_config=NS(block_size=minimum,mamba_block_size=mamba),block_size=mamba,mamba_state_block_size=mamba,
+        hash_block_size=unit,mamba_partial_cache_hit=True,mamba_has_prefill_checkpoint_blocks=True,
+        mamba_prefill_checkpoint_alignment=64 if unit in (32,64) else 192,
+        use_eagle_block_drop=False,mamba_shared_prefix_checkpoint=False,
+        max_num_scheduled_tokens=8192,scheduler_config=NS(long_prefill_token_threshold=0))
+
+def prefill_request(prompt,start=0):
+    return NS(num_computed_tokens=start,num_prompt_tokens=prompt,num_tokens=prompt,shared_prefix_boundary=0)
+
+
+@unittest.skipUnless(SITE, "Set VLLM_RTX_SPARK_SOURCE_DIR for actual source-extracted regression")
 class ResolvedStateUnit(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -64,6 +69,7 @@ class ResolvedStateUnit(unittest.TestCase):
             ("get_mamba_prefill_checkpoint_position", "is_mamba_prefill_checkpoint_valid")]
         split = node(SITE / REL, "_mamba_block_aligned_split", "Scheduler")
         scope = compile_nodes(helpers + [split])
+        cls.scope = scope
         cls.split = staticmethod(scope[split.name])
         # Counterfactual reintroduces only the stale owner, preserving the exact
         # scheduling body and all boundary decisions for before/after witness.
@@ -132,6 +138,35 @@ class ResolvedStateUnit(unittest.TestCase):
         state = self.state([3456, 6912], align=False); self.derive(state)
         self.assertIsNone(state.mamba_state_block_size)
 
+    def test_native_K7_mismatch_requires_the_8704_boundary(self):
+        scheduler=prefill_state();req=prefill_request(8721,6912)
+        # At the actual Mamba block size, the reserved checkpoint column would
+        # equal the running source column, so the export is not valid here.
+        valid=self.scope["is_mamba_prefill_checkpoint_valid"]
+        self.assertFalse(valid(6912,8721,8704,32,6912,64))
+        self.assertTrue(valid(6912,8721,8704,32,1728,64))
+        self.assertEqual(self.split(scheduler,req,8721-6912),8704-6912)
+        self.assertEqual(chunks(self.split,scheduler,8721),[6912,8704,8721])
+
+    def test_minimum_other_group_block_cannot_change_mamba_chunks(self):
+        for mamba in (3456,6912):
+            for unit in (32,64,96):
+                for prompt in (1098,8721,17442):
+                    reference=chunks(self.split,prefill_state(mamba,mamba,unit),prompt)
+                    for minimum in (16,64,864,1728,3456):
+                        with self.subTest(mamba=mamba,unit=unit,prompt=prompt,minimum=minimum):
+                            self.assertEqual(chunks(self.split,prefill_state(mamba,minimum,unit),prompt),reference)
+                    boundary=(prompt-1)//unit*unit
+                    # A reusable checkpoint is either a real chunk endpoint,
+                    # or can be exported from its actual source/destination
+                    # Mamba columns under the production helper's predicate.
+                    start=0;covered=False
+                    for end in reference:
+                        if boundary==end or self.scope["is_mamba_prefill_checkpoint_valid"](
+                                start,end,boundary,unit,mamba,64 if unit in (32,64) else 192):covered=True
+                        start=end
+                    self.assertTrue(covered,(mamba,unit,prompt,reference,boundary))
+
 
 if __name__ == "__main__":
-    unittest.main(argv=[sys.argv[0]] + REST, verbosity=2)
+    unittest.main()

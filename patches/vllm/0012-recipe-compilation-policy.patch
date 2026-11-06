@@ -1,0 +1,29 @@
+diff --git a/vllm/config/vllm.py b/vllm/config/vllm.py
+--- a/vllm/config/vllm.py
++++ b/vllm/config/vllm.py
+@@ -1421,4 +1421,9 @@
+     def __post_init__(self):
+         """Verify configs are valid & consistent with each other."""
++        from vllm._rtx_spark.optimizations.compilation import (
++            prepare_compilation_policy,
++        )
++
++        prepare_compilation_policy(self)
+         # To give each torch profile run a unique instance name.
+         self.instance_id = f"{time.time_ns()}"
+diff --git a/vllm/v1/worker/worker_base.py b/vllm/v1/worker/worker_base.py
+--- a/vllm/v1/worker/worker_base.py
++++ b/vllm/v1/worker/worker_base.py
+@@ -270,6 +270,12 @@
+         )
+         self.vllm_config = vllm_config
+ 
++        from vllm._rtx_spark.optimizations.compilation import (
++            prepare_compilation_policy,
++        )
++
++        prepare_compilation_policy(vllm_config)
++
+         vllm_config.enable_trace_function_call_for_thread()
+ 
+         from vllm.plugins import load_general_plugins

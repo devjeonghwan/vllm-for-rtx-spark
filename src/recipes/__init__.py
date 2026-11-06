@@ -20,7 +20,8 @@ _MODELS = {}
 
 def register_builtin_models():
     """Declare bundled recipes without importing their model implementations."""
-    _MODELS.setdefault("qwen3.8-flash-next", __package__ + ".qwen3_8")
+    _MODELS.setdefault("qwen3.8-flash-next", __package__ + ".qwen3_8_flash_next")
+    _MODELS.setdefault("gemma4-12b-fp8", __package__ + ".gemma4_12b_fp8")
 
 
 def register_model(name, prepare, validate, *, matches=None, options=(),

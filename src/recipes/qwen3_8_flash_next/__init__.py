@@ -9,6 +9,7 @@ import tempfile
 
 from ...optimizations import Option, resolve_options, validate_options
 from ...optimizations.backends import CUTE_MODE, CSF_BACKEND
+from ...optimizations.compilation import BREAKABLE_CUDAGRAPH
 
 ARCHITECTURES = ("Qwen4ExpForConditionalGeneration",)
 # vLLM already supplies this architecture; do not replace its model class.
@@ -42,13 +43,13 @@ def _configure_draft_min_depth(options):
         return
     from ...runtime import cache_root, resources_root
 
-    policy = json.loads((resources_root() / "recipes/qwen3_8/mtp-depth.json").read_text(encoding="utf-8"))
+    policy = json.loads((resources_root() / "recipes/qwen3_8_flash_next/mtp-depth.json").read_text(encoding="utf-8"))
     policy["min"] = options["draft_min_depth"]
     payload = (json.dumps(policy, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
     digest = hashlib.sha256(payload).hexdigest()
     directory = (cache_root() / "recipe-configs").resolve()
     directory.mkdir(parents=True, exist_ok=True)
-    destination = directory / ("qwen3_8-mtp-" + digest + ".json")
+    destination = directory / ("qwen3_8_flash_next-mtp-" + digest + ".json")
 
     def verify():
         if destination.read_bytes() != payload:
@@ -96,7 +97,7 @@ def _apply_draft_head2(arguments, enabled):
     from ...runtime import resources_root
 
     if enabled:
-        os.environ["MBX_DRAFT_HEAD2"] = str(resources_root() / "recipes" / "qwen3_8" / "qwen3.8-head2.basis.pt")
+        os.environ["MBX_DRAFT_HEAD2"] = str(resources_root() / "recipes" / "qwen3_8_flash_next" / "qwen3.8-head2.basis.pt")
         os.environ["MBX_DRAFT_HEAD2_K"] = "2048"
         os.environ["MBX_DRAFT_HEAD2_SCORER"] = "fp8"
     else:
@@ -104,6 +105,7 @@ def _apply_draft_head2(arguments, enabled):
 
 
 OPTIONS = (
+    BREAKABLE_CUDAGRAPH,
     # Omission preserves a caller's external policy; the bundled policy is min3.
     Option("draft_min_depth", int, apply=_apply_minimum, validate=_validate_minimum),
     CUTE_MODE,
@@ -133,7 +135,7 @@ def _prepare_environment():
         "MBX_PLE_LIB": root / "native/mbx_ple_nvme.dll",
         "MBX_PLE_ASYNC_LIB": root / "native/mbx_ple_async.dll",
         "MBX_DEPTH_LIB": root / "native/mbx_mtp.dll",
-        "MBX_DEPTH_CFG": root / "recipes/qwen3_8/mtp-depth.json",
+        "MBX_DEPTH_CFG": root / "recipes/qwen3_8_flash_next/mtp-depth.json",
         "MBX_DEPTH_STATS": cache_root() / "depth-stats.json",
         "MBX_DEPTH_STEPTIME": cache_root() / "depth-steptime.json",
         "MBX_PLE_NVME_DIR": cache_root() / "ple-nvme",

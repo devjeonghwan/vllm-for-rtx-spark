@@ -126,7 +126,7 @@ def storage_bytes(module):
 
 def make(target_head, *, chunk_rows=8192):
     import torch
-    from vllm._rtx_spark.recipes.qwen3_8.helpers.mbx_draft_head2 import _quant_nvfp4
+    from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers.mbx_draft_head2 import _quant_nvfp4
     from vllm.model_executor.layers.quantization.utils.marlin_utils_fp4 import prepare_fp4_layer_for_marlin
     weight = target_head.weight
     if not weight.is_cuda or weight.dtype != torch.bfloat16 or weight.ndim != 2:

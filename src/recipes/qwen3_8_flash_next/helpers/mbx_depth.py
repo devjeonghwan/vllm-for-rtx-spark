@@ -8,7 +8,7 @@ from vllm.logger import init_logger
 
 log = init_logger('vllm.mbx_depth')  # 7bb0..7cc4
 from ....runtime import resources_root, cache_root
-CFG = os.environ.get('MBX_DEPTH_CFG', str(resources_root() / 'recipes/qwen3_8/mtp-depth.json'))  # 6b98/7d98
+CFG = os.environ.get('MBX_DEPTH_CFG', str(resources_root() / 'recipes/qwen3_8_flash_next/mtp-depth.json'))  # 6b98/7d98
 STATS = os.environ.get('MBX_DEPTH_STATS', str(cache_root() / 'depth-stats.json'))  # 6bb4/7e74
 LIB = os.environ['MBX_DEPTH_LIB']
 STEPTIME = os.environ.get('MBX_DEPTH_STEPTIME', str(cache_root() / 'depth-steptime.json'))

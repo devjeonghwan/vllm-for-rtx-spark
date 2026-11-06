@@ -4,7 +4,7 @@
          self.candidate_sampler = CandidateSampler(
              self.max_num_reqs, self.num_speculative_steps, self.top_k, device
          )
-+        from vllm._rtx_spark.recipes.qwen3_8.dflash_head_overlap import create_overlap
++        from vllm._rtx_spark.recipes.qwen3_8_flash_next.dflash_head_overlap import create_overlap
 +
 +        self._selector_projection_overlap = create_overlap(vllm_config, device)
  

@@ -131,7 +131,7 @@ class WheelTests(unittest.TestCase):
 
     def test_rejects_missing_private_package_source_or_vendor(self):
         for member in ("runtime/__init__.py", "kernels/__init__.py", "kernels/cute/__init__.py",
-                       "kernels/csf/__init__.py", "recipes/__init__.py", "recipes/qwen3_8/__init__.py",
+                       "kernels/csf/__init__.py", "recipes/__init__.py", "recipes/qwen3_8_flash_next/__init__.py",
                        "vendor/openai_harmony/openai_harmony.pyd",
                        "kernels/cute/device/b12x/policy/_profiles/data/nvidia.gb10.48sm.json.gz"):
             with self.subTest(member=member):

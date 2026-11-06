@@ -136,7 +136,7 @@ class VersionTests(unittest.TestCase):
 
     def test_runtime_inputs_live_in_the_regular_private_source_package(self):
         manifest = self.current["load_manifest"]()
-        for relative in ("runtime/vllm/adapter.py", "recipes/qwen3_8/helpers/mbx_loader.py"):
+        for relative in ("runtime/vllm/adapter.py", "recipes/qwen3_8_flash_next/helpers/mbx_loader.py"):
             with self.subTest(relative=relative):
                 self.assertTrue((ROOT / "src" / relative).is_file())
         self.assertNotIn("resolve_version_input", self.current)

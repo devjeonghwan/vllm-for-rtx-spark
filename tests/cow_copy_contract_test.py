@@ -1,19 +1,15 @@
 """Source-extracted CPU copy contracts; no Torch/native/model import.
 
-Use --site after source composition. Fake byte rows test host routing/snapshot
+Set VLLM_RTX_SPARK_SOURCE_DIR after source composition. Fake byte rows test host routing/snapshot
 semantics only; native nondefault-stream byte tests are separate evidence.
 """
-import argparse
 import ast
 import copy
 from dataclasses import dataclass
-from pathlib import Path
 from types import SimpleNamespace as NS
 import unittest
 
-parser=argparse.ArgumentParser(add_help=False)
-parser.add_argument('--site',type=Path);parser.add_argument('--baseline',type=Path)
-ARGS,REST=parser.parse_known_args()
+from support import SOURCE as SITE
 REL='vllm/v1/worker/utils.py'
 
 
@@ -77,20 +73,16 @@ def source_function(path,native_available=True):
     return scope['copy_kv_cache_blocks_inplace'],counts
 
 
-@unittest.skipUnless(ARGS.site,'Pass --site for actual source-extracted host contracts')
+@unittest.skipUnless(SITE,'Set VLLM_RTX_SPARK_SOURCE_DIR for actual source-extracted host contracts')
 class CopyHostContracts(unittest.TestCase):
     def compare(self,pairs,*,native=True,nonraw=False,aliases=False,device=Device()):
-        candidate,counts=source_function(ARGS.site/REL,native)
+        candidate,counts=source_function(SITE/REL,native)
         actual=Storage(nonraw);expected=Storage(nonraw)
         def views(s):
             first=Cache(s,device=device)
             return [first,Cache(s,1,device),first]if aliases else[first]
-        if ARGS.baseline:
-            reference,_=source_function(ARGS.baseline/REL,native)
-            reference(views(expected),8,pairs)
-        else:
-            values=[expected.rows[a].copy()for a,b in pairs]
-            for (_,b),value in zip(pairs,values):expected.rows[b]=value
+        values=[expected.rows[a].copy()for a,b in pairs]
+        for (_,b),value in zip(pairs,values):expected.rows[b]=value
         candidate(views(actual),8,pairs)
         self.assertEqual(actual.rows,expected.rows)
         return counts
@@ -122,4 +114,4 @@ class CopyHostContracts(unittest.TestCase):
         self.assertEqual(self.compare([]),{'native':0,'H2D':0})
 
 
-if __name__=='__main__':unittest.main(argv=[__file__,*REST])
+if __name__=='__main__':unittest.main()

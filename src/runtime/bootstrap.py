@@ -29,6 +29,9 @@ def initialize():
     global _initialized
     if sys.platform != "win32":
         return
+    from .logging import configure_standard_streams
+
+    configure_standard_streams()
     publish_dependency_paths()
     from ..kernels.providers import initialize_providers
 
@@ -41,7 +44,6 @@ def initialize():
     defaults = {
         "VLLM_WORKER_MULTIPROC_METHOD": "spawn",
         "VLLM_USE_V2_MODEL_RUNNER": "1",
-        "VLLM_USE_BREAKABLE_CUDAGRAPH": "1",
         "USE_LIBUV": "0",
         "VLLM_USE_RUST_FRONTEND": "0",
         "TORCH_CUDA_ARCH_LIST": "12.1a",

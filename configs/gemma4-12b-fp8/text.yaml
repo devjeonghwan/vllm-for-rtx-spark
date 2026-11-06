@@ -1,0 +1,32 @@
+# Gemma 4 12B FP8 Dynamic: text-only decoding.
+# Estimated VRAM: ~25 GB total (8 GB BF16 KV cache).
+host: 127.0.0.1
+port: 8000
+api-server-count: 1
+served-model-name: RedHatAI/gemma-4-12B-it-FP8-Dynamic
+revision: 2083adceb2a3df0465e6021e08a7196d21dbbb44
+tokenizer-revision: 2083adceb2a3df0465e6021e08a7196d21dbbb44
+load-format: safetensors
+language-model-only: true
+distributed-executor-backend: mp
+dtype: bfloat16
+tensor-parallel-size: 1
+pipeline-parallel-size: 1
+gpu-memory-utilization: 0.80
+kv-cache-dtype: bfloat16
+kv-cache-memory-bytes: 8000000000
+max-model-len: 32768
+max-num-seqs: 16
+max-num-batched-tokens: 8192
+enable-prefix-caching: false
+async-scheduling: true
+compilation-config:
+  mode: 0
+  cudagraph_mode: FULL_AND_PIECEWISE
+  cudagraph_capture_sizes: [1, 2, 4, 8, 16]
+seed: 1234
+additional-config:
+  rtx_spark:
+    model: gemma4-12b-fp8
+    breakable_cudagraph: true
+    fused_fp8: false
