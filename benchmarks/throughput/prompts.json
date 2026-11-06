@@ -1,0 +1,149 @@
+{
+  "prompt_source": "https://github.com/Alssndr0/qwen38-flash-next-recipe/blob/e0f4d37e82e68770670bc588ed1ab2673acdd3e7/scripts/fixedbench.py",
+  "workloads": {
+    "mixed": {
+      "messages": [
+        [
+          {
+            "role": "user",
+            "content": "Write a Python module that parses ISO-8601 durations into a dataclass, with validation, then explain how it works."
+          }
+        ],
+        [
+          {
+            "role": "user",
+            "content": "Implement an LRU cache with per-entry TTL in Go, safe for concurrent use, then explain the locking strategy."
+          }
+        ],
+        [
+          {
+            "role": "user",
+            "content": "Write a Rust function that merges overlapping time intervals in place, with unit tests, then explain it."
+          }
+        ],
+        [
+          {
+            "role": "user",
+            "content": "Write a short story about a lighthouse keeper who discovers that the light is being watched from the sea."
+          }
+        ],
+        [
+          {
+            "role": "user",
+            "content": "Explain how public-key cryptography works, with a worked RSA example using small numbers."
+          }
+        ],
+        [
+          {
+            "role": "user",
+            "content": "Write a TypeScript implementation of a typed event bus with wildcard topics and once-listeners, with JSDoc."
+          }
+        ],
+        [
+          {
+            "role": "user",
+            "content": "Describe the causes and consequences of the 2008 financial crisis in a structured essay."
+          }
+        ],
+        [
+          {
+            "role": "user",
+            "content": "Write a SQL schema for a library system and five example queries with explanations."
+          }
+        ]
+      ]
+    },
+    "code": {
+      "messages": [
+        [
+          {
+            "role": "user",
+            "content": "Write a TypeScript implementation of a typed event bus with wildcard topics and once-listeners, with JSDoc."
+          }
+        ]
+      ]
+    },
+    "prose": {
+      "messages": [
+        [
+          {
+            "role": "user",
+            "content": "Write a complete, approximately 7000-word literary short story about a lighthouse keeper who discovers that the light is being watched from the sea. Develop distinct characters, a coherent mystery, rising tension, and a resolved ending. Write the story itself, with no outline, preface, or commentary."
+          }
+        ]
+      ]
+    },
+    "structured": {
+      "messages": [
+        [
+          {
+            "role": "user",
+            "content": "Create a detailed catalog of 3 fictional products for an independent outdoor equipment shop. Give each a unique integer id, a descriptive name, a full paragraph description, exactly three tags, a price, and whether it is in stock. Return only the JSON object required by the provided schema."
+          }
+        ]
+      ],
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "outdoor_catalog",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "title",
+              "entries"
+            ],
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "entries": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "name",
+                    "description",
+                    "tags",
+                    "price",
+                    "in_stock"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "price": {
+                      "type": "number"
+                    },
+                    "in_stock": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
