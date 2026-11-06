@@ -58,9 +58,9 @@ The 108 GB profiles may use shared memory. [DFlash2](configs/qwen3.8-flash-next/
 .\.venv\Scripts\vllm.exe serve C:\models\gemma-4-12B-it-FP8-Dynamic --config configs\gemma4-12b-fp8\text.yaml
 ```
 
-| Profile | Estimated GPU use | KV budget | KV precision |
-|---|---:|---:|---|
-| [Text](configs/gemma4-12b-fp8/text.yaml) | 25 GB | 8 GB | BF16 |
+| Estimated GPU use | KV budget | Profile |
+|---|---:|---|
+| 25 GB | 8 GB | [Default](configs/gemma4-12b-fp8/text.yaml) |
 
 ## Benchmarks
 
