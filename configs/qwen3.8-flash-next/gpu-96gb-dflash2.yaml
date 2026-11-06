@@ -1,6 +1,5 @@
-# Experimental DFlash2: RTX Spark N1X GPU 96 GB / CPU 32 GB, NVMe PLE.
-# Target KV: FP8, 18 GB budget. Draft KV: BF16; trained RoPE/context retained.
-# Uses a separate draft-only NVFP4 full-vocabulary head.
+# Qwen3.8-Flash-Next FP4: experimental DFlash2 with BF16 draft KV.
+# Estimated VRAM: ~96 GB total (18 GB target KV cache).
 host: 127.0.0.1
 port: 8000
 api-server-count: 1

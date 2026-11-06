@@ -1,123 +1,98 @@
 # vLLM for RTX Spark
 
-vLLM builds and model recipes for NVIDIA RTX Spark on Windows ARM64.
+Optimized vLLM inference for NVIDIA RTX Spark N1X on Windows ARM64.
 
-## Supported Matrix
+## Supported models
 
-| Hardware | [Qwen3.8-Flash-Next-FP4-Local](https://huggingface.co/nvidia/Qwen3.8-Flash-Next-FP4-Local) |
-|---|---|
-| RTX Spark N1X 128 GB | Supported |
-
-## Benchmarks
-
-### 1. DGX Spark ([MyLLMBox v5.3.1](https://github.com/myllmbox/qwen38-flash-next-recipe/tree/v5.3.1)) vs RTX Spark (This project)
-
-| Workload | RTX Spark, 1 request | DGX Spark, 1 request | RTX Spark, 16 requests | DGX Spark, 16 requests |
-|---|---:|---:|---:|---:|
-| Mixed | 63.70 | 57.58 | 224.98 | 187.78 |
-| Code | 60.48 | 57.23 | 285.85 | 268.15 |
-| JSON schema | 46.50 | 44.90 | 238.20 | 222.28 |
-| Prose | 41.43 | 44.53 | 213.08 | 212.20 |
-
-### 2. RTX Spark: NVIDIA recipe (llama.cpp) vs This project
-
-NVIDIA figures are from its [published Windows recipe](https://nvidia.github.io/local-ai-inference-recipes/hardware/rtx-spark/index.html?model=qwen%2Fqwen3.8-flash-next&os=windows&backend=llama-cpp&memory=78&precision=iq4-xs&variant=vision-mtp&memoryConfig=128). Our measurements use the RTX Spark N1X described above.
-
-| Benchmark | NVIDIA llama.cpp, IQ4_XS | This project, NVFP4 |
-|---|---:|---:|
-| AA-AgentPerf-local completion, full replay | 1,118.16 s | **734.51 s** |
-| SPEED-Bench coding decode, all 80 conversations | 35.37 tok/s | **70.44 tok/s** |
+| Model | Precision | Default recipe |
+|---|---|---|
+| [Qwen3.8-Flash-Next-FP4-Local](https://huggingface.co/nvidia/Qwen3.8-Flash-Next-FP4-Local) | NVFP4 / MXFP8 | [FAST MTP, 96 GB](configs/qwen3.8-flash-next/gpu-96gb-draft-kv-bf16.yaml) |
+| [Gemma 4 12B IT FP8 Dynamic](https://huggingface.co/RedHatAI/gemma-4-12B-it-FP8-Dynamic) | FP8, text only | [8 GB BF16 KV](configs/gemma4-12b-fp8/text.yaml) |
 
 ## Install
 
-Requirements: ARM64 Python 3.13, an NVIDIA driver compatible with CUDA 13.4, and the model checkpoint. Allow several GB for dependencies and at least 32 GB of free NVMe space for the PLE cache.
+Requirements: ARM64 Python 3.13 and an NVIDIA driver compatible with CUDA 13.4.
 
-On the **RTX Spark N1X 128 GB**, set dedicated GPU memory to **96 GB**. This leaves about **32 GB for Windows**.
+- Set GPU memory to 96 GB, leaving 32 GB for Windows.
+- Set the Windows paging file to 98,304 MB initial / 131,072 MB maximum ([details](https://forums.developer.nvidia.com/t/rtx-spark-on-windows-cuda-allocations-consume-system-commit-even-with-96-gib-dedicated-gpu-memory/386453)).
+- Qwen3.8-Flash-Next-FP4-Local needs at least 32 GB of free NVMe space for its PLE cache.
 
-Set a custom Windows paging file:
-
-- **Initial size (MB): 98304**
-- **Maximum size (MB): 131072**
-
-Open **Advanced system settings → Performance → Settings → Advanced → Virtual memory → Change**. Turn off **Automatically manage paging file size for all drives**. Select your NVMe drive and choose **Custom size**. Enter the values above, click **Set**, then **OK**, and restart Windows.
-
-CUDA allocations also use Windows system commit. A small paging file can cause OOM errors even when GPU memory is still free. See the [memory issue report](https://forums.developer.nvidia.com/t/rtx-spark-on-windows-cuda-allocations-consume-system-commit-even-with-96-gib-dedicated-gpu-memory/386453).
-
-Download the Windows ARM64 ZIP from [Releases](https://github.com/devjeonghwan/vllm-for-rtx-spark/releases), extract it, and run:
+Download and extract the ARM64 ZIP from [Releases](https://github.com/devjeonghwan/vllm-for-rtx-spark/releases), then install with Python/pip:
 
 ```powershell
 .\scripts\install.ps1 -Python python
 ```
 
-This creates `.venv` and installs the bundled vLLM wheel and its dependencies. PyTorch and FlashAttention are downloaded from NVIDIA.
+Or, with uv installed:
+
+```powershell
+uv python install cpython-3.13-windows-aarch64-none
+.\scripts\install.ps1 -UseUv
+```
+
+`-UseUv` uses the active virtual environment or creates `.venv`; `-Environment <path>` overrides it. Download model weights separately.
 
 ## Run
+
+OpenAI-compatible API: `http://127.0.0.1:8000/v1`.
+
+### Qwen3.8-Flash-Next-FP4-Local profiles
 
 ```powershell
 .\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-96gb-draft-kv-bf16.yaml
 ```
 
-The API is available at `http://127.0.0.1:8000/v1`, with model name `Qwen/Qwen3.8-Flash-Next`. The first start prepares the PLE cache and can take several minutes.
+The first start prepares the PLE cache and can take several minutes. Target KV is FP8; select the MTP draft KV precision below.
 
-The six MTP profiles use the same GPU 96 GB / CPU 32 GB allocation, FP8 drafter projections, HEAD2, dynamic draft depth 3–7, NVMe PLE, decode graphs, a 409,600-token context and up to 16 requests.
-
-The suffix selects **MTP draft KV** precision; target KV stays FP8. BF16 was faster in our tests when KV capacity was available. FP8 holds about 7% more cached tokens at the same budget and can be faster near the KV limit.
-
-| Approx. GPU use | KV budget | BF16 draft KV | FP8 draft KV |
+| Estimated GPU use | KV budget | BF16 draft KV | FP8 draft KV |
 |---|---:|---|---|
 | 90 GB | 12 GB | [Config](configs/qwen3.8-flash-next/gpu-90gb-draft-kv-bf16.yaml) | [Config](configs/qwen3.8-flash-next/gpu-90gb-draft-kv-fp8.yaml) |
-| 96 GB | 18 GB | [Config (default)](configs/qwen3.8-flash-next/gpu-96gb-draft-kv-bf16.yaml) | [Config](configs/qwen3.8-flash-next/gpu-96gb-draft-kv-fp8.yaml) |
+| 96 GB | 18 GB | [Default](configs/qwen3.8-flash-next/gpu-96gb-draft-kv-bf16.yaml) | [Config](configs/qwen3.8-flash-next/gpu-96gb-draft-kv-fp8.yaml) |
 | 108 GB | 27 GB | [Config](configs/qwen3.8-flash-next/gpu-108gb-draft-kv-bf16.yaml) | [Config](configs/qwen3.8-flash-next/gpu-108gb-draft-kv-fp8.yaml) |
 
-Memory figures are estimates. The 108 GB profiles may use WDDM shared memory and are experimental with the current draft KV setup. The profiles accept vLLM command-line overrides; `draft_min_depth` under `additional-config.rtx_spark` overrides the default minimum of 3.
+The 108 GB profiles may use shared memory. [DFlash2](configs/qwen3.8-flash-next/gpu-96gb-dflash2.yaml) is experimental; FAST MTP is the default.
 
-### Experimental DFlash2
-
-Fast MTP remains the default. The [DFlash2 profile](configs/qwen3.8-flash-next/gpu-96gb-dflash2.yaml) uses the [Inco AI draft model](https://huggingface.co/incoai/Qwen3.8-Flash-Next-DFlash2) with a separate NVFP4 draft head. It improved SPEED-Bench coding decode in our tests, but did not give a consistent speedup across the full suite. Further optimization and pull requests are welcome.
-
-For experimental head/selector projection overlap, set `dflash2_head_overlap: true` under `additional-config.rtx_spark` in the DFlash2 profile. It is off by default and can be slower for some workloads.
+### Gemma 4 12B IT FP8 Dynamic profiles
 
 ```powershell
-.\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-96gb-dflash2.yaml
+.\.venv\Scripts\vllm.exe serve C:\models\gemma-4-12B-it-FP8-Dynamic --config configs\gemma4-12b-fp8\text.yaml
 ```
 
-The draft keeps its trained RoPE and 262,144-token context limit.
+| Profile | Estimated GPU use | KV budget | KV precision |
+|---|---:|---:|---|
+| [Text](configs/gemma4-12b-fp8/text.yaml) | 25 GB | 8 GB | BF16 |
+
+## Benchmarks
+
+### NVIDIA reference
+
+| Model | Benchmark | This project, NVFP4 | NVIDIA llama.cpp, IQ4_XS |
+|---|---|---:|---:|
+| Qwen3.8-Flash-Next-FP4-Local | AA-AgentPerf-local, full replay | 734.51 s | 1,118.16 s |
+| Qwen3.8-Flash-Next-FP4-Local | SPEED-Bench coding, 80 conversations | 70.44 tok/s | 35.37 tok/s |
+
+NVIDIA figures come from its [Windows recipe](https://nvidia.github.io/local-ai-inference-recipes/hardware/rtx-spark/index.html?model=qwen%2Fqwen3.8-flash-next&os=windows&backend=llama-cpp&memory=78&precision=iq4-xs&variant=vision-mtp&memoryConfig=128). Quantization and benchmark clients differ.
+
+### Workload throughput
+
+| Model | Concurrency | Mixed tok/s | Code tok/s | JSON schema tok/s | Prose tok/s |
+|---|---:|---:|---:|---:|---:|
+| Qwen3.8-Flash-Next-FP4-Local | 1 | 62.85 | 60.40 | 47.20 | 42.38 |
+| Qwen3.8-Flash-Next-FP4-Local | 16 | 233.63 | 295.50 | 242.33 | 215.75 |
+| Gemma 4 12B IT FP8 Dynamic | 1 | 17.58 | 17.38 | 17.43 | 17.38 |
+| Gemma 4 12B IT FP8 Dynamic | 16 | 244.50 | 244.90 | 245.30 | 245.30 |
+
+[See prompts, settings and runner](benchmarks/README.md).
 
 ## Build
 
-Use a Git checkout in a short directory path. Install Git, native ARM64 Python 3.13, Visual Studio ARM64 C++ tools, and CUDA Toolkit 13.4.
+Requires native ARM64 Python 3.13, Visual Studio ARM64 C++ tools and CUDA Toolkit 13.4.
 
 ```powershell
 python -m pip install --only-binary=:all: -r requirements\runtime.txt -r requirements\vendor.txt -r requirements\build.txt
 .\scripts\build-vllm.ps1 -Python python
 ```
 
-Currently, project is pinned to vLLM 0.32.0 at commit `5df63a7203cdb9328d824a27b682e77c7b9928be`. The build applies the patches and copies the sources listed in `patches/vllm/manifest.json`, then produces one wheel containing the runtime and kernel assets.
+The project targets vLLM 0.32.0. Source and build requirements are pinned in [manifest.json](patches/vllm/manifest.json); prebuilt native assets are included.
 
-Prebuilt native assets are included. To rebuild them, use `scripts/build-native-assets.ps1 -Install` and `scripts/build_harmony.py` before building the vLLM wheel. The Rust bindings require the `aarch64-pc-windows-msvc` toolchain.
-
-For a CuTe kernel rebuild, install `src/kernels/cute/compiler/requirements.txt` in the compiler's Python environment. Copy `src/kernels/cute/compiler/settings.example.json` to `local-build.json`, set the tool paths, and run:
-
-```powershell
-python scripts\build_kernels.py --provider source --settings local-build.json --output .build\kernels-new --install
-```
-
-The current provider uses an x64 CuTe compiler during builds and ARM64 libraries during inference. CuTe and CSF providers can be replaced independently. CSF currently includes the recipe's original cubin; its device source is unavailable.
-
-## Layout
-
-- `src/runtime/`: Windows integration and native host code.
-- `src/runtime/vllm/`: this release's vLLM adapter.
-- `src/kernels/`: kernel providers, sources, and compiler support.
-- `src/recipes/`: model-specific integration and helpers.
-- `src/optimizations/`: shared option declarations and application callbacks.
-- `assets/`: prebuilt kernels, libraries, and model support data.
-- `third_party/`: external source dependencies, including the added vLLM kernel sources.
-- `patches/vllm/`: vLLM patches and their manifest.
-- `configs/`: model launch settings.
-
-The wheel registers `rtx_spark` through `vllm.general_plugins`. Windows startup and recipe configuration also use explicit vLLM hooks. See [development notes](docs/development.md) for updating vLLM and adding models or options.
-
-CPU tests: `python -m unittest discover -s tests -p '*_test.py'`. Release build and GPU validation details are in `build-info.json`. Model weights are obtained separately. This is a preview release.
-
-See `sources.lock.json` and `THIRD_PARTY_NOTICES.md` for source revisions and credits.
+[Tests](tests/README.md) · [Source revisions](sources.lock.json) · [Third-party notices](THIRD_PARTY_NOTICES.md)

@@ -1,6 +1,5 @@
-# RTX Spark N1X: GPU 96 GB / CPU 32 GB, NVMe PLE.
-# Approx. 96 GB total GPU use; 18 GB KV.
-# Target KV: FP8. MTP draft KV: BF16.
+# Qwen3.8-Flash-Next FP4: fast MTP with BF16 draft KV.
+# Estimated VRAM: ~96 GB total (18 GB target KV cache).
 host: 127.0.0.1
 port: 8000
 api-server-count: 1
