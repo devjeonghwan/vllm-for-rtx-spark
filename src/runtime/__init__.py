@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging as _logging
 import os
 from pathlib import Path
 
@@ -76,7 +77,11 @@ def _model_integration(arguments, options, *, prepared=None):
         if requested is not None and requested != name:
             raise ValueError("RTX Spark model recipe changed after preparation")
     integration = resolve_model(arguments, name=name) if name is not None else None
-    if integration is None and options:
+    if integration is None and name == "none":
+        from ..optimizations import resolve_options
+
+        resolve_options(options, ())  # Opt-out accepts no recipe-specific keys.
+    elif integration is None and options:
         raise ValueError("No RTX Spark model integration matches the supplied settings")
     return name, integration
 
@@ -88,10 +93,16 @@ def prepare_engine_args(args):
     adapter = get_adapter()
     options = _rtx_spark_options(args)
     name, integration = _model_integration(args, options)
+    args._rtx_spark_config_sources = {"recipe": "config" if "model" in options else "automatic"}
     if integration is None:
         from ..optimizations.compilation import restore_compilation_environment
 
         restore_compilation_environment()
+        if name == "none":
+            from ..plugin import register
+
+            register()  # Native dependencies/providers are independent of recipes.
+            adapter.bind_recipe(args, name)
     if integration is not None:
         from ..optimizations import resolve_options, validate_options, apply_options
         from ..optimizations.compilation import resolve_compilation_options
@@ -106,6 +117,12 @@ def prepare_engine_args(args):
         integration.prepare(args, resolved)
         apply_options(args, resolved, integration.options)
     adapter.remember_recipe(args, name)
+    _logging.getLogger("vllm.rtx_spark").info(
+        "RTX Spark recipe=%s (source=%s); options=%s; gdn_prefill_backend=%s; kernel_config=%s",
+        name or "none", "config" if "model" in options else "automatic",
+        _rtx_spark_options(args),
+        (getattr(args, "additional_config", None) or {}).get("gdn_prefill_backend", "automatic"),
+        getattr(args, "kernel_config", None))
 
 
 def configure_engine(config, *, engine_args=None):
@@ -128,4 +145,14 @@ def configure_engine(config, *, engine_args=None):
         validate_options(config, resolved, integration.options)
         integration.validate(config, resolved)
         adapter.bind_recipe(config, name)
+    elif name == "none":
+        adapter.bind_recipe(config, name)
+    # Final VllmConfig construction has configured logging; early preparation
+    # may run before INFO handlers exist. Keep transient provenance on EngineArgs,
+    # never as undeclared attributes on VllmConfig or user-facing option keys.
+    _logging.getLogger("vllm.rtx_spark").info(
+        "RTX Spark effective recipe=%s; sources=%s; options=%s; gdn_prefill_backend=%s; kernel_config=%s",
+        name or "none", getattr(owner, "_rtx_spark_config_sources", "serialized config"),
+        _rtx_spark_options(config), (getattr(config, "additional_config", None) or {}).get(
+            "gdn_prefill_backend", "automatic"), getattr(config, "kernel_config", None))
     return config

@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 import tempfile
@@ -14,6 +15,9 @@ from ...optimizations.compilation import BREAKABLE_CUDAGRAPH
 ARCHITECTURES = ("Qwen4ExpForConditionalGeneration",)
 # vLLM already supplies this architecture; do not replace its model class.
 MODEL_CLASSES = {}
+_head2_projection = {}
+_depth_projection = None
+_log = logging.getLogger("vllm.rtx_spark")
 
 
 def matches(arguments):
@@ -25,6 +29,7 @@ def matches(arguments):
 def _validate_options(options):
     resolved = resolve_options(options, OPTIONS)
     validate_options(None, resolved, OPTIONS)
+    _head2_settings(resolved)
     return resolved
 
 
@@ -43,7 +48,14 @@ def _configure_draft_min_depth(options):
         return
     from ...runtime import cache_root, resources_root
 
-    policy = json.loads((resources_root() / "recipes/qwen3_8_flash_next/mtp-depth.json").read_text(encoding="utf-8"))
+    global _depth_projection
+    source = os.environ.get("MBX_DEPTH_CFG")
+    if _depth_projection is not None and source == _depth_projection[1]:
+        source = _depth_projection[0]
+    source = source or str(resources_root() / "recipes/qwen3_8_flash_next/mtp-depth.json")
+    policy = json.loads(Path(source).read_text(encoding="utf-8"))
+    if not isinstance(policy, dict):
+        raise ValueError("MTP depth policy must be a JSON object: " + source)
     policy["min"] = options["draft_min_depth"]
     payload = (json.dumps(policy, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
     digest = hashlib.sha256(payload).hexdigest()
@@ -77,6 +89,9 @@ def _configure_draft_min_depth(options):
                 temporary.unlink(missing_ok=True)
     # Explicit YAML takes precedence; an omitted option never changes this env.
     os.environ["MBX_DEPTH_CFG"] = str(destination)
+    _depth_projection = (source, str(destination))
+    _log.info("RTX Spark MTP policy=%s (source=%s, min=%s from config)",
+              destination, source, options["draft_min_depth"])
 
 
 def _validate_minimum(arguments, minimum):
@@ -87,21 +102,85 @@ def _validate_minimum(arguments, minimum):
 
 def _apply_minimum(arguments, minimum):
     _configure_draft_min_depth({"draft_min_depth": minimum})
+    if hasattr(arguments, "_rtx_spark_config_sources"):
+        arguments._rtx_spark_config_sources["depth_policy"] = _depth_projection[0]
+        arguments._rtx_spark_config_sources["depth_min"] = "config"
 
 
 def _apply_draft_fp8(arguments, enabled):
     os.environ["MBX_DRAFT_FP8"] = "1" if enabled else "0"
 
 
+def _validate_head2_option(arguments, enabled):
+    if arguments is not None:
+        from ...runtime.vllm import get_adapter
+
+        _head2_settings(resolve_options(get_adapter().integration_options(arguments), OPTIONS))
+
+
 def _apply_draft_head2(arguments, enabled):
+    from ...runtime.vllm import get_adapter
+
+    supplied = get_adapter().integration_options(arguments)
+    resolved = resolve_options(supplied, OPTIONS)
+    settings, sources = _head2_settings(resolved)
+    if not enabled:
+        original = _head2_environment("MBX_DRAFT_HEAD2")
+        os.environ.pop("MBX_DRAFT_HEAD2", None)
+        _head2_projection["MBX_DRAFT_HEAD2"] = (original, None)
+        return
+    environment = {"draft_head2_basis": "MBX_DRAFT_HEAD2", "draft_head2_k": "MBX_DRAFT_HEAD2_K",
+                   "draft_head2_scorer": "MBX_DRAFT_HEAD2_SCORER"}
+    for key, name in environment.items():
+        original = _head2_environment(name)
+        os.environ[name] = str(settings[key])
+        _head2_projection[name] = (original, str(settings[key]))
+    # Freeze environment/default resolution for serialized/spawned configuration.
+    additional = arguments.additional_config or {}
+    arguments.additional_config = dict(additional, rtx_spark=dict(resolved, **settings))
+    if hasattr(arguments, "_rtx_spark_config_sources"):
+        arguments._rtx_spark_config_sources["head2"] = sources
+    _log.info("RTX Spark HEAD2=%s; sources=%s", settings, sources)
+
+
+def _head2_environment(name):
+    current = os.environ.get(name)
+    previous = _head2_projection.get(name)
+    return previous[0] if previous is not None and current == previous[1] else current
+
+
+def _head2_settings(options):
     from ...runtime import resources_root
 
-    if enabled:
-        os.environ["MBX_DRAFT_HEAD2"] = str(resources_root() / "recipes" / "qwen3_8_flash_next" / "qwen3.8-head2.basis.pt")
-        os.environ["MBX_DRAFT_HEAD2_K"] = "2048"
-        os.environ["MBX_DRAFT_HEAD2_SCORER"] = "fp8"
-    else:
-        os.environ.pop("MBX_DRAFT_HEAD2", None)
+    names = ("draft_head2_basis", "draft_head2_k", "draft_head2_scorer")
+    if not options.get("draft_head2", True):
+        if any(name in options for name in names):
+            raise ValueError("HEAD2 settings conflict with rtx_spark.draft_head2=false")
+        return {}, {}
+    defaults = (str(resources_root() / "recipes/qwen3_8_flash_next/qwen3.8-head2.basis.pt"), 2048, "fp8")
+    environment = ("MBX_DRAFT_HEAD2", "MBX_DRAFT_HEAD2_K", "MBX_DRAFT_HEAD2_SCORER")
+    settings, sources = {}, {}
+    for key, name, default in zip(names, environment, defaults):
+        external = _head2_environment(name)
+        value = options[key] if key in options else external if external is not None else default
+        sources[key] = "config" if key in options else name if external is not None else "recipe default"
+        if key == "draft_head2_k":
+            if isinstance(value, str):
+                try:
+                    value = int(value)
+                except ValueError:
+                    raise ValueError("HEAD2 candidate count must be a positive integer") from None
+            if type(value) is not int or value < 1:
+                raise ValueError("HEAD2 candidate count must be a positive integer")
+        elif key == "draft_head2_scorer":
+            if value not in ("fp8", "fp4"):
+                raise ValueError("HEAD2 scorer must be fp8 or fp4")
+        else:
+            if not value or not Path(value).expanduser().is_file():
+                raise ValueError("HEAD2 basis file does not exist: " + str(value))
+            value = str(Path(value).expanduser().resolve())
+        settings[key] = value
+    return settings, sources
 
 
 OPTIONS = (
@@ -111,7 +190,10 @@ OPTIONS = (
     CUTE_MODE,
     CSF_BACKEND,
     Option("draft_fp8", bool, True, apply=_apply_draft_fp8),
-    Option("draft_head2", bool, True, apply=_apply_draft_head2),
+    Option("draft_head2", bool, True, apply=_apply_draft_head2, validate=_validate_head2_option),
+    Option("draft_head2_basis", str),
+    Option("draft_head2_k", int),
+    Option("draft_head2_scorer", str),
     Option("dflash2_nvfp4_head", bool, False),
     Option("dflash2_head_overlap", bool, False),
 )
@@ -153,6 +235,8 @@ def prepare(args, options):
 
     initialize()
     _prepare_environment()
+    if "draft_min_depth" not in options:
+        _log.info("RTX Spark MTP policy=%s (environment or recipe default)", os.environ["MBX_DEPTH_CFG"])
     get_adapter().wrap_hf_overrides(args, TargetAndDraftOverrides)
 
 

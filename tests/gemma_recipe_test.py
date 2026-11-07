@@ -114,21 +114,25 @@ class GemmaRecipeTests(unittest.TestCase):
         self.assertEqual(os.environ["VLLM_USE_BREAKABLE_CUDAGRAPH"], "1")
         self.assertFalse(any(name.startswith(("MBX_DRAFT", "MBX_DEPTH", "MBX_PLE")) for name in os.environ))
 
-    def test_final_config_checks_actual_quantization_and_architecture(self):
+    def test_final_config_checks_architecture_without_preset_size_or_quant_whitelist(self):
         gemma.validate(_config(), {})
-        for mutate, message in (
-            (lambda hf: hf.update(model_type="gemma4"), "Unified"),
-            (lambda hf: hf["text_config"].update(hidden_size=4096), "12B dense"),
-            (lambda hf: hf["text_config"].update(enable_moe_block=True), "12B dense"),
-            (lambda hf: hf["quantization_config"].update(quant_method="modelopt"), "compressed-tensors"),
-            (lambda hf: hf["quantization_config"]["config_groups"]["group_0"]["weights"].update(strategy="block"), "per-channel"),
-            (lambda hf: hf["quantization_config"]["config_groups"]["group_0"]["input_activations"].update(dynamic=False), "per-token"),
+        for mutate in (
+            lambda hf: hf["text_config"].update(hidden_size=3072, num_hidden_layers=32),
+            lambda hf: hf["text_config"].update(enable_moe_block=True),
+            lambda hf: hf["quantization_config"].update(quant_method="modelopt"),
+            lambda hf: hf["quantization_config"]["config_groups"].update(group_1={"targets": ["lm_head"]}),
+            lambda hf: hf.pop("quantization_config"),
         ):
             config = _config()
             metadata = _metadata()
             mutate(metadata)
             config.model_config.hf_config = Namespace(**metadata)
-            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+            with self.subTest(metadata=metadata):
+                gemma.validate(config, {})
+        for field, value in (("model_type", "gemma4"), ("architectures", ["OtherModel"])):
+            config = _config()
+            setattr(config.model_config.hf_config, field, value)
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Unified"):
                 gemma.validate(config, {})
 
     def test_supported_scope_is_checked_before_generic_startup(self):

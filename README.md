@@ -95,4 +95,4 @@ python -m pip install --only-binary=:all: -r requirements\runtime.txt -r require
 
 The project targets vLLM 0.32.0. Source and build requirements are pinned in [manifest.json](patches/vllm/manifest.json); prebuilt native assets are included. See [source preparation](scripts/README.md) for source archives and patches.
 
-[Tests](tests/README.md) · [Source revisions](sources.lock.json) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+[Configuration](configs/README.md) · [Tests](tests/README.md) · [Source revisions](sources.lock.json) · [Third-party notices](THIRD_PARTY_NOTICES.md)

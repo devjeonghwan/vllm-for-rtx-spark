@@ -262,21 +262,27 @@ print(json.dumps({"initialize_callable": callable(bootstrap.initialize),
         with self.assertRaisesRegex(ValueError, "exceeds"):
             configure_engine(config)
 
-    def test_draft_min_depth_changes_only_min_and_overrides_external_path(self):
+    def test_draft_min_depth_changes_only_min_of_external_policy(self):
         original_path = resources_root() / "recipes/qwen3_8_flash_next/mtp-depth.json"
         original_bytes = original_path.read_bytes()
         original_policy = json.loads(original_bytes)
         with self.temporary_directory() as directory, \
                 patch.object(runtime, "cache_root", return_value=Path(directory)), \
-                patch.dict(os.environ, {"MBX_DEPTH_CFG": "external-policy.json"}, clear=True):
+                patch.dict(os.environ, {}, clear=True):
+            external = Path(directory) / "external-policy.json"
+            external_policy = dict(original_policy, window=96, promote=[80, 70], demote=[20, 10])
+            external.write_text(json.dumps(external_policy), encoding="utf-8")
+            external_bytes = external.read_bytes()
+            os.environ["MBX_DEPTH_CFG"] = str(external)
             selected = self.prepare_depth(1, {"num_speculative_tokens": 7})
-            expected = dict(original_policy, min=1)
+            expected = dict(external_policy, min=1)
             self.assertEqual(json.loads(selected.read_bytes()), expected)
             self.assertTrue(selected.is_absolute())
             self.assertEqual(selected.parent, Path(directory) / "recipe-configs")
             self.assertEqual(selected.name, "qwen3_8_flash_next-mtp-" + hashlib.sha256(selected.read_bytes()).hexdigest() + ".json")
             self.assertEqual(original_path.read_bytes(), original_bytes)
             self.assertEqual(original_policy["min"], 3)
+            self.assertEqual(external.read_bytes(), external_bytes)
 
     def test_omitted_draft_min_depth_preserves_external_policy_without_cache_writes(self):
         from _rtx_spark.kernels import cute, csf
@@ -332,11 +338,14 @@ print(json.dumps({"initialize_callable": callable(bootstrap.initialize),
     def test_policy_write_failure_does_not_publish_or_select_partial_json(self):
         with self.temporary_directory() as directory, \
                 patch.object(runtime, "cache_root", return_value=Path(directory)), \
-                patch.dict(os.environ, {"MBX_DEPTH_CFG": "external-policy.json"}, clear=True), \
+                patch.dict(os.environ, {}, clear=True), \
                 patch.object(qwen3_8_flash_next.os, "fsync", side_effect=OSError("fixture write failure")):
+            external = Path(directory) / "external-policy.json"
+            external.write_text('{"mode":"dynamic","min":3}', encoding="utf-8")
+            os.environ["MBX_DEPTH_CFG"] = str(external)
             with self.assertRaisesRegex(OSError, "fixture write failure"):
                 self.prepare_depth(3)
-            self.assertEqual(os.environ["MBX_DEPTH_CFG"], "external-policy.json")
+            self.assertEqual(os.environ["MBX_DEPTH_CFG"], str(external))
             self.assertEqual(list((Path(directory) / "recipe-configs").iterdir()), [])
 
     def test_selected_depth_policy_is_read_by_original_helper_and_inherited_by_child(self):

@@ -45,30 +45,14 @@ def _validate_execution(arguments):
 
 
 def _validate_checkpoint(model):
+    # Recipe identity is an API boundary, not a size/quantization whitelist.
+    # The upstream loader and each selected provider validate actual formats.
     hf = getattr(model, "hf_config", None)
     if hf is None:
         raise ValueError("Gemma4-12B-FP8 requires actual checkpoint metadata")
     if _field(hf, "model_type") != "gemma4_unified" or not set(ARCHITECTURES).intersection(
             _field(hf, "architectures", ()) or ()):
         raise ValueError("Gemma4-12B-FP8 requires Gemma4UnifiedForConditionalGeneration metadata")
-    text = _field(hf, "text_config")
-    if (_field(text, "hidden_size"), _field(text, "num_hidden_layers"), _field(text, "enable_moe_block")) != (
-            3840, 48, False):
-        raise ValueError("Gemma4-12B-FP8 recipe supports the 12B dense checkpoint")
-    quant = _field(hf, "quantization_config", {})
-    if _field(quant, "quant_method") != "compressed-tensors" or _field(quant, "format") != "float-quantized":
-        raise ValueError("Gemma4-12B-FP8 requires compressed-tensors float-quantized metadata")
-    groups = _field(quant, "config_groups", {})
-    if not isinstance(groups, Mapping) or len(groups) != 1:
-        raise ValueError("Gemma4-12B-FP8 requires one FP8 Linear quantization group")
-    group = next(iter(groups.values()))
-    if _field(group, "targets") != ["Linear"]:
-        raise ValueError("Gemma4-12B-FP8 requires the checkpoint's Linear quantization targets")
-    for name, strategy, dynamic in (("weights", "channel", False), ("input_activations", "token", True)):
-        scheme = _field(group, name, {})
-        actual = tuple(_field(scheme, key) for key in ("type", "num_bits", "strategy", "dynamic", "symmetric"))
-        if actual != ("float", 8, strategy, dynamic, True) or _field(scheme, "group_size") is not None:
-            raise ValueError("Gemma4-12B-FP8 requires static per-channel FP8 weights and dynamic per-token FP8 activations")
 
 
 def prepare(arguments, options):

@@ -22,7 +22,6 @@ _LATE_HOOK_CALLED = False
 _OWNERS = None
 _ACTIVATION = None
 _FAILURE = None
-ROWS, COLUMNS = 248320, 2560
 CHUNK_ROWS = 8192
 
 
@@ -87,7 +86,12 @@ def convert(draft, target_head, target_model=None):
     if _OWNERS is not None:
         raise RuntimeError("A fresh process/model is required for NVFP4 head conversion")
     import torch
-    assert draft.lm_head is target_head and tuple(target_head.weight.shape) == (ROWS, COLUMNS)
+    from vllm.model_executor.layers.quantization.utils.marlin_utils import marlin_padded_nk
+
+    assert draft.lm_head is target_head and target_head.weight.ndim == 2
+    rows, columns = map(int, target_head.weight.shape)
+    assert rows > 0 and columns > 0 and columns % 16 == 0
+    expected_bytes = core.expected_storage_bytes(*marlin_padded_nk(rows, columns, 16))
     assert target_head.weight.dtype == torch.bfloat16 and target_head.tp_size == 1
     assert getattr(draft, "_mbx_head2", None) is None
     assert dataclasses.is_dataclass(target_head.shard_indices)
@@ -116,13 +120,13 @@ def convert(draft, target_head, target_model=None):
         assert replacement.shard_indices is not target_head.shard_indices
         assert dataclasses.asdict(replacement.shard_indices) == shard_before
         assert dataclasses.asdict(target_head.shard_indices) == shard_before
-        assert core.storage_bytes(replacement) == 357580804
+        assert core.storage_bytes(replacement) == expected_bytes
         assert isinstance(replacement.quant_method, core.DraftNvfp4Method)
-        assert replacement._rtx_nvfp4_head["rows"] == ROWS and replacement._rtx_nvfp4_head["columns"] == COLUMNS
+        assert replacement._rtx_nvfp4_head["rows"] == rows and replacement._rtx_nvfp4_head["columns"] == columns
         _OWNERS = {"target": target_head, "target_weight": weight, "draft": draft, "holder": replacement,
                    "whole_target": whole_target, "whole_target_tree_before": tree_before}
         _ACTIVATION = {"schema": "dflash-original-NVFP4-head-activation-v1", "pid": os.getpid(),
-            "rows": ROWS, "columns": COLUMNS, "full_vocabulary": True,
+            "rows": rows, "columns": columns, "full_vocabulary": True,
             "target_module_before": before, "target_module_after": after,
             "target_full_weight_before": checksum_before, "target_full_weight_after": checksum_after,
             "target_full_weight_bytes_unchanged": True, "target_metadata_unchanged": True,

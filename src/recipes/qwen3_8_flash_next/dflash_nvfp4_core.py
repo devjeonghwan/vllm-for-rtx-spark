@@ -124,6 +124,14 @@ def storage_bytes(module):
     return sum(value.numel() * value.element_size() for value in module.parameters())
 
 
+def expected_storage_bytes(padded_rows, padded_columns):
+    """Pinned NVFP4 Marlin: packed 4-bit weights, FP8 /16 scales, FP32 scalar."""
+    if (type(padded_rows) is not int or type(padded_columns) is not int
+            or padded_rows <= 0 or padded_columns <= 0 or padded_columns % 16):
+        raise ValueError('Positive padded NVFP4 geometry is required')
+    return padded_rows * padded_columns // 2 + padded_rows * (padded_columns // 16) + 4
+
+
 def make(target_head, *, chunk_rows=8192):
     import torch
     from vllm._rtx_spark.recipes.qwen3_8_flash_next.helpers.mbx_draft_head2 import _quant_nvfp4

@@ -65,6 +65,31 @@ class RecipeSelectionTests(unittest.TestCase):
         self.assertEqual(self.calls, [("second", "prepare", "second"), ("second", "apply", 7),
                                      ("second", "validate", "second")])
 
+    def test_explicit_none_skips_matchers_but_initializes_native_plugin(self):
+        def forbidden(arguments):
+            raise AssertionError("Explicit opt-out must not run matchers")
+
+        self.register("first", matches=forbidden, architectures=("Shared",))
+        args = self.args(options={"model": "none"}, architectures=("Shared",))
+        with patch.object(plugin, "register") as startup:
+            runtime.prepare_engine_args(args)
+            startup.assert_called_once_with()
+        config = self.args(architectures=("Shared",))
+        runtime.configure_engine(config, engine_args=pickle.loads(pickle.dumps(args)))
+        self.assertEqual(config.additional_config, {"rtx_spark": {"model": "none"}})
+        runtime.configure_engine(pickle.loads(pickle.dumps(config)))
+        self.assertEqual(self.calls, [])
+
+    def test_none_rejects_recipe_keys_before_initialization_and_is_reserved(self):
+        for options in ({"model": "none", "setting": 3},
+                        {"model": "none", "optimizations": {"draft_fp8": True}}):
+            with self.subTest(options=options), patch.object(plugin, "register") as startup:
+                with self.assertRaisesRegex(ValueError, "Unknown RTX Spark setting"):
+                    runtime.prepare_engine_args(self.args(options=options))
+                startup.assert_not_called()
+        with self.assertRaisesRegex(ValueError, "reserved"):
+            self.register("none")
+
     def test_automatic_multiple_matches_fail_before_any_recipe_mutation(self):
         self.register("first", matches=lambda args: True)
         self.register("second", architectures=("Shared",))
