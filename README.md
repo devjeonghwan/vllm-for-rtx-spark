@@ -43,7 +43,7 @@ OpenAI-compatible API: `http://127.0.0.1:8000/v1`.
 ### Qwen3.8-Flash-Next-FP4-Local profiles
 
 ```powershell
-.\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-96gb-draft-kv-bf16.yaml
+.\.venv\Scripts\vllm.exe serve C:\models\Qwen3.8-Flash-Next-FP4-Local --config configs\qwen3.8-flash-next\gpu-96gb-draft-kv-bf16.yaml --monitor
 ```
 
 The first start prepares the PLE cache and can take several minutes. Target KV is FP8; select the MTP draft KV precision below.
@@ -59,7 +59,7 @@ The 108 GB profiles may use shared memory. [DFlash2](configs/qwen3.8-flash-next/
 ### Gemma 4 12B IT FP8 Dynamic profiles
 
 ```powershell
-.\.venv\Scripts\vllm.exe serve C:\models\gemma-4-12B-it-FP8-Dynamic --config configs\gemma4-12b-fp8\text.yaml
+.\.venv\Scripts\vllm.exe serve C:\models\gemma-4-12B-it-FP8-Dynamic --config configs\gemma4-12b-fp8\text.yaml --monitor
 ```
 
 | Estimated GPU use | KV budget | Profile |
@@ -71,9 +71,7 @@ The 108 GB profiles may use shared memory. [DFlash2](configs/qwen3.8-flash-next/
 <img src="assets/monitor-screenshot.png" alt="monitor" width="960">
 </p>
 
-Add `--monitor` to `vllm serve`, then open `http://127.0.0.1:8000/monitor/`.
-Add `--tray` for a Windows tray icon that reopens the monitor after closing the browser.
-Monitoring is off by default (`--no-monitor`); it requires one Python API server and engine statistics.
+With `--monitor`, open `http://127.0.0.1:8000/monitor/`. The Windows tray icon reopens the dashboard after closing the browser.
 
 ## Benchmarks
 

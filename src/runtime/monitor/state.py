@@ -6,6 +6,7 @@ from collections import OrderedDict, deque
 from contextlib import aclosing
 from io import StringIO
 import math
+import os
 from pathlib import Path
 import time
 
@@ -26,6 +27,17 @@ def rate(tokens, seconds):
     if tokens is None or seconds is None or seconds <= 0:
         return None
     return number(tokens / seconds)
+
+
+def config_path(args):
+    path = getattr(args, "_rtx_spark_config_file", None) or getattr(args, "config", None)
+    if not path:
+        return ""
+    try:
+        return Path(os.path.relpath(path)).as_posix()
+    except ValueError:
+        # Windows cannot express a relative path across different drives.
+        return Path(path).as_posix()
 
 
 def config_rows(config, args):
@@ -64,8 +76,7 @@ class Monitor:
         self.shutdown = None
         self.scheduler = {}
         self.config = config_rows(engine.vllm_config, args)
-        self.profile = Path(getattr(args, "_rtx_spark_config_file", None)
-                            or getattr(args, "config", None) or "").name
+        self.profile = config_path(args)
         self.original_generate = engine.generate
         self.had_generate_override = "generate" in vars(engine)
         self.stats_manager = engine.logger_manager

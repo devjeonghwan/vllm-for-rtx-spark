@@ -1,22 +1,19 @@
 """Opt-in local monitoring. Importing CLI helpers does not import Torch or a UI."""
-import argparse
 import os
 
 
 def add_cli_args(parser):
     group = parser.add_argument_group("Local monitor")
-    group.add_argument("--monitor", action=argparse.BooleanOptionalAction, default=False,
-                       help="Enable the local monitor at /monitor/ (recent 100 generations).")
-    group.add_argument("--tray", action=argparse.BooleanOptionalAction, default=False,
-                       help="Show a Windows tray icon for --monitor.")
+    group.add_argument("--monitor", action="store_true", default=False,
+                       help="Enable the local monitor at /monitor/ and its Windows tray icon.")
     return parser
 
 
 def validate_args(args):
-    if getattr(args, "tray", False) and not getattr(args, "monitor", False):
-        raise ValueError("--tray requires --monitor")
     if not getattr(args, "monitor", False):
         return
+    if os.name != "nt":
+        raise ValueError("--monitor requires Windows")
     if getattr(args, "disable_log_stats", False):
         raise ValueError("--monitor requires engine statistics; remove --disable-log-stats")
     count = getattr(args, "api_server_count", None)
@@ -28,10 +25,6 @@ def validate_args(args):
             or getattr(args, "uds", None) or os.environ.get("VLLM_USE_RUST_FRONTEND") == "1"
             or getattr(args, "subparser", "serve") not in ("serve", None)):
         raise ValueError("--monitor requires the Python HTTP vllm serve frontend with a TCP port")
-    if getattr(args, "tray", False) and os.name != "nt":
-        raise ValueError("--tray requires Windows")
-    if getattr(args, "tray", False) and getattr(args, "ssl_certfile", None):
-        raise ValueError("--tray currently requires local HTTP; open HTTPS /monitor/ manually")
 
 
 def install(app, args, engine):

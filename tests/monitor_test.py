@@ -21,7 +21,7 @@ state = importlib.import_module(PACKAGE + ".state")
 
 
 def arguments(**values):
-    return NS(**dict(dict(monitor=True, tray=False, api_server_count=1, disable_log_stats=False,
+    return NS(**dict(dict(monitor=True, api_server_count=1, disable_log_stats=False,
         host="127.0.0.1", port=8000, config="configs/gpu-96gb.yaml", subparser="serve"), **values))
 
 
@@ -207,12 +207,14 @@ class StoreTests(unittest.TestCase):
         self.assertIsNone(monitor_api.install(fake,arguments(monitor=False),object()))
         self.assertEqual(vars(fake),{})
 
-    def test_cli_on_off_and_invalid_combinations(self):
+    def test_cli_monitor_flag_and_invalid_combinations(self):
         parser=monitor_api.add_cli_args(argparse.ArgumentParser())
         self.assertFalse(parser.parse_args([]).monitor)
-        self.assertFalse(parser.parse_args(['--monitor','--no-monitor']).monitor)
-        self.assertTrue(parser.parse_args(['--monitor','--tray']).tray)
-        for options in ({"tray":True,"monitor":False},{"disable_log_stats":True},
+        self.assertTrue(parser.parse_args(['--monitor']).monitor)
+        for flag in ('--no-monitor','--tray','--no-tray'):
+            with patch('sys.stderr'),self.assertRaises(SystemExit):
+                parser.parse_args([flag])
+        for options in ({"disable_log_stats":True},
                         {"api_server_count":2},{"headless":True},{"grpc":True}):
             with self.assertRaises(ValueError):
                 monitor_api.validate_args(arguments(**options))
@@ -235,7 +237,7 @@ class RouteTests(unittest.TestCase):
         engine=Engine()
         original=engine.generate
         monitor=web.install_monitor(app,arguments(),engine)
-        with TestClient(app,base_url='http://127.0.0.1:8000',client=('127.0.0.1',30000)) as client:
+        with patch(PACKAGE+'.tray.Tray') as tray, TestClient(app,base_url='http://127.0.0.1:8000',client=('127.0.0.1',30000)) as client:
             self.assertEqual(client.get('/monitor/').status_code,200)
             self.assertEqual(client.get('/monitor/app.js').status_code,200)
             for name, signature in (('vllm.png', b'\x89PNG\r\n\x1a\n'),
@@ -261,7 +263,10 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(phases,['enter','exit'])
         self.assertEqual(engine.generate,original)
         self.assertTrue(monitor.closed)
-        with TestClient(app,base_url='http://127.0.0.1',client=('192.0.2.1',30000)) as remote:
+        tray.assert_called_once_with('http://127.0.0.1:8000/monitor/')
+        tray.return_value.start.assert_called_once_with()
+        tray.return_value.close.assert_called_once_with()
+        with patch(PACKAGE+'.tray.Tray'), TestClient(app,base_url='http://127.0.0.1',client=('192.0.2.1',30000)) as remote:
             self.assertEqual(remote.get('/monitor/').status_code,403)
 
 
@@ -280,13 +285,15 @@ class ProfileParserTests(unittest.TestCase):
         parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=parent) as directory:
             profile = Path(directory) / "selected.yaml"
-            profile.write_text("monitor: true\ntray: false\n", encoding="utf-8")
+            profile.write_text("monitor: true\n", encoding="utf-8")
             args = parser.parse_args(["serve", "checkpoint", "--config", str(profile)])
             self.assertTrue(args.monitor)
-            self.assertFalse(args.tray)
             self.assertEqual(args._rtx_spark_config_file, str(profile))
-            off = parser.parse_args(["serve", "checkpoint", "--config", str(profile), "--no-monitor"])
+            profile.write_text("monitor: false\n", encoding="utf-8")
+            off = parser.parse_args(["serve", "checkpoint", "--config", str(profile)])
             self.assertFalse(off.monitor)
+            on = parser.parse_args(["serve", "checkpoint", "--config", str(profile), "--monitor"])
+            self.assertTrue(on.monitor)
             plain = parser.parse_args(["serve", "checkpoint", "--monitor"])
             self.assertIsNone(plain._rtx_spark_config_file)
 

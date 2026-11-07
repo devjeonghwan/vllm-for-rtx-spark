@@ -75,7 +75,8 @@ async function poll(force=false){
     $('#engine-dot').classList.toggle('neutral',data.status!=='ready');
     $('#model-name').textContent=data.model;$('#model-name').title=data.model;
     $('#server-address').textContent=location.host;
-    $('#profile-name').textContent=data.profile||'CLI';$('#config-profile').textContent=data.profile||'CLI';
+    const profile=data.profile||'CLI';
+    for(const selector of ['#profile-name','#config-profile']){const element=$(selector);element.textContent=profile;element.title=profile;}
     $('#kv-state').textContent=(data.kv_usage===null?'—':`${fmt(data.kv_usage*100)}%`)+(data.kv_budget_bytes?` / ${fmt(data.kv_budget_bytes/1e9)} GB`:'');
     $('#running-count').textContent=data.running??'—';$('#waiting-count').textContent=data.waiting??'—';
     $('.version').textContent=data.version?`v${data.version}`:'—';

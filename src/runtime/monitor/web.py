@@ -84,14 +84,13 @@ def install_monitor(app, args, engine):
         try:
             async with original_lifespan(application) as lifetime:
                 try:
-                    if args.tray:
-                        from .tray import Tray
+                    from .tray import Tray
 
-                        scheme = "http"
-                        root = (getattr(args, "root_path", "") or "").rstrip("/")
-                        url = f"{scheme}://127.0.0.1:{args.port}{root}/monitor/"
-                        tray = Tray(url)
-                        await asyncio.to_thread(tray.start)
+                    scheme = "https" if getattr(args, "ssl_certfile", None) else "http"
+                    root = (getattr(args, "root_path", "") or "").rstrip("/")
+                    url = f"{scheme}://127.0.0.1:{args.port}{root}/monitor/"
+                    tray = Tray(url)
+                    await asyncio.to_thread(tray.start)
                     logger.info("Local monitor: /monitor/")
                     yield lifetime
                 finally:
