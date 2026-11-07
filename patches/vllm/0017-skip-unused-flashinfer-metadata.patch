@@ -1,0 +1,12 @@
+--- a/vllm/v1/attention/backends/gdn_attn.py
++++ b/vllm/v1/attention/backends/gdn_attn.py
+@@ -546,7 +546,8 @@
+                         cu_seqlens=prefill_query_start_loc,
+                     )
+                 )
+-            else:
++            elif self.gdn_prefill_backend != "flashinfer":
++                # FlashInfer consumes cu_seqlens, not FLA chunk metadata.
+                 chunk_indices, chunk_offsets = self._build_chunk_metadata(
+                     prefill_query_start_loc,
+                     prefill_query_start_loc_cpu,
