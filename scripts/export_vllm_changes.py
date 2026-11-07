@@ -24,6 +24,11 @@ RECIPE_HELPERS = {
     "mbx_marlin_csf", "mbx_opt_quant", "mbx_ple_ckpt", "native_sampling",
     "raw_reader", "vllm_fp8_hybrid",
 }
+UPSTREAM_INSTALLED = (
+    "vllm/third_party/deep_gemm", "vllm/vllm_flash_attn/cute",
+    "vllm/third_party/flashmla/flash_mla_interface.py", "vllm/third_party/fmha_sm100",
+    "vllm/third_party/tml_fa4", "vllm/third_party/triton_kernels",
+)
 
 
 def normalized(path):
@@ -217,7 +222,7 @@ def patch_text(name, before, after):
 
 
 def patch_owners():
-    """Keep the existing four role boundaries without another file inventory."""
+    """Keep the existing patch ownership without another file inventory."""
     owners = {}
     for name in MANIFEST["patches"]:
         for line in contained_path(PATCH_ROOT, name).read_text(encoding="utf-8").splitlines():
@@ -232,9 +237,10 @@ def copied_path(name):
 
 
 def is_patch_source(name):
-    """Maintained private modules and declared copies are not patch payloads."""
+    """Private modules and upstream-installed sources are not vLLM patches."""
     private = "vllm/_rtx_spark"
-    return name != private and not name.startswith(private + "/") and not copied_path(name)
+    installed = any(name == prefix or name.startswith(prefix + "/") for prefix in UPSTREAM_INSTALLED)
+    return name != private and not name.startswith(private + "/") and not installed and not copied_path(name)
 
 
 def main():
@@ -260,7 +266,8 @@ def main():
         name = file.relative_to(runtime).as_posix()
         if is_patch_source(name):
             final[name] = rtx_spark_hooks(name, normalized(file))
-    candidates = {name for name in base_files | tracked(native)
+    owners = patch_owners()
+    candidates = {name for name in base_files | tracked(native) | owners.keys()
                   if name == "CMakeLists.txt" or name.startswith(("csrc/", "cmake/"))}
     candidates.update(("cmake/windows_arm64_cuda.cmake", "fix_cuda_13_align.py", "fix_cutlass_msvc.py",
                        "cmake/patches/windows_cutlass_memory_sm75.patch", "cmake/patches/windows_flash_attn.patch"))
@@ -269,7 +276,6 @@ def main():
         if file.is_file() and file.suffix not in SKIP_SUFFIXES and is_patch_source(name):
             final[name] = normalized(file)
     final["vllm/_version.py"] = rtx_spark_hooks("vllm/_version.py", b"")
-    owners = patch_owners()
     groups = {name: [] for name in MANIFEST["patches"]}
     for name, after in sorted(final.items()):
         before = normalized(base / name) if name in base_files else None

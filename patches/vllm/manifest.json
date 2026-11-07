@@ -23,6 +23,14 @@
     "core_extensions": [
       "_C_stable_libtorch.pyd",
       "_moe_C_stable_libtorch.pyd"
+    ],
+    "source_components": [
+      "triton_kernels",
+      "_deep_gemm_C",
+      "fmha_sm100",
+      "_flashmla_C",
+      "tml_fa4",
+      "_vllm_fa4_cutedsl_C"
     ]
   },
   "requirements": {
@@ -45,32 +53,8 @@
     "0012-recipe-compilation-policy.patch",
     "0013-runtime-model-boundaries.patch",
     "0014-fused-channelwise-fp8.patch",
-    "0015-yaml-selected-parser-booleans.patch"
+    "0015-yaml-selected-parser-booleans.patch",
+    "0016-upstream-dependency-lifecycle.patch"
   ],
-  "copy": [
-    {
-      "source": "third_party/vllm-kernels/deep_gemm",
-      "destination": "vllm/third_party/deep_gemm"
-    },
-    {
-      "source": "third_party/vllm-kernels/flash_attn_cute",
-      "destination": "vllm/vllm_flash_attn/cute"
-    },
-    {
-      "source": "third_party/vllm-kernels/flashmla/flash_mla_interface.py",
-      "destination": "vllm/third_party/flashmla/flash_mla_interface.py"
-    },
-    {
-      "source": "third_party/vllm-kernels/fmha_sm100",
-      "destination": "vllm/third_party/fmha_sm100"
-    },
-    {
-      "source": "third_party/vllm-kernels/tml_fa4",
-      "destination": "vllm/third_party/tml_fa4"
-    },
-    {
-      "source": "third_party/vllm-kernels/triton_kernels",
-      "destination": "vllm/third_party/triton_kernels"
-    }
-  ]
+  "copy": []
 }

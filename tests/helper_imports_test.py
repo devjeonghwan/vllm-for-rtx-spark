@@ -104,7 +104,7 @@ class HelperImportsTests(unittest.TestCase):
                     self.assertNotIn(node.module, helpers, line)
 
     def test_flashinfer_windows_sampling_uses_the_packaged_helper(self):
-        source = ROOT / "third_party/python/flashinfer/jit/sampling.py"
+        source = ROOT / ".build/vendor/flashinfer/jit/sampling.py"
         function = next(node for node in ast.parse(source.read_text(encoding="utf-8")).body
                         if isinstance(node, ast.FunctionDef) and node.name == "gen_sampling_module")
         namespace = {"JitSpec": object}

@@ -94,7 +94,7 @@ print(json.dumps({"initialize_callable": callable(bootstrap.initialize),
     def test_checkout_and_installed_paths(self):
         self.assertEqual(source_root(), ROOT / "src")
         self.assertEqual(resources_root(), ROOT / "assets")
-        self.assertEqual(vendor_root(), ROOT / "third_party/python")
+        self.assertEqual(vendor_root(), ROOT / ".build/vendor")
         self.assertEqual(recipe_helpers(), ROOT / "src/recipes/qwen3_8_flash_next/helpers")
         installed = ROOT / ".build/site-packages/vllm/_rtx_spark"
         with patch.object(runtime, "source_root", return_value=installed):

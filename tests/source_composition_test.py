@@ -19,12 +19,8 @@ VERSION = runpy.run_path(ROOT / "src/version.py")
 
 class CopyRuleTests(unittest.TestCase):
     def test_manifest_copy_roles_exclude_duplicate_private_runtime_payloads(self):
-        inputs = BUILD['copy_inputs']()
-        self.assertTrue(inputs)
-        destinations = [destination for _, destination in inputs]
-        self.assertEqual(len(destinations), len(set(destinations)))
-        self.assertTrue(all(source.is_relative_to(ROOT / 'third_party/vllm-kernels') for source, _ in inputs))
-        self.assertFalse(any(destination.startswith('vllm/_rtx_spark/') for destination in destinations))
+        rules = BUILD['MANIFEST']['copy']
+        self.assertEqual(rules, [])  # Upstream inputs use CMake's install components.
 
     def setUp(self):
         parent = ROOT / ".build/copy-rules-tests"
@@ -103,6 +99,15 @@ class CopyRuleTests(unittest.TestCase):
             (self.inputs / "src/kernels/example/kernel.cu").write_bytes(b"// changed CUDA source\n")
             with self.assertRaisesRegex(RuntimeError, "fresh.*--source-dir"):
                 BUILD["verify_source"](output)
+
+    def test_changed_patch_set_requires_a_fresh_source(self):
+        output = self.prepared_fixture()
+        with self.source_globals():
+            BUILD["verify_source"](output)
+            self.manifest["patches"] = ["new-build-hook.patch"]
+            with self.assertRaisesRegex(RuntimeError, "patch set is stale"):
+                BUILD["verify_source"](output)
+        self.assertTrue((output / "rtx-spark-source.json").is_file())
 
     def test_removed_repository_input_cannot_leave_an_old_prepared_file(self):
         output = self.prepared_fixture()
@@ -229,6 +234,10 @@ class SourceChangesTests(unittest.TestCase):
             "_VERSION": {"manifest_path": lambda: manifest},
         }):
             result = BUILD["prepare"](prepared, upstream)
+            patch_file = manifest.parent / "fixture.patch"
+            patch_file.write_bytes(patch_file.read_bytes().replace(b"+set(FIXTURE after)", b"+set(FIXTURE changed)"))
+            with self.assertRaisesRegex(RuntimeError, "patches changed"):
+                BUILD["verify_source"](prepared)
         self.assertTrue(result["source_prepared"])
         self.assertEqual((prepared / "CMakeLists.txt").read_bytes(), before.replace(b"before", b"after"))
         self.assertEqual(git("config", "--local", "core.autocrlf").strip(), b"true")

@@ -1,9 +1,8 @@
 * text=auto eol=lf
 src/** -text
-third_party/** -text
 assets/** -text
 patches/** -text
-*.patch whitespace=-blank-at-eol
+*.patch whitespace=-blank-at-eol,-space-before-tab
 *.dll binary
 *.pyd binary
 *.cubin binary

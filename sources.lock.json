@@ -45,5 +45,117 @@
       "upstream_status": "closed-unmerged",
       "scope": "SWA-only adaptation preserving pinned Mamba/FullAttention/base-CoW"
     }
+  },
+  "dependencies": {
+    "flashinfer-python": {
+      "version": "0.7.0.post1",
+      "url": "https://files.pythonhosted.org/packages/00/7d/16237087a2af99086ef4ae9808dff9b24f0a4db4cfd673233836821a32e0/flashinfer_python-0.7.0.post1-py3-none-any.whl",
+      "sha256": "c7adf826568d61fc1b7d3aadd4cae387a35a138bfc08e2deca2f34ecfa280716",
+      "filename": "flashinfer_python-0.7.0.post1-py3-none-any.whl",
+      "kind": "bdist_wheel",
+      "runtime": true,
+      "modules": [
+        "flashinfer"
+      ],
+      "patches": [
+        "patches/flashinfer/0001-windows-runtime.patch"
+      ],
+      "native_patches": [
+        "patches/flashinfer/0002-windows-headers.patch"
+      ]
+    },
+    "jmespath": {
+      "version": "1.1.0",
+      "url": "https://files.pythonhosted.org/packages/14/2f/967ba146e6d58cf6a652da73885f52fc68001525b4197effc174321d70b4/jmespath-1.1.0-py3-none-any.whl",
+      "sha256": "a5663118de4908c91729bea0acadca56526eb2698e83de10cd116ae0f4e97c64",
+      "filename": "jmespath-1.1.0-py3-none-any.whl",
+      "kind": "bdist_wheel",
+      "runtime": true,
+      "modules": [
+        "jmespath"
+      ],
+      "dist_info": "jmespath-1.1.0.dist-info"
+    },
+    "mistral-common": {
+      "version": "1.12.0",
+      "url": "https://files.pythonhosted.org/packages/c0/78/2881bae14f5d79c6d4626439e74f1bc1591d0f10a9eb7eea5a408ecdb877/mistral_common-1.12.0-py3-none-any.whl",
+      "sha256": "fa4504b66c30c0201ae4578c0340c5ee2abd22151c271532f62e373b985a53cf",
+      "filename": "mistral_common-1.12.0-py3-none-any.whl",
+      "kind": "bdist_wheel",
+      "runtime": true,
+      "modules": [
+        "mistral_common"
+      ],
+      "dist_info": "mistral_common-1.12.0.dist-info"
+    },
+    "model-hosting-container-standards": {
+      "version": "0.1.16",
+      "url": "https://files.pythonhosted.org/packages/07/ef/6eabeb251d2a0598cb5f9a274159e05ae07a1e3fe6a1473bf6035793252a/model_hosting_container_standards-0.1.16-py3-none-any.whl",
+      "sha256": "47f4f65713120bc3a69feb022981a38db9e557aedf88dbd72077f20588caa12b",
+      "filename": "model_hosting_container_standards-0.1.16-py3-none-any.whl",
+      "kind": "bdist_wheel",
+      "runtime": true,
+      "modules": [
+        "model_hosting_container_standards"
+      ],
+      "dist_info": "model_hosting_container_standards-0.1.16.dist-info"
+    },
+    "prometheus-fastapi-instrumentator": {
+      "version": "8.1.0",
+      "url": "https://files.pythonhosted.org/packages/44/b9/91a2246e6cf01b7ccb14479803c8a50f9c258ae5c6a0f16ba3294820632b/prometheus_fastapi_instrumentator-8.1.0-py3-none-any.whl",
+      "sha256": "b9f40b2cff3f7891ca0610b3ae4fc6ec723fd326b04bb659819aaeb821a0fc7d",
+      "filename": "prometheus_fastapi_instrumentator-8.1.0-py3-none-any.whl",
+      "kind": "bdist_wheel",
+      "runtime": true,
+      "modules": [
+        "prometheus_fastapi_instrumentator"
+      ],
+      "dist_info": "prometheus_fastapi_instrumentator-8.1.0.dist-info"
+    },
+    "pycountry": {
+      "version": "26.2.16",
+      "url": "https://files.pythonhosted.org/packages/9c/42/7703bd45b62fecd44cd7d3495423097e2f7d28bc2e99e7c1af68892ab157/pycountry-26.2.16-py3-none-any.whl",
+      "sha256": "115c4baf7cceaa30f59a4694d79483c9167dbce7a9de4d3d571c5f3ea77c305a",
+      "filename": "pycountry-26.2.16-py3-none-any.whl",
+      "kind": "bdist_wheel",
+      "runtime": true,
+      "modules": [
+        "pycountry"
+      ],
+      "dist_info": "pycountry-26.2.16.dist-info"
+    },
+    "pydantic-extra-types": {
+      "version": "2.11.1",
+      "url": "https://files.pythonhosted.org/packages/17/c1/3226e6d7f5a4f736f38ac11a6fbb262d701889802595cdb0f53a885ac2e0/pydantic_extra_types-2.11.1-py3-none-any.whl",
+      "sha256": "1722ea2bddae5628ace25f2aa685b69978ef533123e5638cfbddb999e0100ec1",
+      "filename": "pydantic_extra_types-2.11.1-py3-none-any.whl",
+      "kind": "bdist_wheel",
+      "runtime": true,
+      "modules": [
+        "pydantic_extra_types"
+      ],
+      "dist_info": "pydantic_extra_types-2.11.1.dist-info"
+    },
+    "tiktoken": {
+      "version": "0.14.0",
+      "url": "https://files.pythonhosted.org/packages/66/62/167a842aa0429d45f5e797354fd4343a96f6043d67d0513c675c7b8d36e6/tiktoken-0.14.0.tar.gz",
+      "sha256": "231dec90efcdccf1b565a1416107736f1e09b1a08fe736ef9d6363e626d03874",
+      "filename": "tiktoken-0.14.0.tar.gz",
+      "kind": "sdist"
+    },
+    "llguidance": {
+      "version": "1.7.6",
+      "url": "https://files.pythonhosted.org/packages/da/91/6bc8bb503dc259e46d253b5424385a54fe06c38a4c7a12befe69a3c2455a/llguidance-1.7.6.tar.gz",
+      "sha256": "db7febbe412ed2015501904646750071d7e00e6df7f85c4b956ad4f206fd2df7",
+      "filename": "llguidance-1.7.6.tar.gz",
+      "kind": "sdist"
+    },
+    "oss-harmony": {
+      "version": "0.0.11",
+      "url": "https://files.pythonhosted.org/packages/43/88/ca56e5b17df4763bbb552c7be3abe432b51db3c51f6327a3848b88ad7c08/oss_harmony-0.0.11.tar.gz",
+      "sha256": "ccad467b71d61490df1f2204b7a064990833338615ac135536c5b3a8e2d03a15",
+      "filename": "oss_harmony-0.0.11.tar.gz",
+      "kind": "sdist"
+    }
   }
 }

@@ -21,6 +21,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 _VERSION = runpy.run_path(ROOT / "src/version.py")
 _SOURCE_CHANGES = runpy.run_path(ROOT / "scripts/apply_source_changes.py")
+_DEPENDENCIES = runpy.run_path(ROOT / "scripts/prepare_dependencies.py")
 MANIFEST = _VERSION["load_manifest"]()
 PROJECT_VERSION = _VERSION["PROJECT_VERSION"]
 UPSTREAM_VERSION = MANIFEST["vllm"]["version"]
@@ -62,6 +63,14 @@ def copy_inputs(manifest=None, *, source_root=None):
 def copy_sources(source: Path, manifest=None, *, source_root=None):
     return _SOURCE_CHANGES["copy_sources"](
         source, MANIFEST if manifest is None else manifest, source_root=ROOT if source_root is None else source_root)
+
+
+def patch_fingerprint():
+    result = hashlib.sha256()
+    for name in MANIFEST.get("patches", ()):
+        result.update(name.encode("utf-8") + b"\0")
+        result.update((_VERSION["manifest_path"]().parent / safe_relative(name)).read_bytes())
+    return result.hexdigest()
 
 
 def prepare(source: Path, upstream: Path | None = None) -> dict:
@@ -108,6 +117,8 @@ def prepare(source: Path, upstream: Path | None = None) -> dict:
     changes = _SOURCE_CHANGES["apply_source_changes"](source, _VERSION["manifest_path"](), source_root=ROOT)
     copied = changes["copied_files"]
     record = {"upstream": repository, "commit": commit, "vllm_version": manifest["vllm"]["version"],
+              "patches": manifest.get("patches", []),
+              "patches_sha256": patch_fingerprint(),
               "version": VERSION, "copy_rules": len(manifest["copy"]), "copied_files": copied,
               "source_prepared": True,
               "GPU_initialized": False}
@@ -122,6 +133,10 @@ def verify_source(source: Path):
     if (receipt.get("source_prepared") is not True or receipt.get("commit") != COMMIT
             or receipt.get("vllm_version") != UPSTREAM_VERSION):
         raise RuntimeError("Source receipt belongs to another vLLM release")
+    if receipt.get("patches", []) != MANIFEST.get("patches", []):
+        raise RuntimeError("Prepared source patch set is stale; use a fresh --source-dir")
+    if MANIFEST.get("patches") and receipt.get("patches_sha256") != patch_fingerprint():
+        raise RuntimeError("Prepared source patches changed; use a fresh --source-dir")
     if (source / "vllm/_rtx_spark").exists():
         raise RuntimeError("Prepared source contains obsolete private copies; use a fresh --source-dir")
     for name in ("CMakeLists.txt", "vllm/__init__.py", "vllm/_version.py", "vllm/engine/arg_utils.py"):
@@ -199,9 +214,9 @@ def build_native(source: Path, build: Path, jobs: int):
     run(["cmake", "-S", source, "-B", build, "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release",
          "-DCMAKE_CXX_COMPILER=cl", "-DCMAKE_CUDA_FLAGS=-target-dir=arm64",
          "-DCMAKE_CUDA_ARCHITECTURES=" + manifest["build"]["cuda_architectures"],
-         "-DVLLM_PYTHON_EXECUTABLE=" + sys.executable,
+         "-DVLLM_PYTHON_EXECUTABLE=" + Path(sys.executable).as_posix(),
          "-DVLLM_BUILD_EXTERNAL_KERNELS=OFF", "-DVLLM_BUILD_SM120_CUTLASS=OFF",
-         "-DCMAKE_INSTALL_PREFIX=" + str(source), "-DNVCC_THREADS=2"], env=environment)
+         "-DCMAKE_INSTALL_PREFIX=" + source.as_posix(), "-DNVCC_THREADS=2"], env=environment)
     # This equivalent alias avoids MSVC's dependent-alias lookup error.
     stride = build / "_deps/cutlass-src/include/cute/stride.hpp"
     if stride.exists():
@@ -213,6 +228,8 @@ def build_native(source: Path, build: Path, jobs: int):
     for extension in manifest["build"]["core_extensions"]:
         component = Path(extension).stem
         run(["cmake", "--build", build, "--parallel", str(jobs), "--target", component], env=environment)
+        run(["cmake", "--install", build, "--component", component], env=environment)
+    for component in manifest["build"]["source_components"]:
         run(["cmake", "--install", build, "--component", component], env=environment)
     return source / "vllm"
 
@@ -234,6 +251,9 @@ def wheel(source: Path, native: Path, output: Path) -> dict:
     records = []
     written = set()
     payload_counts = {}
+    external_licenses = list(payload_files(source / "share/rtx-spark/licenses"))
+    if len(external_licenses) != 8:
+        raise RuntimeError("Upstream dependency sources are not installed; install the vLLM source components before wheel mode")
     def add(archive, path: str, raw: bytes):
         if path in written:
             raise ValueError("Duplicate wheel member: " + path)
@@ -255,12 +275,14 @@ def wheel(source: Path, native: Path, output: Path) -> dict:
         for name in native_names:
             add(archive, "vllm/" + name, (native / name).read_bytes())
         for folder, prefix in (("src", "vllm/_rtx_spark"),
-                               ("third_party/python", "vllm/_rtx_spark/vendor"),
+                               (".build/vendor", "vllm/_rtx_spark/vendor"),
                                ("assets", "vllm/_rtx_spark/assets")):
             paths = list(payload_files(ROOT / folder))
             if not paths:
                 raise RuntimeError("Bundled wheel payload is missing: " + folder)
             for path, relative in paths:
+                if folder == "assets" and relative.startswith("python/"):
+                    continue  # Native Python packages are already in the vendor payload.
                 add(archive, prefix + "/" + relative, path.read_bytes())
             payload_counts[folder] = len(paths)
         add(archive, "vllm/_rtx_spark/manifest.json", _VERSION["manifest_path"]().read_bytes())
@@ -271,6 +293,7 @@ def wheel(source: Path, native: Path, output: Path) -> dict:
                     "License-File: LICENSE", "License-File: THIRD_PARTY_NOTICES.md",
                     "Project-URL: Repository, https://github.com/devjeonghwan/vllm-for-rtx-spark"]
         metadata.extend("Requires-Dist: " + item for item in dependencies())
+        metadata.extend("License-File: " + relative for _, relative in external_licenses)
         add(archive, dist + "/METADATA", ("\n".join(metadata) + "\n\n").encode())
         add(archive, dist + "/WHEEL", ("Wheel-Version: 1.0\nGenerator: vllm-rtx-spark\nRoot-Is-Purelib: false\nTag: " + tag + "\n").encode())
         add(archive, dist + "/entry_points.txt", (
@@ -279,6 +302,8 @@ def wheel(source: Path, native: Path, output: Path) -> dict:
         add(archive, dist + "/top_level.txt", b"vllm\n")
         add(archive, dist + "/licenses/LICENSE", (source / "LICENSE").read_bytes())
         add(archive, dist + "/licenses/THIRD_PARTY_NOTICES.md", (ROOT / "THIRD_PARTY_NOTICES.md").read_bytes())
+        for path, relative in external_licenses:
+            add(archive, dist + "/licenses/" + relative, path.read_bytes())
         record_buffer = io.StringIO(newline="")
         csv.writer(record_buffer, lineterminator="\n").writerows(records + [(dist + "/RECORD", "", "")])
         record_info = zipfile.ZipInfo(dist + "/RECORD", (2026, 10, 27, 0, 0, 0))
@@ -302,6 +327,8 @@ def main():
     parser.add_argument("--output", type=Path, default=ROOT / "dist")
     parser.add_argument("--jobs", type=int, default=2, choices=range(1, 9))
     args = parser.parse_args()
+    if args.command in ("build", "wheel"):
+        _DEPENDENCIES["prepare_runtime"]()
     source = (args.source_dir or ROOT / ".build" / ("vllm-" + UPSTREAM_VERSION)).resolve()
     if args.command in ("prepare", "build"):
         result = prepare(source, args.upstream_dir)

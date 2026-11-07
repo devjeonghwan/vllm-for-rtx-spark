@@ -1,2 +1,0 @@
-[console_scripts]
-mistral_common = mistral_common.experimental.app.main:cli

@@ -4,11 +4,11 @@
 - Qwen3.8 integration is based on myllmbox/qwen38-flash-next-recipe v5.3.1 and its pinned image. Original notices accompany the reused files.
 - The CSF SM121a GPU object is the original object extracted from the recipe's `libmbx_marlin_csf.so`. It is bundled unchanged; its CUDA kernel source is not included. The Windows host code is included.
 - b12x sources and policies retain their original Apache-2.0 notices. CuTe-generated kernels and NVIDIA DSL sources retain their separate notices; the compiler is a build dependency and is not bundled.
-- The added kernel sources are ordinary files under `third_party/vllm-kernels/`, recovered from the pinned recipe image. Their original source notices are preserved.
+- DeepGEMM, FlashAttention CuTe, FlashMLA, MSA, TML-FA4 and Triton kernels use the pinned vLLM CMake dependency revisions and install rules, including the CUTLASS submodules. Their source notices and license files are retained in the wheel.
 - PyTorch, CUDA and NVIDIA FlashAttention are installed from their official distributions. They are not built or redistributed by this project.
 - The optional draft HEAD2 basis is the original recipe data file, not a trained or modified model supplied by this project.
-- Bundled Python libraries and native helpers retain their original license files. Model weights are obtained separately under the model's license.
-- oss-harmony 0.0.11 (Apache-2.0) and llguidance 1.7.6 (MIT) include native ARM64 bindings and their original source under `third_party/`.
+- Bundled Python libraries are prepared from the fixed archives in `sources.lock.json`; project changes to FlashInfer are recorded under `patches/flashinfer/`. Original license files and notices are retained. Model weights are obtained separately under the model's license.
+- oss-harmony 0.0.11 (Apache-2.0), tiktoken 0.14.0 (MIT) and llguidance 1.7.6 (MIT) use unchanged source archives pinned in `sources.lock.json`. Their validated native ARM64 packages are under `assets/python/`; rebuild scripts fetch the original sources into `.build/sources/`.
 - HC up-projection and gate/mix fusion adapts Strata (Niko1221/Strata), MIT, commit `46c152a1310f77cd2f0ce2c7cd213962df14fe83`, `src/prefill/kernels.cu:2367-2496`. The maintained CUDA source and original license are under `src/kernels/hc_upmix/`.
 - The sampling kernels under `src/kernels/sampling/` adapt the pinned vLLM Qrita top-k/top-p and rejection kernels, Apache-2.0. Their original copyright and Qrita paper attribution are retained in the sources.
 - DFlash2 completed-layer target features follow z-lab/dflash at the revision recorded in `sources.lock.json`; external draft weights are obtained separately.

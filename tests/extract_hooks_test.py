@@ -35,6 +35,10 @@ class ExtractHookTests(unittest.TestCase):
         for name in ("vllm/_rtx_spark/runtime/vllm/adapter.py",
                      "vllm/_rtx_spark/recipes/qwen3_8_flash_next/helpers/mbx_loader.py",
                      "vllm/third_party/deep_gemm/__init__.py",
+                     "vllm/vllm_flash_attn/cute/interface.py",
+                     "vllm/third_party/fmha_sm100/api.py",
+                     "vllm/third_party/tml_fa4/interface.py",
+                     "vllm/third_party/triton_kernels/compaction.py",
                      "vllm/third_party/flashmla/flash_mla_interface.py"):
             with self.subTest(name=name):
                 self.assertFalse(EXPORT["is_patch_source"](name))

@@ -1,0 +1,20 @@
+{
+  "oss-harmony": {
+    "source": "oss-harmony",
+    "version": "0.0.11",
+    "target": "aarch64-pc-windows-msvc",
+    "source_patched": false
+  },
+  "tiktoken": {
+    "source": "tiktoken",
+    "version": "0.14.0",
+    "target": "aarch64-pc-windows-msvc",
+    "source_patched": false
+  },
+  "llguidance": {
+    "source": "llguidance",
+    "version": "1.7.6",
+    "target": "aarch64-pc-windows-msvc",
+    "source_patched": false
+  }
+}

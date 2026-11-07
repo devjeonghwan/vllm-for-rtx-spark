@@ -28,7 +28,7 @@ def resources_root():
 def vendor_root():
     """Private third-party Python dependencies, without importing them."""
     checkout = _checkout_root()
-    return checkout / "third_party" / "python" if checkout is not None else source_root() / "vendor"
+    return checkout / ".build" / "vendor" if checkout is not None else source_root() / "vendor"
 
 
 def recipe_helpers(recipe="qwen3_8_flash_next"):

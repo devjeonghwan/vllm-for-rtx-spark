@@ -1,0 +1,34 @@
+--- a/native-include/flashinfer/math.cuh
++++ b/native-include/flashinfer/math.cuh
+@@ -191,7 +191,7 @@
+  * \param x input
+  */
+ __forceinline__ __device__ half ptx_exp2(half x) {
+-  ushort y_u16;
++  unsigned short y_u16;
+   asm volatile("ex2.approx.f16 %0, %1;" : "=h"(y_u16) : "h"(__half_as_ushort(x)));
+   return __ushort_as_half(y_u16);
+ }
+@@ -266,7 +266,7 @@
+  * \param x input
+  */
+ __forceinline__ __device__ half tanh(half x) {
+-  ushort y_u16;
++  unsigned short y_u16;
+   asm volatile("tanh.approx.f16 %0, %1;" : "=h"(y_u16) : "h"(__half_as_ushort(x)));
+   return __ushort_as_half(y_u16);
+ }
+--- a/native-include/flashinfer/vec_dtypes.cuh
++++ b/native-include/flashinfer/vec_dtypes.cuh
+@@ -33,7 +33,11 @@
+ #define FLASHINFER_HARDWARE_FP8_CONVERSION_ENABLED
+ #endif
+ 
++#if defined(_MSC_VER)
++#define FLASHINFER_INLINE __forceinline__ __device__
++#else
+ #define FLASHINFER_INLINE inline __attribute__((always_inline)) __device__
++#endif
+ 
+ __device__ __forceinline__ void st_global_release(int4 const& val, int4* addr) {
+   asm volatile("st.release.global.sys.v4.b32 [%4], {%0, %1, %2, %3};" ::"r"(val.x), "r"(val.y),

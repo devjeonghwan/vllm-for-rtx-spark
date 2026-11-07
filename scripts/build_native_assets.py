@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import runpy
 import shutil
 import struct
 import subprocess
@@ -20,6 +21,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+_DEPENDENCIES = runpy.run_path(ROOT / "scripts/prepare_dependencies.py")
 
 
 def sha(path):
@@ -160,7 +162,7 @@ def build(args):
         produced["csf_host"] = target / "mbx_original_csf_native_host.dll"
     if "sampling" in chosen:
         ffi = package_path("tvm_ffi")
-        source = ROOT / "third_party/flashinfer-native"
+        source = _DEPENDENCIES["prepare_flashinfer_native"]()
         includes = [source / "cccl/cub", source / "cccl/thrust", source / "cccl/libcudacxx/include",
                     source / "native-include", source / "vendor/csrc", source / "vendor/cutlass/include",
                     source / "vendor/cutlass/tools/util/include", source / "vendor/spdlog/include",
@@ -192,14 +194,15 @@ def build(args):
             raise RuntimeError("Install native ARM64 Rust/Cargo to build tiktoken")
         wheelhouse = output / "tokenizer"
         wheelhouse.mkdir()
-        run([sys.executable, "-m", "pip", "wheel", str(ROOT / "third_party/tiktoken"),
+        source = _DEPENDENCIES["prepare_source"]("tiktoken")
+        run([sys.executable, "-m", "pip", "wheel", str(source),
              "--no-deps", "--no-build-isolation", "--wheel-dir", str(wheelhouse)], "tiktoken-build")
         wheels = list(wheelhouse.glob("tiktoken-*-win_arm64.whl"))
         if len(wheels) != 1:
             raise RuntimeError("Expected exactly one native ARM64 tiktoken wheel")
         receipt["tokenizer_wheel"] = {"path": str(wheels[0]), "sha256": sha(wheels[0])}
         if args.install:
-            target = ROOT / "third_party/python"
+            target = ROOT / "assets/python"
             with zipfile.ZipFile(wheels[0]) as archive:
                 for member in archive.infolist():
                     relative = Path(member.filename)
@@ -216,7 +219,7 @@ def build(args):
             raise RuntimeError("Install maturin>=1,<2 in the build environment")
         wheelhouse = output / "llguidance"
         wheelhouse.mkdir()
-        source = ROOT / "third_party/llguidance"
+        source = _DEPENDENCIES["prepare_source"]("llguidance")
         run([sys.executable, "-m", "maturin", "build", "--manifest-path", str(source / "python_ext/Cargo.toml"),
              "--release", "--locked", "--target", "aarch64-pc-windows-msvc", "--jobs", str(args.jobs),
              "--out", str(wheelhouse), "--interpreter", sys.executable], "llguidance-build", cwd=source)
@@ -225,7 +228,7 @@ def build(args):
             raise RuntimeError("Expected exactly one native ARM64 llguidance wheel")
         receipt["llguidance_wheel"] = {"path": str(wheels[0]), "sha256": sha(wheels[0])}
         if args.install:
-            target = ROOT / "third_party/python"
+            target = ROOT / "assets/python"
             with zipfile.ZipFile(wheels[0]) as archive:
                 for member in archive.infolist():
                     relative = Path(member.filename)
@@ -245,7 +248,7 @@ def build(args):
             manifest["files"][name].pop("sha256", None)
             manifest["files"][name].pop("bytes", None)
             manifest["files"][name].update(file=path.name,
-                                            origin="Built from this repository's src and third_party trees")
+                                            origin="Built from maintained src and pinned dependency sources")
         (target / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(output / "build.json")
 

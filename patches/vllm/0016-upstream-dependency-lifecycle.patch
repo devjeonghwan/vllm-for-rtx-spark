@@ -1,0 +1,366 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1605,8 +1605,7 @@
+ endif()
+ 
+ # For CUDA and HIP builds also build the triton_kernels external package.
+-if(VLLM_BUILD_EXTERNAL_KERNELS AND
+-   (VLLM_GPU_LANG STREQUAL "CUDA" OR VLLM_GPU_LANG STREQUAL "HIP"))
++if(VLLM_GPU_LANG STREQUAL "CUDA" OR VLLM_GPU_LANG STREQUAL "HIP")
+     include(cmake/external_projects/triton_kernels.cmake)
+ endif()
+ 
+@@ -1623,14 +1622,18 @@
+ endif()
+ 
+ # For CUDA we also build and ship some external projects.
+-if (VLLM_GPU_LANG STREQUAL "CUDA" AND VLLM_BUILD_EXTERNAL_KERNELS)
++if (VLLM_GPU_LANG STREQUAL "CUDA")
++    # Source-only components still use upstream fetching and install rules.
++    # The Windows ARM64 build keeps optional native extensions disabled.
+     include(cmake/external_projects/deepgemm.cmake)
+-    include(cmake/external_projects/deepselect.cmake)
+     include(cmake/external_projects/fmha_sm100.cmake)
+     include(cmake/external_projects/flashmla.cmake)
+-    include(cmake/external_projects/flashkda.cmake)
+-    include(cmake/external_projects/qutlass.cmake)
+     include(cmake/external_projects/tml_fa4.cmake)
++    if(VLLM_BUILD_EXTERNAL_KERNELS)
++      include(cmake/external_projects/deepselect.cmake)
++      include(cmake/external_projects/flashkda.cmake)
++      include(cmake/external_projects/qutlass.cmake)
++    endif()
+ 
+     # vllm-flash-attn should be last as it overwrites some CMake functions
+     include(cmake/external_projects/vllm_flash_attn.cmake)
+diff --git a/cmake/external_projects/deepgemm.cmake b/cmake/external_projects/deepgemm.cmake
+--- a/cmake/external_projects/deepgemm.cmake
++++ b/cmake/external_projects/deepgemm.cmake
+@@ -28,7 +28,7 @@
+   message(STATUS "DeepGEMM using local DEEPGEMM_SRC_DIR: ${deepgemm_SOURCE_DIR}")
+ else()
+   # Keep in sync with tools/install_deepgemm.sh
+-  if(WIN32)
++  if(WIN32 AND VLLM_BUILD_EXTERNAL_KERNELS)
+     set(_DEEPGEMM_UPSTREAM_REPO "https://github.com/SystemPanic/DeepGEMM-windows.git")
+     set(_DEEPGEMM_UPSTREAM_TAG "1eeab30ec29cd9e782c9c1fba194a36591225024")
+   else()
+@@ -61,38 +61,18 @@
+       GIT_TAG "${_DEEPGEMM_UPSTREAM_TAG}"
+       GIT_SUBMODULES "third-party/cutlass" "third-party/deep_jit"
+       GIT_PROGRESS TRUE
++      GIT_CONFIG core.autocrlf=false core.eol=lf core.longpaths=true
+     )
+   endif()
+   message(STATUS "DeepGEMM is available at ${deepgemm_SOURCE_DIR}")
+   
+-  if(WIN32)
+-    find_package(Git REQUIRED)
+-    set(_dg_cutlass_dir "${deepgemm_SOURCE_DIR}/third-party/cutlass")
+-    set(_dg_cutlass_patch
+-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/windows_cutlass_memory_sm75.patch")
+-
+-    # If the patch reverses cleanly, it's already applied.
++  if(WIN32 AND VLLM_BUILD_EXTERNAL_KERNELS)
+     execute_process(
+-      COMMAND "${GIT_EXECUTABLE}" apply --reverse --check --ignore-whitespace
+-              "${_dg_cutlass_patch}"
+-      WORKING_DIRECTORY "${_dg_cutlass_dir}"
+-      RESULT_VARIABLE _dg_patch_already
+-      OUTPUT_QUIET ERROR_QUIET)
+-
+-    if(NOT _dg_patch_already EQUAL 0)
+-      execute_process(
+-        COMMAND "${GIT_EXECUTABLE}" apply --ignore-whitespace
+-                "${_dg_cutlass_patch}"
+-        WORKING_DIRECTORY "${_dg_cutlass_dir}"
+-        RESULT_VARIABLE _dg_patch_rc
+-        ERROR_VARIABLE _dg_patch_err)
+-      if(NOT _dg_patch_rc EQUAL 0)
+-        message(FATAL_ERROR
+-          "Failed to apply ${_dg_cutlass_patch} to ${_dg_cutlass_dir}:\n"
+-          "${_dg_patch_err}")
+-      endif()
+-      message(STATUS "Applied windows_cutlass_memory_sm75.patch to DeepGEMM CUTLASS")
+-    endif()
++      COMMAND "${CMAKE_COMMAND}"
++        "-DSOURCE_DIR=${deepgemm_SOURCE_DIR}/third-party/cutlass"
++        "-DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/../patches/windows_cutlass_memory_sm75.patch"
++        -P "${CMAKE_CURRENT_LIST_DIR}/../patches/apply_windows_kernel_patch.cmake"
++      COMMAND_ERROR_IS_FATAL ANY)
+   endif()
+ endif()
+ 
+@@ -122,7 +102,7 @@
+ cuda_archs_loose_intersection(DEEPGEMM_ARCHS
+   "${DEEPGEMM_SUPPORT_ARCHS}" "${CUDA_ARCHS}")
+ 
+-if(DEEPGEMM_ARCHS)
++if(DEEPGEMM_ARCHS OR NOT VLLM_BUILD_EXTERNAL_KERNELS)
+   message(STATUS "DeepGEMM CUDA architectures: ${DEEPGEMM_ARCHS}")
+ 
+   #
+@@ -151,6 +131,7 @@
+     "${deepgemm_SOURCE_DIR}/third-party/deep_jit/include/*.h"
+     "${deepgemm_SOURCE_DIR}/third-party/deep_jit/include/*.hpp")
+ 
++  if(VLLM_BUILD_EXTERNAL_KERNELS)
+   set(_dg_dir "${CMAKE_CURRENT_BINARY_DIR}/deepgemm_C")
+   set(_dg_marker "${_dg_dir}/.built")
+   add_custom_command(
+@@ -175,6 +156,11 @@
+       PATTERN "_C.py"
+       PATTERN "_C_extension*.so"
+       PATTERN "_C_extension*.pyd")
++  else()
++    add_custom_target(_deep_gemm_C)
++    install(FILES "${deepgemm_SOURCE_DIR}/deep_gemm/_C.py"
++      DESTINATION vllm/third_party/deep_gemm COMPONENT _deep_gemm_C)
++  endif()
+ 
+   #
+   # Vendor DeepGEMM Python package files
+@@ -232,4 +218,8 @@
+     "unsupported CUDA architecture ${CUDA_ARCHS}")
+   # Create empty target so setup.py doesn't fail on unsupported systems
+   add_custom_target(_deep_gemm_C)
+-endif()
+\ No newline at end of file
++endif()
++install(FILES "${deepgemm_SOURCE_DIR}/LICENSE"
++  DESTINATION share/rtx-spark/licenses/deep_gemm COMPONENT _deep_gemm_C)
++install(FILES "${deepgemm_SOURCE_DIR}/third-party/cutlass/LICENSE.txt"
++  DESTINATION share/rtx-spark/licenses/deep_gemm_cutlass COMPONENT _deep_gemm_C)
+diff --git a/cmake/external_projects/flashmla.cmake b/cmake/external_projects/flashmla.cmake
+--- a/cmake/external_projects/flashmla.cmake
++++ b/cmake/external_projects/flashmla.cmake
+@@ -21,6 +21,7 @@
+         GIT_REPOSITORY https://github.com/vllm-project/FlashMLA
+         GIT_TAG 0eee43b12f034b657133cf2afca6a72ebb6efccf
+         GIT_PROGRESS TRUE
++        GIT_CONFIG core.autocrlf=false core.eol=lf core.longpaths=true
+         CONFIGURE_COMMAND ""
+         BUILD_COMMAND ""
+   )
+@@ -47,6 +48,15 @@
+ install(FILES "${FLASHMLA_VENDOR_DIR}/flash_mla_interface.py"
+         DESTINATION vllm/third_party/flashmla/
+         COMPONENT _flashmla_C)
++
++install(FILES "${flashmla_SOURCE_DIR}/LICENSE"
++  DESTINATION share/rtx-spark/licenses/flashmla COMPONENT _flashmla_C)
++
++if(NOT VLLM_BUILD_EXTERNAL_KERNELS)
++  add_custom_target(_flashmla_C)
++  add_custom_target(_flashmla_extension_C)
++  return()
++endif()
+ 
+ # The FlashMLA kernels only work on hopper and require CUDA 12.3 or later.
+ # Only build FlashMLA kernels if we are building for something compatible with 
+diff --git a/cmake/external_projects/fmha_sm100.cmake b/cmake/external_projects/fmha_sm100.cmake
+--- a/cmake/external_projects/fmha_sm100.cmake
++++ b/cmake/external_projects/fmha_sm100.cmake
+@@ -19,6 +19,7 @@
+     GIT_REPOSITORY https://github.com/vllm-project/MSA.git
+     GIT_TAG 968061ab16cb14991a5c7d4c0e8eabf531be0dcf
+     GIT_PROGRESS TRUE
++    GIT_CONFIG core.autocrlf=false core.eol=lf core.longpaths=true
+     CONFIGURE_COMMAND ""
+     BUILD_COMMAND ""
+   )
+@@ -94,3 +95,8 @@
+   PATTERN "__pycache__" EXCLUDE
+   PATTERN "*.pyc" EXCLUDE
+   PATTERN ".git*" EXCLUDE)
++
++install(FILES "${fmha_sm100_SOURCE_DIR}/LICENSE"
++  DESTINATION share/rtx-spark/licenses/fmha_sm100 COMPONENT fmha_sm100)
++install(FILES "${FMHA_SM100_PY_ROOT}/cutlass/LICENSE.txt"
++  DESTINATION share/rtx-spark/licenses/fmha_sm100_cutlass COMPONENT fmha_sm100)
+diff --git a/cmake/external_projects/tml_fa4.cmake b/cmake/external_projects/tml_fa4.cmake
+--- a/cmake/external_projects/tml_fa4.cmake
++++ b/cmake/external_projects/tml_fa4.cmake
+@@ -16,6 +16,7 @@
+     GIT_REPOSITORY https://github.com/vllm-project/tml-fa4.git
+     GIT_TAG 75765e76a9c2c012c1f6ecd64577eb646eb4d303
+     GIT_PROGRESS TRUE
++    GIT_CONFIG core.autocrlf=false core.eol=lf core.longpaths=true
+     CONFIGURE_COMMAND ""
+     BUILD_COMMAND "")
+ endif()
+@@ -48,3 +49,6 @@
+     file(WRITE \${DST_FILE} \"\${FILE_CONTENTS}\")
+   endforeach()
+ " COMPONENT tml_fa4)
++
++install(FILES "${tml_fa4_SOURCE_DIR}/flash_attn/cute/LICENSE"
++  DESTINATION share/rtx-spark/licenses/tml_fa4 COMPONENT tml_fa4)
+diff --git a/cmake/external_projects/triton_kernels.cmake b/cmake/external_projects/triton_kernels.cmake
+--- a/cmake/external_projects/triton_kernels.cmake
++++ b/cmake/external_projects/triton_kernels.cmake
+@@ -15,7 +15,7 @@
+     # Pinned from release/internal/3.8.x
+     set(TRITON_KERNELS_TAG "669b31acc1dd1b3fd93286afd5db67f65d9f7557")
+   else()
+-	if(WIN32)
++	if(WIN32 AND VLLM_BUILD_EXTERNAL_KERNELS)
+ 	  set(TRITON_GIT "https://github.com/triton-lang/triton-windows.git")
+ 	  set(TRITON_KERNELS_TAG "v3.6.0-windows.post26")
+ 	else()
+@@ -30,6 +30,7 @@
+           GIT_REPOSITORY ${TRITON_GIT}
+           GIT_TAG ${TRITON_KERNELS_TAG}
+           GIT_PROGRESS TRUE
++          GIT_CONFIG core.autocrlf=false core.eol=lf core.longpaths=true
+           SOURCE_SUBDIR python/triton_kernels/triton_kernels
+   )
+ endif()
+@@ -60,4 +61,6 @@
+         DESTINATION
+         vllm/third_party/triton_kernels/
+         COMPONENT triton_kernels
+-        FILES_MATCHING PATTERN "*.py")
+\ No newline at end of file
++        FILES_MATCHING PATTERN "*.py")
++install(FILES "${triton_kernels_SOURCE_DIR}/LICENSE"
++  DESTINATION share/rtx-spark/licenses/triton_kernels COMPONENT triton_kernels)
+diff --git a/cmake/external_projects/vllm_flash_attn.cmake b/cmake/external_projects/vllm_flash_attn.cmake
+--- a/cmake/external_projects/vllm_flash_attn.cmake
++++ b/cmake/external_projects/vllm_flash_attn.cmake
+@@ -29,11 +29,27 @@
+   set(VLLM_FLASH_ATTN_SRC_DIR $ENV{VLLM_FLASH_ATTN_SRC_DIR})
+ endif()
+ 
++set(_fa_source_subdir "")
++set(_fa_patch_command "")
++if(NOT VLLM_BUILD_EXTERNAL_KERNELS)
++  # Populate the original repository without configuring its native targets.
++  set(_fa_source_subdir "__rtx_spark_python_only__")
++elseif(WIN32)
++  set(_fa_patch_command "${CMAKE_COMMAND}"
++    "-DSOURCE_DIR=<SOURCE_DIR>"
++    "-DPATCH_FILE=${CMAKE_CURRENT_LIST_DIR}/../patches/windows_flash_attn.patch"
++    "-DPYTHON_EXECUTABLE=${VLLM_PYTHON_EXECUTABLE}"
++    "-DCUTLASS_FIX=${CMAKE_CURRENT_SOURCE_DIR}/fix_cutlass_msvc.py"
++    -P "${CMAKE_CURRENT_LIST_DIR}/../patches/apply_windows_kernel_patch.cmake")
++endif()
++
+ if(VLLM_FLASH_ATTN_SRC_DIR)
+   FetchContent_Declare(
+           vllm-flash-attn SOURCE_DIR
+           ${VLLM_FLASH_ATTN_SRC_DIR}
+           BINARY_DIR ${CMAKE_BINARY_DIR}/vllm-flash-attn
++          SOURCE_SUBDIR "${_fa_source_subdir}"
++          PATCH_COMMAND ${_fa_patch_command}
+   )
+ else()
+   FetchContent_Declare(
+@@ -41,8 +57,11 @@
+           GIT_REPOSITORY https://github.com/vllm-project/flash-attention.git
+           GIT_TAG 9cd61de38763d712bb6ce56e2a02cc2bf718c89f
+           GIT_PROGRESS TRUE
++          GIT_CONFIG core.autocrlf=false core.eol=lf core.longpaths=true
+           # Don't share the vllm-flash-attn build between build types
+           BINARY_DIR ${CMAKE_BINARY_DIR}/vllm-flash-attn
++          SOURCE_SUBDIR "${_fa_source_subdir}"
++          PATCH_COMMAND ${_fa_patch_command}
+   )
+ endif()
+ 
+@@ -60,7 +79,7 @@
+ # from this scope.  We therefore append the flags here so they propagate
+ # into the flash-attn build.  CMAKE_CACHE_ARGS does NOT work with
+ # FetchContent_MakeAvailable — it is silently ignored.
+-if (WIN32)
++if (WIN32 AND VLLM_BUILD_EXTERNAL_KERNELS)
+   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Xcompiler=/Zc:preprocessor")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:preprocessor")
+ endif()
+@@ -71,7 +90,7 @@
+ # After MakeAvailable, also force the flag onto the actual targets in case
+ # the subproject's CMakeLists.txt overrides CMAKE_CUDA_FLAGS with its own
+ # target_compile_options.
+-if (WIN32)
++if (WIN32 AND VLLM_BUILD_EXTERNAL_KERNELS)
+   foreach(_fa_tgt _vllm_fa2_C _vllm_fa3_C)
+     if(TARGET ${_fa_tgt})
+       target_compile_options(${_fa_tgt} PRIVATE
+@@ -80,34 +99,7 @@
+       )
+     endif()
+   endforeach()
+-  find_package(PythonInterp)
+-  find_package(Python)  
+-  find_package(Git REQUIRED)
+-  set(_dg_fa_patch
+-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/patches/windows_flash_attn.patch")
+-  # If the patch reverses cleanly, it's already applied.
+-  execute_process(
+-    COMMAND "${GIT_EXECUTABLE}" apply --reverse --check --ignore-whitespace
+-            "${_dg_fa_patch}"
+-    WORKING_DIRECTORY "${vllm-flash-attn_SOURCE_DIR}"
+-    RESULT_VARIABLE _dg_patch_already
+-    OUTPUT_QUIET ERROR_QUIET)
+ 
+-  if(NOT _dg_patch_already EQUAL 0)
+-    execute_process(
+-      COMMAND "${GIT_EXECUTABLE}" apply --ignore-whitespace
+-              "${_dg_fa_patch}"
+-      WORKING_DIRECTORY "${vllm-flash-attn_SOURCE_DIR}"
+-      RESULT_VARIABLE _dg_patch_rc
+-      ERROR_VARIABLE _dg_patch_err)
+-    if(NOT _dg_patch_rc EQUAL 0)
+-      message(FATAL_ERROR
+-        "Failed to apply ${_dg_fa_patch} to ${vllm-flash-attn_SOURCE_DIR}:\n"
+-        "${_dg_patch_err}")
+-    endif()
+-    message(STATUS "Applied windows_flash_attn.patch to flash-attention")
+-  endif()
+-  execute_process(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/fix_cutlass_msvc.py ${vllm-flash-attn_SOURCE_DIR}/csrc/cutlass)
+ endif()
+ 
+ # Restore the install prefix after FA's install rules
+@@ -145,7 +137,7 @@
+ # so edits to cute-dsl Python files take effect immediately without rebuilding.
+ # Otherwise, copy files and transform flash_attn.cute imports to
+ # vllm.vllm_flash_attn.cute to match our package structure.
+-if(VLLM_FLASH_ATTN_SRC_DIR)
++if(VLLM_FLASH_ATTN_SRC_DIR AND VLLM_BUILD_EXTERNAL_KERNELS)
+   install(CODE "
+     set(LINK_TARGET \"${vllm-flash-attn_SOURCE_DIR}/flash_attn/cute\")
+     set(LINK_NAME \"\${CMAKE_INSTALL_PREFIX}/vllm/vllm_flash_attn/cute\")
+@@ -166,4 +158,6 @@
+       file(WRITE \${DST_FILE} \"\${FILE_CONTENTS}\")
+     endforeach()
+   " COMPONENT _vllm_fa4_cutedsl_C)
+-endif()
+\ No newline at end of file
++endif()
++install(FILES "${vllm-flash-attn_SOURCE_DIR}/flash_attn/cute/LICENSE"
++  DESTINATION share/rtx-spark/licenses/flash_attn_cute COMPONENT _vllm_fa4_cutedsl_C)
+diff --git a/cmake/patches/apply_windows_kernel_patch.cmake b/cmake/patches/apply_windows_kernel_patch.cmake
+new file mode 100644
+--- /dev/null
++++ b/cmake/patches/apply_windows_kernel_patch.cmake
+@@ -0,0 +1,19 @@
++# Run after dependency population and before its sources are consumed.
++cmake_minimum_required(VERSION 3.26)
++find_package(Git REQUIRED)
++if(NOT EXISTS "${SOURCE_DIR}/.git" OR NOT EXISTS "${PATCH_FILE}")
++  message(FATAL_ERROR "Missing dependency source or patch")
++endif()
++execute_process(COMMAND "${GIT_EXECUTABLE}" -c core.autocrlf=false -c core.eol=lf apply --reverse --check --ignore-whitespace "${PATCH_FILE}"
++  WORKING_DIRECTORY "${SOURCE_DIR}" RESULT_VARIABLE _already
++  OUTPUT_QUIET ERROR_QUIET)
++if(NOT _already EQUAL 0)
++  execute_process(COMMAND "${GIT_EXECUTABLE}" -c core.autocrlf=false -c core.eol=lf apply --check --ignore-whitespace "${PATCH_FILE}"
++    WORKING_DIRECTORY "${SOURCE_DIR}" COMMAND_ERROR_IS_FATAL ANY)
++  execute_process(COMMAND "${GIT_EXECUTABLE}" -c core.autocrlf=false -c core.eol=lf apply --ignore-whitespace "${PATCH_FILE}"
++    WORKING_DIRECTORY "${SOURCE_DIR}" COMMAND_ERROR_IS_FATAL ANY)
++endif()
++if(DEFINED CUTLASS_FIX)
++  execute_process(COMMAND "${PYTHON_EXECUTABLE}" "${CUTLASS_FIX}" "${SOURCE_DIR}/csrc/cutlass"
++    COMMAND_ERROR_IS_FATAL ANY)
++endif()
