@@ -80,7 +80,7 @@ Monitoring is off by default (`--no-monitor`); it requires one Python API server
 
 | Model | Benchmark | This project, NVFP4 | NVIDIA llama.cpp, IQ4_XS |
 |---|---|---:|---:|
-| Qwen3.8-Flash-Next-FP4-Local | AA-AgentPerf-local, full replay | 734.51 s | 1,118.16 s |
+| Qwen3.8-Flash-Next-FP4-Local | AA-AgentPerf-local, full replay | 727.72 s | 1,118.16 s |
 | Qwen3.8-Flash-Next-FP4-Local | SPEED-Bench coding, 80 conversations | 70.44 tok/s | 35.37 tok/s |
 
 NVIDIA figures come from its [Windows recipe](https://nvidia.github.io/local-ai-inference-recipes/hardware/rtx-spark/index.html?model=qwen%2Fqwen3.8-flash-next&os=windows&backend=llama-cpp&memory=78&precision=iq4-xs&variant=vision-mtp&memoryConfig=128). Quantization and benchmark clients differ.
@@ -89,8 +89,8 @@ NVIDIA figures come from its [Windows recipe](https://nvidia.github.io/local-ai-
 
 | Model | Concurrency | Mixed tok/s | Code tok/s | JSON schema tok/s | Prose tok/s |
 |---|---:|---:|---:|---:|---:|
-| Qwen3.8-Flash-Next-FP4-Local | 1 | 62.85 | 60.40 | 47.20 | 42.38 |
-| Qwen3.8-Flash-Next-FP4-Local | 16 | 233.63 | 295.50 | 242.33 | 215.75 |
+| Qwen3.8-Flash-Next-FP4-Local | 1 | 65.75 | 62.58 | 47.70 | 43.95 |
+| Qwen3.8-Flash-Next-FP4-Local | 16 | 233.63 | 301.45 | 247.30 | 226.63 |
 | Gemma 4 12B IT FP8 Dynamic | 1 | 17.58 | 17.38 | 17.43 | 17.38 |
 | Gemma 4 12B IT FP8 Dynamic | 16 | 244.50 | 244.90 | 245.30 | 245.30 |
 
