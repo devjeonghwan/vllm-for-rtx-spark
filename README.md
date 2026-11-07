@@ -1,8 +1,9 @@
-<center>
+<p align="center">
 <img src="assets/vllm.png" alt="vLLM" width="80">
+</p>
 
-# vLLM for RTX Spark
-</center>
+<h1 align="center">vLLM for RTX Spark</h1>
+
 Optimized vLLM inference for NVIDIA RTX Spark N1X on Windows ARM64.
 
 ## Supported models
@@ -66,9 +67,9 @@ The 108 GB profiles may use shared memory. [DFlash2](configs/qwen3.8-flash-next/
 | 25 GB | 8 GB | [Default](configs/gemma4-12b-fp8/text.yaml) |
 
 ## Monitor
-<center>
+<p align="center">
 <img src="assets/monitor-screenshot.png" alt="monitor" width="960">
-</center>
+</p>
 
 Add `--monitor` to `vllm serve`, then open `http://127.0.0.1:8000/monitor/`.
 Add `--tray` for a Windows tray icon that reopens the monitor after closing the browser.
