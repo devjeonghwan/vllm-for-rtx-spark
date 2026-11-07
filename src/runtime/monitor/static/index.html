@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>vLLM Monitor</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="app-bar">
+    <div class="app-name"><img class="app-logo" src="vllm.png" alt=""><strong>vLLM Monitor</strong><span class="hardware-name">RTX Spark</span></div>
+    <div class="app-actions"><div class="menu-anchor"><button id="app-menu-toggle" class="icon-button" aria-label="Menu" aria-expanded="false" title="Menu">•••</button><div id="app-menu" class="menu" hidden><label><input id="auto-refresh" type="checkbox" checked>Auto refresh</label><label><input id="show-content" type="checkbox" checked>Show request text</label><hr><button id="export-requests">Export requests as JSON</button><button id="tray-stop">Stop server</button></div></div></div>
+  </header>
+  <section class="server-strip" aria-label="Server status">
+    <div class="server-top"><span class="engine-state"><span class="status-dot" id="engine-dot"></span><strong id="engine-state">Connecting</strong></span><span class="model-name" id="model-name">—</span><span class="server-address" id="server-address">—</span></div>
+    <div class="server-bottom"><span class="profile"><span class="field-label">Configuration</span><a href="#configuration" id="profile-name">—</a></span><span class="server-memory"><span class="field-label">KV</span><span id="kv-state">—</span></span><span class="queue-status"><span class="field-label">Running</span><strong id="running-count">—</strong><span class="field-label">Waiting</span><strong id="waiting-count">—</strong></span></div>
+  </section>
+  <nav class="tabs" aria-label="Views"><a href="#requests" data-view="requests" class="selected" aria-current="page">Requests <span id="request-count">0</span></a><a href="#configuration" data-view="configuration">Configuration</a><a href="#events" data-view="events">Logs</a></nav>
+  <main>
+    <section id="view-requests" class="view requests-view" aria-label="Requests">
+      <div class="request-list">
+        <div class="toolbar"><label class="search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.3"/><path d="m10 10 4 4"/></svg><input id="request-search" type="search" placeholder="Search requests" aria-label="Search requests"></label><select id="status-filter" aria-label="Request status"><option value="all">All statuses</option><option value="active">Active</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="cancelled">Cancelled</option></select><span class="toolbar-count" id="result-count">0</span></div>
+        <div class="table-scroll"><table class="request-table"><thead><tr><th>Requests</th><th>Status</th><th class="numeric">Input / Output</th><th class="numeric" title="Uncached input tokens / prefill time">Prefill <span>tok/s</span></th><th class="numeric" title="(Output tokens − 1) / time after first output">Decode <span>tok/s</span></th><th class="numeric" title="Output tokens / engine request time including queue">Gen <span>tok/s</span></th></tr></thead><tbody id="request-rows"></tbody></table></div>
+      </div>
+      <section class="detail-pane" id="detail-pane" aria-label="Request details" hidden><header class="detail-header"><strong class="mono" id="detail-id"></strong><div class="detail-tabs" role="tablist" aria-label="Request detail tabs"><button role="tab" id="tab-summary" data-detail="summary" aria-selected="true" aria-controls="detail-content">Summary</button><button role="tab" id="tab-content" data-detail="content" aria-selected="false" aria-controls="detail-content" tabindex="-1">Content</button><button role="tab" id="tab-json" data-detail="json" aria-selected="false" aria-controls="detail-content" tabindex="-1">JSON</button></div><button class="icon-button" id="detail-close" aria-label="Close details" title="Close details">×</button></header><div class="detail-content" id="detail-content" role="tabpanel" aria-labelledby="tab-summary"></div></section>
+    </section>
+    <section id="view-configuration" class="view" aria-label="Configuration" hidden><div class="toolbar"><span class="profile-label" id="config-profile">—</span><button id="copy-config">Copy</button></div><div class="config-scroll"><table class="config-table"><thead><tr><th>Setting</th><th>Value</th></tr></thead><tbody id="config-rows"></tbody></table></div></section>
+    <section id="view-events" class="view" aria-label="Logs" hidden><div class="toolbar"><label class="search"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6.5" cy="6.5" r="4.3"/><path d="m10 10 4 4"/></svg><input id="event-search" type="search" placeholder="Search logs" aria-label="Search logs"></label><select id="event-level" aria-label="Log level"><option value="all">All levels</option><option value="INFO">INFO</option><option value="WARN">WARN</option><option value="ERROR">ERROR</option></select></div><div class="table-scroll"><table class="event-table"><thead><tr><th>Time</th><th>Level</th><th>Message</th></tr></thead><tbody id="event-rows"></tbody></table></div></section>
+  </main>
+  <footer class="status-bar"><span><span class="status-dot neutral"></span>Connecting to server</span><span id="footer-state">Auto refresh</span><span class="version">—</span></footer>
+  <dialog id="stop-dialog"><h2>Stop server</h2><p>Finish active requests and stop this server.</p><div class="dialog-actions"><button id="stop-cancel">Cancel</button><button id="stop-confirm" class="accent-button">Stop</button></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

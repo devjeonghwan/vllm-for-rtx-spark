@@ -55,7 +55,8 @@
     "0014-fused-channelwise-fp8.patch",
     "0015-yaml-selected-parser-booleans.patch",
     "0016-upstream-dependency-lifecycle.patch",
-    "0017-skip-unused-flashinfer-metadata.patch"
+    "0017-skip-unused-flashinfer-metadata.patch",
+    "0018-local-monitor.patch"
   ],
   "copy": []
 }

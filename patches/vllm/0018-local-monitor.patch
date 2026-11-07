@@ -1,0 +1,80 @@
+diff --git a/vllm/utils/argparse_utils.py b/vllm/utils/argparse_utils.py
+--- a/vllm/utils/argparse_utils.py
++++ b/vllm/utils/argparse_utils.py
+@@ -331,7 +331,11 @@
+                     "using `vllm serve`. i.e. `vllm serve <model> --<arg> <value>`."
+                 )
+ 
++        _rtx_spark_config_file = None
+         if "--config" in args:
++            _config_index = args.index("--config")
++            if _config_index + 1 < len(args):
++                _rtx_spark_config_file = args[_config_index + 1]
+             args = self._pull_args_from_config(args)
+ 
+         def repl(match: re.Match) -> str:
+@@ -462,7 +466,10 @@
+             processed_args.append(dict_arg)
+             processed_args.append(json.dumps(dict_value))
+ 
+-        return super().parse_args(processed_args, namespace)
++        parsed = super().parse_args(processed_args, namespace)
++        if getattr(parsed, "monitor", False):
++            parsed._rtx_spark_config_file = _rtx_spark_config_file
++        return parsed
+ 
+     def check_port(self, value):
+         try:
+diff --git a/vllm/entrypoints/launchers/cli_args.py b/vllm/entrypoints/launchers/cli_args.py
+--- a/vllm/entrypoints/launchers/cli_args.py
++++ b/vllm/entrypoints/launchers/cli_args.py
+@@ -464,7 +464,9 @@
+     parser = FrontendArgs.add_cli_args(parser)
+     parser = AsyncEngineArgs.add_cli_args(parser)
+ 
+-    return parser
++    from vllm._rtx_spark.runtime.monitor import add_cli_args
++
++    return add_cli_args(parser)
+ 
+ 
+ def validate_grpc_port_arg(args: argparse.Namespace) -> None:
+@@ -519,6 +521,10 @@
+ 
+     validate_grpc_port_arg(args)
+ 
++    from vllm._rtx_spark.runtime.monitor import validate_args as validate_monitor_args
++
++    validate_monitor_args(args)
++
+     # Enable auto tool needs a tool call parser to be valid
+     if args.enable_auto_tool_choice and not args.tool_call_parser:
+         raise TypeError("Error: --enable-auto-tool-choice requires --tool-call-parser")
+diff --git a/vllm/entrypoints/launchers/api_server/entry.py b/vllm/entrypoints/launchers/api_server/entry.py
+--- a/vllm/entrypoints/launchers/api_server/entry.py
++++ b/vllm/entrypoints/launchers/api_server/entry.py
+@@ -136,6 +136,11 @@
+     logger.info("Supported tasks: %s", supported_tasks)
+     app = build_app(args, supported_tasks, model_config)
+     await init_app_state(engine_client, app.state, args, supported_tasks)
++
++    if getattr(args, "monitor", False):
++        from vllm._rtx_spark.runtime.monitor import install
++
++        install(app, args, engine_client)
+ 
+     logger.info("Starting vLLM server on %s", listen_address)
+ 
+diff --git a/vllm/entrypoints/launchers/launcher.py b/vllm/entrypoints/launchers/launcher.py
+--- a/vllm/entrypoints/launchers/launcher.py
++++ b/vllm/entrypoints/launchers/launcher.py
+@@ -254,5 +254,9 @@
+         logger.info_once("[shutdown] API server: shutdown triggered")
+         shutdown_event.set()
+ 
++    monitor = getattr(app.state, "rtx_spark_monitor", None)
++    if monitor is not None:
++        monitor.shutdown = signal_handler
++
+     async def dummy_shutdown() -> None:
+         pass

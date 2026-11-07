@@ -45,7 +45,7 @@ def main():
                     *map(str, core)], cwd=ROOT, check=True)
     install_entries = [(path, "wheels/" + path.name) for path in core]
     install_entries.append((_VERSION["manifest_path"](), "manifest.json"))
-    for name in ("README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "sources.lock.json"):
+    for name in ("README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "sources.lock.json", "assets/vllm.png", "assets/monitor-screenshot.png"):
         install_entries.append((ROOT / name, name))
     build_info = output / "build-info.json"
     if build_info.is_file():

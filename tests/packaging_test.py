@@ -24,7 +24,7 @@ class InstallationPackagingTests(unittest.TestCase):
             output = root / "dist"
             output.mkdir()
             files = {
-                "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "sources.lock.json",
+                "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "sources.lock.json", "assets/vllm.png", "assets/monitor-screenshot.png",
                 "configs/model/gpu.yaml", "requirements/constraints.txt", "scripts/install.ps1",
                 "patches/vllm/manifest.json",
                 "benchmarks/README.md", "benchmarks/requirements.txt", "benchmarks/reference/README.md",
@@ -74,7 +74,7 @@ class InstallationPackagingTests(unittest.TestCase):
             names = [name for _, name in entries]
             self.assertEqual(set(names), {
                 "wheels/" + wheel.name, "manifest.json", "README.md", "LICENSE",
-                "THIRD_PARTY_NOTICES.md", "sources.lock.json", "build-info.json",
+                "THIRD_PARTY_NOTICES.md", "sources.lock.json", "build-info.json", "assets/vllm.png", "assets/monitor-screenshot.png",
                 "configs/model/gpu.yaml", "requirements/constraints.txt", "scripts/install.ps1",
                 "benchmarks/README.md", "benchmarks/requirements.txt", "benchmarks/reference/README.md",
                 "benchmarks/throughput/run.py",
