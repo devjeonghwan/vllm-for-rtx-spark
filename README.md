@@ -4,7 +4,7 @@
 
 <h1 align="center">vLLM for RTX Spark</h1>
 
-Optimized vLLM inference for NVIDIA RTX Spark N1X on Windows ARM64.
+<p align="center">Optimized vLLM inference for NVIDIA RTX Spark N1X on Windows ARM64.</p>
 
 ## Supported models
 
